@@ -46,9 +46,6 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         // interpolation settings:
         config.interpolation = {};
         $("#button_redraw").click(redraw);
-        $("#select_variogram").change(redraw);
-        $("#input_sigma2").change(redraw);
-        $("#input_alpha").change(redraw);
 
         redraw();
     }
@@ -66,10 +63,6 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
 
         config.till = new Date(config.from.getTime());
         config.till.setMinutes(config.till.getMinutes() + config.duration);
-
-        config.interpolation.variogram = $("#select_variogram").val();
-        config.interpolation.sigma2 = parseInt($("#input_sigma2").val(), 10);
-        config.interpolation.alpha = parseInt($("#input_alpha").val(), 10);
     }
     
     function redrawMap(canvas) {
