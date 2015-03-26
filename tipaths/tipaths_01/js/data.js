@@ -85,6 +85,58 @@ define(["jquery", "proj4"], function ($, proj4) {
     };
     
     // -----------------------------------------------------------------------------
+    
+    /**
+     * Loads window data for one altitude.
+     * @param {Date}     from     From datetime.
+     * @param {Date}     till     Till datetime.
+     * @param {Number}   altitude At altitude (.3, .5, .7, ..., 3.9)§
+     * @param {Function} handler  A handler function that takes a JSON object as
+     *                            sole argument.
+     */
+    data.loadData_1 = function (from, till, altitude, handler) {
+        var sql = "SELECT radar_name";
+        sql += ", AVG(bird_density) as bird_density";
+        sql += ", AVG(u_speed) as u_speed";
+        sql += ", AVG(v_speed) as v_speed";
+        sql += ", AVG(ground_speed) as ground_speed";
+        sql += " FROM bird_migration_altitude_profiles";
+        sql += " WHERE altitude = '" + altitude + "'";
+        sql += " AND bird_density > 0";
+        sql += " AND start_time >= '" + data.cartoDB.toString(from) + "'";
+        sql += " AND start_time < '" + data.cartoDB.toString(till) + "'";
+        sql += " GROUP BY radar_name";
+        //debug(sql);
+        data.cartoDB.loadData(sql, handler);
+    }
+    
+    /**
+     * Loads window data for one altitude.
+     * @param {Date}     from    From datetime.
+     * @param {Date}     till    Till datetime.
+     * @param {Number}   altMin  The minimum altitude.
+     * @param {Number}   altMax  The maximum altitude.
+     * @param {Function} handler A handler function that takes a JSON object as
+     *                           sole argument.
+     */
+    data.loadData_2 = function (from, till, altMin, altMax, handler) {
+        var sql = "SELECT radar_name";
+        sql += ", AVG(bird_density) as bird_density";
+        sql += ", AVG(u_speed) as u_speed";
+        sql += ", AVG(v_speed) as v_speed";
+        sql += ", AVG(ground_speed) as ground_speed";
+        sql += " FROM bird_migration_altitude_profiles";
+        sql += " WHERE altitude >= '" + altMin + "'";
+        sql += " AND altitude <= '" + altMax + "'";
+        sql += " AND bird_density > 0";
+        sql += " AND start_time >= '" + data.cartoDB.toString(from) + "'";
+        sql += " AND start_time < '" + data.cartoDB.toString(till) + "'";
+        sql += " GROUP BY radar_name";
+        //debug(sql);
+        data.cartoDB.loadData(sql, handler);
+    }
+    
+    // -----------------------------------------------------------------------------
     // Various:
 
     // An array with a continuous set of altitudes for which all radars provide data

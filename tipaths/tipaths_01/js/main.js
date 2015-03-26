@@ -74,25 +74,14 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
     }
     
     function redrawMap(canvas) {
-        var sql = "SELECT radar_name";
-        sql += ", AVG(bird_density) as bird_density";
-        sql += ", AVG(u_speed) as u_speed";
-        sql += ", AVG(v_speed) as v_speed";
-        sql += ", AVG(ground_speed) as ground_speed";
-        sql += " FROM bird_migration_altitude_profiles";
-        sql += " WHERE altitude = '" + config.altitude + "'";
-        sql += " AND bird_density > 0";
-        sql += " AND start_time >= '" + data.cartoDB.toString(config.from) + "'";
-        sql += " AND start_time < '" + data.cartoDB.toString(config.till) + "'";
-        sql += " GROUP BY radar_name";
-        //debug(sql);
-        data.cartoDB.loadData(sql, function (json) {
+        var rdatas = [];
+        data.loadData_2(config.from, config.till, 0.3, 0.9, function (json) {
 //        $.getJSON("data/td1.json", function(json) {
 //            $("#debug").append(JSON.stringify(json));
 //            console.log(json);
-            var rdata = processData(json);
-            drawMap(rdata);
-            drawPaths(rdata);
+            rdatas[0] = processData(json);
+            drawMap(rdatas[0]);
+            drawPaths(rdatas[0]);
         });
     }
     
@@ -104,15 +93,15 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
             radar,
             row,
             rdata = {
-                radarNames : [],
+                names : [],
                 densities : [],
                 uSpeeds : [],
                 vSpeeds : [],
                 speeds : [],
                 rxs : [],
-                rys : []
+                rys : [],
+                indices : {}
             },
-            rd,
             speedMin = 1000000,
             speedMax = -1000000,
             densityMin = 1000000,
@@ -127,13 +116,12 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         for (i = 0; i < leni; i++) {
             row = json.rows[i];
             
-            rd = rdata[row.radar_name];
-            rd.index = i;
+            rdata.indices[row.radar_name] = i;
             
             var speed = util.distance(row.u_speed, row.v_speed);
             console.log("ground_speed: " + row.ground_speed + " - speed: " + speed);
             
-            rdata.radarNames.push(row.radar_name);
+            rdata.names.push(row.radar_name);
             rdata.densities.push(row.bird_density);
             rdata.uSpeeds.push(row.u_speed);
             rdata.vSpeeds.push(row.v_speed);
@@ -148,11 +136,10 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         leni = data.radars.length;
         for (i = 0; i < leni; i++) {
             radar = data.radars[i];
-            rd = rdata[radar.name];
+            var di = rdata.indices[radar.name];
             var rp = map.locToPxl(radar.coordinates[0], radar.coordinates[1]);
-            rd.mapPos = rp;
-            rdata.rxs.push(rp.x);
-            rdata.rys.push(rp.y);
+            rdata.rxs[di] = rp.x;
+            rdata.rys[di] = rp.y;
         }
         
         console.log("speed min: " + speedMin + " - max: " + speedMax);
@@ -169,7 +156,10 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
             canvas = $("#canvas"),
             ctx = canvas[0].getContext("2d"),
             clr = "53, 106, 164",
-            density;
+            di,
+            density,
+            rx, 
+            ry;
         
         // Draw the map bitmap:
         ctx.drawImage($("#img_map")[0], 0, 0);
@@ -188,8 +178,10 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         for (i = 0; i < leni; i++) {
             radar = data.radars[i];
             //debug("# Radar: " + radar.name + " - " + radar.coordinates);
-            rd = rdata[radar.name];
-            density = rdata.densities[rd.index];
+            di = rdata.indices[radar.name];
+            density = rdata.densities[di];
+            rx = rdata.rxs[di];
+            ry = rdata.rys[di];
             
             // Draw radar shapes:
             var alpha = 0;
@@ -201,38 +193,27 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
             
             // 50 km circle:
             ctx.beginPath();
-            ctx.arc(rd.mapPos.x, rd.mapPos.y, r50, 0, 2 * Math.PI);
+            ctx.arc(rx, ry, r50, 0, 2 * Math.PI);
             ctx.stroke();
             ctx.fill();
             
             // 100 km circle:
             ctx.beginPath();
-            ctx.arc(rd.mapPos.x, rd.mapPos.y, r100, 0, 2 * Math.PI);
+            ctx.arc(rx, ry, r100, 0, 2 * Math.PI);
             ctx.stroke();
             
             // radar center:
             ctx.beginPath();
             ctx.fillStyle = "rgb(" + clr + ")";
-            ctx.arc(rd.mapPos.x, rd.mapPos.y, 2, 0, 2 * Math.PI);
+            ctx.arc(rx, ry, 2, 0, 2 * Math.PI);
             ctx.fill();
-            
-            // draw all travel vectors:
-//            ctx.strokeStyle = "rgba(102, 153, 0, 1)";
-//            var len = rd.uSpeeds.length;
-//            for (var j = 0; j < len; j++) {
-//                ctx.beginPath();
-//                ctx.moveTo(rd.mapPos.x, rd.mapPos.y);
-//                ctx.lineTo(rd.mapPos.x + rd.uSpeeds[j] * drawFactor,
-//                           rd.mapPos.y - rd.vSpeeds[j] * drawFactor);
-//                ctx.stroke();
-//            }
             
             // draw average travel vector:
             ctx.strokeStyle = "rgb(" + clr + ")";
             ctx.beginPath();
-            ctx.moveTo(rd.mapPos.x, rd.mapPos.y);
-            ctx.lineTo(rd.mapPos.x + rd.avUSpeed * drawFactor,
-                       rd.mapPos.y - rd.avVSpeed * drawFactor);
+            ctx.moveTo(rx, ry);
+            ctx.lineTo(rx + rdata.uSpeeds[di] * drawFactor,
+                       ry - rdata.vSpeeds[di] * drawFactor);
             ctx.stroke();
         }
     }
@@ -278,7 +259,10 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
             pd,
             px,
             py,
-            density;
+            di,
+            density,
+            rx, 
+            ry;
         
         console.log("r100: " + r100);
         
@@ -286,16 +270,20 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         for (ri = 0; ri < rlen; ri++) {
             radar = data.radars[ri];
             rd = rdata[radar.name];
-            density = rdata.densities[rd.index];
-            pathCnt = util.constrain(util.map(density, 0, 250, 0, 100), 0, 100);
+            di = rdata.indices[radar.name];
+            density = rdata.densities[di];
+            rx = rdata.rxs[di];
+            ry = rdata.rys[di];
+            
+            pathCnt = util.constrain(util.map(density, 0, 350, 0, 100), 0, 100);
 
             for (path = 0; path < pathCnt; path++) {
                 pa = Math.random() * Math.PI * 2;
                 //pa += .2 + Math.random();
                 //pd = Math.random() * r100;
                 pd = util.map(path, 0, pathCnt, 0, r100);
-                px = rd.mapPos.x + Math.cos(pa) * pd;
-                py = rd.mapPos.y + Math.sin(pa) * pd;
+                px = rx + Math.cos(pa) * pd;
+                py = ry + Math.sin(pa) * pd;
 
     //            uSpeed = uSpeedInterpolator(px, py) * sectieFactor;
     //            vSpeed = vSpeedInterpolator(px, py) * sectieFactor;
