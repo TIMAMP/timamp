@@ -133,7 +133,7 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
             rdata.indices[row.radar_name] = i;
             
             var speed = util.distance(row.u_speed, row.v_speed);
-            console.log("ground_speed: " + row.ground_speed + " - speed: " + speed);
+            //console.log("ground_speed: " + row.ground_speed + " - speed: " + speed);
             
             rdata.names.push(row.radar_name);
             rdata.densities.push(row.bird_density);
