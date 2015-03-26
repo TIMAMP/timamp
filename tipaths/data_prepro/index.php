@@ -172,10 +172,29 @@ function do_the_jump($start_time, $jump){
 	}
 	return $window;
 }
+
+function calculate_ground(){
+	$database = "birds";
+	$con = mysqli_connect("localhost", "root", "root", $database);
+	$sql = "SELECT `u_speed`, `v_speed`, `ID` FROM `json_file`";
+	$result = mysqli_query($con, $sql) or die(mysql_error());
+	while($row = mysqli_fetch_array($result)){
+		$ground = ($row['u_speed']*$row['u_speed']) + ($row['v_speed']*$row['v_speed']);
+		$ground = sqrt($ground);
+		echo $ground . '</br>';
+		$id = $row['ID'];
+		$sql_2 = "UPDATE `birds`.`json_file` SET `ground` = '$ground' WHERE `json_file`.`ID` = '$id'";
+		$result_2 = mysqli_query($con, $sql_2) or die(mysql_error());
+	}
+	mysqli_close($con);
+}
+
+
+
 function make_the_average(){
 	$database = "birds";
 	$radar_id = array("6410","6234","6260", "6451", "6477");
-	$json_file = fopen("files/json.json", "a+");
+	$json_file = fopen("files/final.json", "a+");
 	$altitude_array = array("0.3","0.5","0.7", "0.9", "1.1","1.3","1.5","1.7", "1.9", "2.1","2.3","2.5","2.7", "2.9", "3.1","3.3","3.5","3.7", "3.9");
 	$table = "json_file";
 	$v_speed = 0;
@@ -183,6 +202,7 @@ function make_the_average(){
 	$u_speed = 0;
 	$con = mysqli_connect("localhost", "root", "root", $database);
 	$window = do_the_jump("", 25);
+while($j <2){
 foreach($window as $time){
 	$start = $time[0];
 	$end = $time[1];
@@ -190,26 +210,30 @@ foreach($window as $time){
 		echo '</br>';
 		$i = 0;
 		foreach($radar_id as $id ){
-			$sql = "SELECT `density` FROM `json_file` WHERE `Radar_ID` = '$id' AND `altitude` LIKE '$altitude' AND `date` BETWEEN '$start' AND '$end'";
+			$sql = "SELECT `u_speed` FROM `json_file` WHERE `Radar_ID` = '$id' AND `altitude` LIKE '$altitude' AND `date` BETWEEN '$start' AND '$end'";
 			$result = mysqli_query($con, $sql) or die(mysql_error());
 			$number = mysqli_num_rows($result);
 			while($row = mysqli_fetch_array($result)){
-				$density += $row['density'] / $number;
+				$density += $row['u_speed'] / $number;
 			}
 			//echo $start . '-'. $end . '->'. $density . '</br>';
-			$density = 0;
 			$array[$i] = $density;
+			$density = 0;
 			$i++;
 		}
-		$line = '[' . $array[0] . ',' . $array[1] . ',' . $array[2] . ',' . $array[3] . ',' . $array[0] . '],';
-		echo $line;
+		$line = '[' . $array[0] . ',' . $array[1] . ',' . $array[2] . ',' . $array[3] . ',' . $array[4] . '],'."\n";
+		//echo $line;
 		fwrite($json_file, $line);
 	}
 	fwrite($json_file, "],\n[");
+	$j++;
+	if($j == 2) break;
+}
 }
 	mysqli_close($con);
 	fclose($json_file);
 }
 
-echo make_the_average();
+echo calculate_ground();
+//echo make_the_average();
 ?>
