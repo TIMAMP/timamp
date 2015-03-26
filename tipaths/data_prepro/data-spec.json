@@ -1,11 +1,11 @@
 {
-    metadata : {
-        startTime: '2013-04-05T17:40:12Z',
-        windowDuration : 25,
-        deltaStartTime : 5,
-        radars : [ radarId, ... ],
-        altitudes : [ 0.3, 0.5, ... ],
-        dataIndices : [ 'density', 'speed_u', 'speed_v' ]
+    "metadata" : {
+        "startTime": "2013-04-05T17:40:12Z",
+        "windowDuration" : 25,
+        "deltaStartTime" : 5,
+        "radars" : [ radarId, ... ],
+        "altitudes" : [ 0.3, 0.5, ... ],
+        "dataIndices" : [ "density", "speed_u", "speed_v" ]
     },
     data : [ /* for each window */
         [ /* for each radar */

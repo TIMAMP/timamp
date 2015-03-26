@@ -6,18 +6,18 @@ The generated JSON file is formatted as follows. The items `<density>`, `<speed_
 
 ```
 {
-    metadata : {
-        startTime: '2013-04-05T17:40:12Z',
-        windowDuration : 25,
-        deltaStartTime : 5,
-        radars : [ radarId, ... ],
-        altitudes : [ 0.3, 0.5, ..., 3.9 ],
-        dataIndices : [ 'density', 'speed_u', 'speed_v', 'ground_speed' ]
+    "metadata" : {
+        "startTime": "2013-04-05T17:40:12Z",
+        "windowDuration" : 25,
+        "deltaStartTime" : 5,
+        "radars" : [ radarId, ... ],
+        "altitudes" : [ 0.3, 0.5, ... ],
+        "dataIndices" : [ "density", "speed_u", "speed_v" ]
     },
     data : [ /* for each window */
         [ /* for each radar */
             [ /* for each altitude */
-                [ <density>, <speed_u>, <speed_v>, <ground_speed> ],
+                [ <density>, <speed_u>, <speed_v> ],
                 ...
             ],
             ...
@@ -26,6 +26,7 @@ The generated JSON file is formatted as follows. The items `<density>`, `<speed_
     ],
     ...
 }
+        
 ```
 
 ####`<density>`
