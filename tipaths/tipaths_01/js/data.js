@@ -111,7 +111,7 @@ define(["jquery", "proj4"], function ($, proj4) {
     }
     
     /**
-     * Loads window data for one altitude.
+     * Loads window data for a range of altitude, averaging over all altitudes.
      * @param {Date}     from    From datetime.
      * @param {Date}     till    Till datetime.
      * @param {Number}   altMin  The minimum altitude.

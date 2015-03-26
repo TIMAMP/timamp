@@ -107,7 +107,6 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
             radar,
             row,
             rdata = {
-                names : [],
                 densities : [],
                 uSpeeds : [],
                 vSpeeds : [],
@@ -133,9 +132,7 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
             rdata.indices[row.radar_name] = i;
             
             var speed = util.distance(row.u_speed, row.v_speed);
-            //console.log("ground_speed: " + row.ground_speed + " - speed: " + speed);
             
-            rdata.names.push(row.radar_name);
             rdata.densities.push(row.bird_density);
             rdata.uSpeeds.push(row.u_speed);
             rdata.vSpeeds.push(row.v_speed);
@@ -163,8 +160,8 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
     }
     
     function drawMap(rdata) {
-        var i,
-            leni,
+        var ri,
+            rlen,
             radar,
             rd,
             canvas = $("#canvas"),
@@ -188,14 +185,11 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         var r50 = map.dmxToPxl(50000); // 50 km
         var r100 = map.dmxToPxl(100000); // 100 km
         
-        leni = data.radars.length;
-        for (i = 0; i < leni; i++) {
-            radar = data.radars[i];
-            //debug("# Radar: " + radar.name + " - " + radar.coordinates);
-            di = rdata.indices[radar.name];
-            density = rdata.densities[di];
-            rx = rdata.rxs[di];
-            ry = rdata.rys[di];
+        rlen = rdata.densities.length;
+        for (ri = 0; ri < rlen; ri++) {
+            density = rdata.densities[ri];
+            rx = rdata.rxs[ri];
+            ry = rdata.rys[ri];
             
             // Draw radar shapes:
             var alpha = 0;
@@ -226,8 +220,8 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
             ctx.strokeStyle = "rgb(" + clr + ")";
             ctx.beginPath();
             ctx.moveTo(rx, ry);
-            ctx.lineTo(rx + rdata.uSpeeds[di] * drawFactor,
-                       ry - rdata.vSpeeds[di] * drawFactor);
+            ctx.lineTo(rx + rdata.uSpeeds[ri] * drawFactor,
+                       ry - rdata.vSpeeds[ri] * drawFactor);
             ctx.stroke();
         }
     }
@@ -281,7 +275,7 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         
         console.log("r100: " + r100);
         
-        rlen = rdata.names.length;
+        rlen = rdata.densities.length;
         for (ri = 0; ri < rlen; ri++) {
             density = rdata.densities[ri];
             rx = rdata.rxs[ri];
