@@ -1,6 +1,7 @@
 <?php
 //globals
 $stats = new stdClass();
+$date = (isset($_GET['date']))? $_GET['date'] : "2013-04-05";
 
 /**
  * This function creates all window frames for a given date
@@ -61,7 +62,6 @@ function loadData($date){
     
     
     $stats->rowCount = 0;
-    $stats->date = $date;
     $stats->windowCount = count($windows);
     
     
@@ -146,15 +146,15 @@ function exportJSON($filename, $data){
 }
 
 $startTime = microTime(true);
-$data = loadData("2013-04-05");
+$data = loadData($date);
 $loadTime = microTime(true);
-exportJSON("data/enram-data.json", $data);
+exportJSON("data/enram-data-$date.json", $data);
 $endTime = microTime(true);
 $stats->loadExecutionTime = $loadTime - $startTime;
 $stats->exportExecutionTime = $endTime - $loadTime;
 
 echo '<h1>Enram Data preprocessor</h1><h2>Stats:</h2><ul>';
-echo '<li>Date: ' . $stats->date . ' </li>';
+echo '<li>Date: ' . $date . ' </li>';
 echo '<li>Number of windows: ' . $stats->windowCount . ' windows</li>';
 echo '<li>Number of rows: ' . $stats->rowCount . ' rows</li>';
 echo '<li>Execution time query + transform data: ' . $stats->loadExecutionTime . ' sec</li>';
