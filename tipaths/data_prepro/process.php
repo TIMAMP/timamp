@@ -158,6 +158,6 @@ echo '<li>Date: ' . $stats->date . ' </li>';
 echo '<li>Number of windows: ' . $stats->windowCount . ' windows</li>';
 echo '<li>Number of rows: ' . $stats->rowCount . ' rows</li>';
 echo '<li>Execution time query + transform data: ' . $stats->loadExecutionTime . ' sec</li>';
-echo '<li>Execution time export JSON file: ' . $stats->exportExecutionTime . ' sec</li>';
+echo '<li>Execution time export JSON file: ' . $stats->exportExecutionTime . ' sec</li></ul>';
 echo '<h2>Result:</h2><p><pre> ' . $stats->result . '</pre></p>';
 ?>
