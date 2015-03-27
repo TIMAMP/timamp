@@ -24,7 +24,9 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
             maxDensity : 600,
             duration : 20,
             windowStep : 20,
-            pathLen : 24
+            pathLen : 24,
+            maxPathCnt : 35,
+            stepFactor : -1
         },
         map = new Map(700),
         loadWinI = 0;
@@ -47,6 +49,7 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
     
     function redraw() {
         updateInterpolationParams();
+        loadWinI = 0;
         redrawMap(canvas);
     }
     
@@ -101,6 +104,7 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         }
         
         loadNext(rdata, config.from);
+        //loadLocal(rdata, "../data_prepro/data-00h/enram-data-2013-04-08.json");
     }
     
     function loadNext(rdata, from) {
@@ -121,6 +125,17 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
                 drawMap(rdata);
                 drawPaths(rdata, 0);
             }
+        });
+    }
+    
+    function loadLocal(rdata, path) {
+        console.log(">> loading data at " + path);
+        $.getJSON(path, function(json) {
+            $("#debug").append(JSON.stringify(json));
+//            console.log(json);
+            rdata = json;
+            drawMap(rdata);
+            drawPaths(rdata, 0);
         });
     }
     
@@ -179,8 +194,8 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
             else if (row.bird_density > densityMax) { densityMax = row.bird_density; }
         }
         
-        console.log("speed min: " + speedMin + " - max: " + speedMax);
-        console.log("density min: " + densityMin + " - max: " + densityMax);
+//        console.log("speed min: " + speedMin + " - max: " + speedMax);
+//        console.log("density min: " + densityMin + " - max: " + densityMax);
         
         return rdata;
     }
@@ -291,6 +306,8 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         var wUSpeeds = rdata.uSpeeds[wini];
         var wVSpeeds = rdata.vSpeeds[wini];
         var wSpeeds = rdata.speeds[wini];
+        var prevDensities = [];
+        
         //console.log("rdata.uSpeeds: " + rdata.uSpeeds);
         //console.log("wUSpeeds: " + wUSpeeds);
         
@@ -326,7 +343,8 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
                 density = densities[radi];
                 radx = rdata.xPositions[radi];
                 rady = rdata.yPositions[radi];
-                pathCnt = util.constrain(util.map(density, 0, 350, 0, 100), 0, 5);
+                
+                pathCnt = Math.round(util.constrain(util.map(density, 0, 350, 0, config.maxPathCnt), 0, config.maxPathCnt));
 
                 for (path = 0; path < pathCnt; path++) {
                     pa = Math.random() * Math.PI * 2;
@@ -337,21 +355,18 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
                     py = rady + Math.sin(pa) * pd;
 
                     for (secti = 0; secti < config.pathLen; secti++) {
-                        console.log("secti: " + secti);
+                        //console.log("secti: " + secti + " - alti: " + alti);
                         var densities = rdata.densities[secti][alti];
                         var uSpeeds = rdata.uSpeeds[secti][alti];
                         var vSpeeds = rdata.vSpeeds[secti][alti];
                         var speeds = rdata.speeds[secti][alti];
-                        
-                        // speeds are in m/s, 
-                        config.stepFactor
                         
                         uSpeed = idw(px, py, uSpeeds, xps, yps, 2) * stepFactor;
                         vSpeed = idw(px, py, vSpeeds, xps, yps, 2) * stepFactor;
                         //speed = idw(px, py, speeds, xps, yps, 2) * stepFactor;
                         //hue = util.map(speed, 0, 10, 0, 0.5);
 
-                        var alpha = util.map(secti, 0, config.pathLen - 1, .5, 1);
+                        var alpha = util.map(secti, 0, config.pathLen - 1, 0.5, 1);
                         //ctx.strokeStyle = util.hsvToHex(hue, 0.8, 0.6);
                         ctx.strokeStyle = util.hsvaToRgba(hue, 0.8, 0.6, alpha);
                         ctx.beginPath();

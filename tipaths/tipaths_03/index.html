@@ -18,17 +18,15 @@
         <script data-main="js/main" src="js/lib/require.js"></script>
     </head>
     <body>
-        <h1>TIPaths 03</h1>
-        <p></p>
-        <div style="margin-bottom: .5em;">
-            <form>
-                from <input id="input_datetime" type="datetime-local" value="2013-04-07T21:00:00" min="2013-04-05T00:00:00" max="2013-04-09T00:00:00" step="90">
-                <br><button id="button_redraw" type="button">redraw</button>
-            </form>
-        </div>
         <div id="frameDiv">
             <canvas id="canvas"></canvas>
-            <div id="sideDiv"></div>
+            <div id="sideDiv">
+                <h1>Time Integrated Multi-Altitude Migration Paths</h1>
+                <form>
+                    Starttime:<br><input id="input_datetime" type="datetime-local" value="2013-04-07T21:00:00" min="2013-04-05T00:00:00" max="2013-04-09T00:00:00" step="90">
+                    <button id="button_redraw" type="button">redraw</button>
+                </form>
+            </div>
         </div>
         <small>Map of Belgium and Netherlands by FreeVectorMaps.com</small>
         <div id="debug"></div>
