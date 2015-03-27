@@ -32,16 +32,8 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
             height: map.height
         });
         
-        // 
-        $.each(data.altitudeStrings, function (i, altitude) {
-            $("#select_altitude").
-                append($("<option></option>")
-                       .attr("value", altitude)
-                       .text(altitude));
-        });
         $("#input_datetime").change(redraw);
         $("#input_duration").change(redraw);
-        $("#select_altitude").change(redraw);
 
         // interpolation settings:
         config.interpolation = {};
@@ -59,7 +51,6 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         // TODO: check if time handling is correct given the timezone differences...
         config.from = new Date($("#input_datetime").val());
         config.duration = parseInt($("#input_duration").val(), 10);
-        config.altitude = parseFloat($("#select_altitude").val());
 
         config.till = new Date(config.from.getTime());
         config.till.setMinutes(config.till.getMinutes() + config.duration);
@@ -175,8 +166,8 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
             else if (row.bird_density > densityMax) { densityMax = row.bird_density; }
         }
         
-        console.log("speed min: " + speedMin + " - max: " + speedMax);
-        console.log("density min: " + densityMin + " - max: " + densityMax);
+//        console.log("speed min: " + speedMin + " - max: " + speedMax);
+//        console.log("density min: " + densityMin + " - max: " + densityMax);
         
         return rdata;
     }
@@ -198,9 +189,9 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         ctx.drawImage($("#img_map")[0], 0, 0);
         
         // Draw frame:
-        ctx.lineWidth   = 1;
-        ctx.strokeStyle = "#aaaaaa";
-        ctx.strokeRect(0, 0, map.width, map.height);
+//        ctx.lineWidth   = 1;
+//        ctx.strokeStyle = "#aaaaaa";
+//        ctx.strokeRect(0, 0, map.width, map.height);
         
         // Draw radars and interpolation:
         var drawFactor = 10;

@@ -217,9 +217,9 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         ctx.drawImage($("#img_map")[0], 0, 0);
         
         // Draw frame:
-        ctx.lineWidth   = 1;
-        ctx.strokeStyle = "#aaaaaa";
-        ctx.strokeRect(0, 0, map.width, map.height);
+//        ctx.lineWidth   = 1;
+//        ctx.strokeStyle = "#aaaaaa";
+//        ctx.strokeRect(0, 0, map.width, map.height);
         
         // Draw radars and interpolation:
         var drawFactor = 10;

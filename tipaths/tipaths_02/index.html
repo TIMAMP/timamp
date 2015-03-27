@@ -14,21 +14,28 @@
                 width: 170px;
                 float: right;
             }
+            input {
+                margin-top: 5px;
+                margin-bottom: 5px;
+            }
+            small {
+                font-size: 60%;
+            }
         </style>
         <script data-main="js/main" src="js/lib/require.js"></script>
     </head>
     <body>
-        <h1>TIPaths 02</h1>
-        <p></p>
-        <div style="margin-bottom: .5em;">
-            <form>
-                from <input id="input_datetime" type="datetime-local" value="2013-04-07T21:00:00" min="2013-04-05T00:00:00" max="2013-04-09T00:00:00" step="90"> - duration (minutes) <input type="text" id="input_duration" value="20" min="1" size="3"> - altitude <select id="select_altitude" value="3.9"></select>
-                <br><button id="button_redraw" type="button">redraw</button>
-            </form>
-        </div>
         <div id="frameDiv">
             <canvas id="canvas"></canvas>
-            <div id="sideDiv"></div>
+            <div id="sideDiv">        
+                <h1>Multi-Altitude Migration Paths</h1>
+                <p>This visualisation shows multi-altitude migration paths based on the density and direction observed during a window with the given duration.</p>
+            <form>
+                Start time:<input id="input_datetime" type="datetime-local" value="2013-04-07T21:00:00" min="2013-04-05T00:00:00" max="2013-04-09T00:00:00" step="90">duration<br><input type="text" id="input_duration" value="20" min="1" size="3"> min.
+                <!--<br><button id="button_redraw" type="button">redraw</button>-->
+            </form>
+        </div>
+            </div>
         </div>
         <small>Map of Belgium and Netherlands by FreeVectorMaps.com</small>
         <div id="debug"></div>
