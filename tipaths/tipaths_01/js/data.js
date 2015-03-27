@@ -111,7 +111,7 @@ define(["jquery", "proj4"], function ($, proj4) {
     }
     
     /**
-     * Loads window data for one altitude.
+     * Loads window data for a range of altitude, averaging over all altitudes.
      * @param {Date}     from    From datetime.
      * @param {Date}     till    Till datetime.
      * @param {Number}   altMin  The minimum altitude.
@@ -124,7 +124,24 @@ define(["jquery", "proj4"], function ($, proj4) {
         sql += ", AVG(bird_density) as bird_density";
         sql += ", AVG(u_speed) as u_speed";
         sql += ", AVG(v_speed) as v_speed";
-        sql += ", AVG(ground_speed) as ground_speed";
+//        sql += ", AVG(ground_speed) as ground_speed";
+        sql += " FROM bird_migration_altitude_profiles";
+        sql += " WHERE altitude >= '" + altMin + "'";
+        sql += " AND altitude <= '" + altMax + "'";
+        sql += " AND bird_density > 0";
+        sql += " AND start_time >= '" + data.cartoDB.toString(from) + "'";
+        sql += " AND start_time < '" + data.cartoDB.toString(till) + "'";
+        sql += " GROUP BY radar_name";
+        //debug(sql);
+        data.cartoDB.loadData(sql, handler);
+    }
+    
+    data.loadData_2 = function (from, till, altMin, altMax, handler) {
+        var sql = "SELECT radar_name";
+        sql += ", AVG(bird_density) as bird_density";
+        sql += ", AVG(u_speed) as u_speed";
+        sql += ", AVG(v_speed) as v_speed";
+//        sql += ", AVG(ground_speed) as ground_speed";
         sql += " FROM bird_migration_altitude_profiles";
         sql += " WHERE altitude >= '" + altMin + "'";
         sql += " AND altitude <= '" + altMax + "'";

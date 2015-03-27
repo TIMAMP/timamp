@@ -26,7 +26,6 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         map = new Map(700);
     
     function init() {
-
         var canvas = $("#canvas");
         canvas.attr({
             width: map.width,
@@ -47,9 +46,6 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         // interpolation settings:
         config.interpolation = {};
         $("#button_redraw").click(redraw);
-        $("#select_variogram").change(redraw);
-        $("#input_sigma2").change(redraw);
-        $("#input_alpha").change(redraw);
 
         redraw();
     }
@@ -67,10 +63,6 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
 
         config.till = new Date(config.from.getTime());
         config.till.setMinutes(config.till.getMinutes() + config.duration);
-
-        config.interpolation.variogram = $("#select_variogram").val();
-        config.interpolation.sigma2 = parseInt($("#input_sigma2").val(), 10);
-        config.interpolation.alpha = parseInt($("#input_alpha").val(), 10);
     }
     
     function redrawMap(canvas) {
@@ -80,8 +72,22 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
 //            $("#debug").append(JSON.stringify(json));
 //            console.log(json);
             rdatas[0] = processData(json);
-            drawMap(rdatas[0]);
-            drawPaths(rdatas[0]);
+            data.loadData_2(config.from, config.till, 1.1, 1.9, function (json) {
+    //        $.getJSON("data/td1.json", function(json) {
+    //            $("#debug").append(JSON.stringify(json));
+    //            console.log(json);
+                rdatas[1] = processData(json);
+                data.loadData_2(config.from, config.till, 2.1, 3.9, function (json) {
+        //        $.getJSON("data/td1.json", function(json) {
+        //            $("#debug").append(JSON.stringify(json));
+        //            console.log(json);
+                    rdatas[2] = processData(json);
+                    drawMap(rdatas[0]);
+                    drawPaths(rdatas[0], .2);
+                    drawPaths(rdatas[1], .5);
+                    drawPaths(rdatas[2], .8);
+                });
+            });
         });
     }
     
@@ -93,7 +99,6 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
             radar,
             row,
             rdata = {
-                names : [],
                 densities : [],
                 uSpeeds : [],
                 vSpeeds : [],
@@ -119,9 +124,7 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
             rdata.indices[row.radar_name] = i;
             
             var speed = util.distance(row.u_speed, row.v_speed);
-            console.log("ground_speed: " + row.ground_speed + " - speed: " + speed);
             
-            rdata.names.push(row.radar_name);
             rdata.densities.push(row.bird_density);
             rdata.uSpeeds.push(row.u_speed);
             rdata.vSpeeds.push(row.v_speed);
@@ -149,8 +152,8 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
     }
     
     function drawMap(rdata) {
-        var i,
-            leni,
+        var ri,
+            rlen,
             radar,
             rd,
             canvas = $("#canvas"),
@@ -174,14 +177,11 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         var r50 = map.dmxToPxl(50000); // 50 km
         var r100 = map.dmxToPxl(100000); // 100 km
         
-        leni = data.radars.length;
-        for (i = 0; i < leni; i++) {
-            radar = data.radars[i];
-            //debug("# Radar: " + radar.name + " - " + radar.coordinates);
-            di = rdata.indices[radar.name];
-            density = rdata.densities[di];
-            rx = rdata.rxs[di];
-            ry = rdata.rys[di];
+        rlen = rdata.densities.length;
+        for (ri = 0; ri < rlen; ri++) {
+            density = rdata.densities[ri];
+            rx = rdata.rxs[ri];
+            ry = rdata.rys[ri];
             
             // Draw radar shapes:
             var alpha = 0;
@@ -212,13 +212,13 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
             ctx.strokeStyle = "rgb(" + clr + ")";
             ctx.beginPath();
             ctx.moveTo(rx, ry);
-            ctx.lineTo(rx + rdata.uSpeeds[di] * drawFactor,
-                       ry - rdata.vSpeeds[di] * drawFactor);
+            ctx.lineTo(rx + rdata.uSpeeds[ri] * drawFactor,
+                       ry - rdata.vSpeeds[ri] * drawFactor);
             ctx.stroke();
         }
     }
     
-    function drawPaths(rdata) {
+    function drawPaths(rdata, hue) {
         var ri,
             rlen,
             radar,
@@ -227,7 +227,7 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
             ctx = canvas[0].getContext("2d"),
             pathCnt,
             path,
-            pathLen = 25,
+            pathLen = 10,
             sectie,
             sectieFactor = 2,
             uSpeed,
@@ -255,6 +255,7 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
                 power : 2
             }),
             r100 = map.dmxToPxl(100000) /* 100 km */,
+            r50 = map.dmxToPxl(50000) /* 50 km */,
             pa = 0,
             pd,
             px,
@@ -266,22 +267,19 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         
         console.log("r100: " + r100);
         
-        rlen = data.radars.length;
+        rlen = rdata.densities.length;
         for (ri = 0; ri < rlen; ri++) {
-            radar = data.radars[ri];
-            rd = rdata[radar.name];
-            di = rdata.indices[radar.name];
-            density = rdata.densities[di];
-            rx = rdata.rxs[di];
-            ry = rdata.rys[di];
+            density = rdata.densities[ri];
+            rx = rdata.rxs[ri];
+            ry = rdata.rys[ri];
             
-            pathCnt = util.constrain(util.map(density, 0, 350, 0, 100), 0, 100);
+            pathCnt = util.constrain(util.map(density, 0, 350, 0, 100), 0, 50);
 
             for (path = 0; path < pathCnt; path++) {
                 pa = Math.random() * Math.PI * 2;
                 //pa += .2 + Math.random();
                 //pd = Math.random() * r100;
-                pd = util.map(path, 0, pathCnt, 0, r100);
+                pd = util.map(path, 0, pathCnt, 0, r50);
                 px = rx + Math.cos(pa) * pd;
                 py = ry + Math.sin(pa) * pd;
 
@@ -299,7 +297,7 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
                     uSpeed = uSpeedInterpolator(px, py) * sectieFactor;
                     vSpeed = vSpeedInterpolator(px, py) * sectieFactor;
                     speed = speedInterpolator(px, py) * sectieFactor;
-                    hue = util.map(speed, 0, 10, 0, 0.5);
+                    //hue = util.map(speed, 0, 10, 0, 0.5);
 
                     ctx.strokeStyle = util.hsvToHex(hue, 0.8, 0.6);
                     ctx.beginPath();
