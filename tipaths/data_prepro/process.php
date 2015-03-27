@@ -102,24 +102,29 @@ function loadData($date){
         
         while($row = mysqli_fetch_array($result)){
             
+            //var_dump($row);
+            
             $radarIndex = 0;
             $altitudeIndex = 0;
             
             foreach($radars as $radar){
-                if($row[0] == $radar) break;
+                if(intval($row['radarID']) == $radar) break;
                 $radarIndex++;
             }
             
             foreach($altitudes as $altitude){
-                if($row[1] == $altitude) break;
+                //echo $altitude . ' index: ' . $altitudeIndex .'<br>';
+                if(floatval($row['altitude']) == $altitude) break;
                 $altitudeIndex++;
             }
             
-            $windowData->densities[$altitudeIndex][$radarIndex] = $row[2];
-            $windowData->uSpeeds[$altitudeIndex][$radarIndex] = $row[3];
-            $windowData->vSpeeds[$altitudeIndex][$radarIndex] = $row[4];
-            $windowData->speeds[$altitudeIndex][$radarIndex] = $row[5];
-            
+            //BUG: ADDS OBJECT TO END OF EACH ARRAY...
+            //*
+            $windowData->densities[$altitudeIndex][$radarIndex] = floatval($row[2]);
+            $windowData->uSpeeds[$altitudeIndex][$radarIndex] = floatval($row[3]);
+            $windowData->vSpeeds[$altitudeIndex][$radarIndex] = floatval($row[4]);
+            $windowData->speeds[$altitudeIndex][$radarIndex] = floatval($row[5]);
+            //*/
         }
         
         $data->densities[] = $windowData->densities;
