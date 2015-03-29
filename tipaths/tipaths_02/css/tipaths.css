@@ -1,0 +1,46 @@
+
+h1{ 
+    box-sizing: border-box;
+  color: rgb(51, 51, 51);
+  display: block;
+  font-family: Montserrat, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 50px;
+  margin-top: 20px;
+  text-transform: uppercase;
+}
+::selection {
+  text-shadow: none;
+  background: #fed136;
+}
+p {
+box-sizing: border-box;
+  display: block;
+  font-family: 'Droid Serif', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  font-style: italic;
+  line-height: 1.75;
+  margin-bottom: 30px;
+  margin-left: 0px;
+  margin-right: 0px;
+  margin-top: 20px;
+      color: #777;
+}
+form {
+    margin: 20px 0 30px;
+    
+    font-size: 14px;
+    line-height: 1.75;
+    font-family: "Droid Serif","Helvetica Neue",Helvetica,Arial,sans-serif;
+  color: rgb(51, 51, 51);
+}
+small {
+    margin: 20px 0 30px;
+    
+    font-size: 9px;
+    line-height: 1.75;
+    font-family: "Droid Serif","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-style: italic;
+      color: #777;
+}
