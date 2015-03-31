@@ -1,0 +1,89 @@
+
+/*** STRUCTURE ***/
+
+#frameDiv {
+    width: 740px;
+}
+#sideDiv {
+    width: 190px;
+    height: 700px;
+    float: right;
+}
+#sideTopDiv {
+    width: 190px;
+    height: 640px;
+    padding: 10px 0 0 0;
+}
+#sideBottomDiv {
+    width: 190px;
+    height: 50px;
+    display: table-cell;
+    vertical-align: bottom;
+}
+#descriptionDiv {
+    width: 536px;
+    margin-top: 1em;
+}
+
+/*** TYPOGRAPHY ***/
+
+body {
+    font-family: Sans-Serif;
+    font-size: 100%;
+}
+#sideDiv p {
+    margin: .1em 0 1em 0;
+}
+#sideTopDiv h1 {
+    margin-top: 0;
+}
+#sideTopDiv h3 {
+    font-size: 100%;
+    font-weight: 600;
+    margin: 1em 0 0 0;
+    padding: 0;
+}
+#descriptionDiv {
+    text-align: justify;
+}
+input {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    text-align: center;
+    font-size: 90%;
+}
+small {
+    font-size: 65%;
+    color: #666;
+}
+
+/*** LEGEND ***/
+div.legend_altiColor_segment {
+    width: 10px;
+    height: 20px;
+    display: inline-block;
+}
+div.legend_altiColor_annot {
+    width: 190px;
+    padding: 0;
+}
+div.legend_altiColor_annot div {
+    margin: 0;
+    padding: 0;
+    display: inline-block;
+    font-size: 70%;
+    line-height: 80%;
+    color: #666;
+}
+div.legend_altiColor_annot_a {
+    width: 40px;
+    text-align: left;
+}
+div.legend_altiColor_annot_b {
+    width: 100px;
+    text-align: center;
+}
+div.legend_altiColor_annot_c {
+    width: 50px;
+    text-align: right;
+}
