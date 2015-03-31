@@ -353,18 +353,18 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
             ctx = canvas[0].getContext("2d"),
             xps = rdata.xPositions,
             yps = rdata.yPositions,
-            idw = interpolation.idw;
+            idw = interpolation.idw,
+            alpha;
         
         // pixels secs per meter
         var pspm = map.dmxToPxl(1) * rdata.windowDuration * 60;
+//        console.log("pspm: " + pspm
+//                    + " - map.dmxToPxl(1): " + map.dmxToPxl(1) 
+//                    + " - rdata.deltaStartTime: " + rdata.deltaStartTime);
         
         // the volume of the context in km3, i.e. area of circle with 100km
         // radius by 200m:
         var contextVolume = Math.PI * 100 * 100 / 5;
-        
-//        console.log("pspm: " + pspm
-//                    + " - map.dmxToPxl(1): " + map.dmxToPxl(1) 
-//                    + " - rdata.deltaStartTime: " + rdata.deltaStartTime);
         
         // for each altitude
         for (alti = 0; alti < altn; alti++) {

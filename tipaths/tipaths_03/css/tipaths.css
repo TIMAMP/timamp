@@ -1,46 +1,142 @@
 
-h1{ 
+/*** STRUCTURE ***/
+
+.frameDiv {
+    width: 740px;
     box-sizing: border-box;
-  color: rgb(51, 51, 51);
-  display: block;
-  font-family: Montserrat, 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  font-size: 24px;
-  font-weight: bold;
-  margin-bottom: 50px;
-  margin-top: 20px;
-  text-transform: uppercase;
 }
-::selection {
-  text-shadow: none;
-  background: #fed136;
+.sideDiv {
+    width: 190px;
+    height: 700px;
+    float: right;
+    box-sizing: border-box;
 }
-p {
-box-sizing: border-box;
-  display: block;
-  font-family: 'Droid Serif', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  font-size: 16px;
-  font-style: italic;
-  line-height: 1.75;
-  margin-bottom: 30px;
-  margin-left: 0px;
-  margin-right: 0px;
-  margin-top: 20px;
-      color: #777;
+.sideTopDiv {
+    width: 190px;
+    height: 640px;
+    padding: 10px 0 0 0;
+    box-sizing: border-box;
+}
+.sideBottomDiv {
+    width: 190px;
+    height: 50px;
+    display: table-cell;
+    vertical-align: bottom;
+    box-sizing: border-box;
+}
+.descriptionDiv {
+    width: 536px;
+    margin-top: .1em;
+    box-sizing: border-box;
 }
 form {
-    margin: 20px 0 30px;
-    
-    font-size: 14px;
-    line-height: 1.75;
     font-family: "Droid Serif","Helvetica Neue",Helvetica,Arial,sans-serif;
-  color: rgb(51, 51, 51);
+    color: rgb(51, 51, 51);
+}
+.bottomDiv {
+    width: 740px;
+    box-sizing: border-box;
+    text-align: center;
+    margin-top: 3em;
+}
+.licenseDiv {
+    width: 400px;
+    display: inline-block;
+    box-sizing: border-box;
+}
+
+/*** TYPOGRAPHY ***/
+
+body, p, small {
+    font-family: 'Droid Serif', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+h1, h3 {
+    font-family: Montserrat, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+body {
+    font-family: Sans-Serif;
+    font-size: 100%;
+}
+h1 {
+    color: rgb(51, 51, 51);
+    display: block;
+    font-size: 170%;
+    font-weight: bold;
+    margin: 0 0 1em 0;
+    line-height: 100%;
+    text-transform: uppercase;
+}
+h3 {
+    font-size: 100%;
+    font-weight: 600;
+    margin: 1em 0 0 0;
+    padding: 0;
+}
+p {
+    margin: .1em 0 1em 0;
+    display: block;
+    font-size: 16px;
+    line-height: 120%;
+    color: #333;
+}
+.sideTopDiv p {
+    text-align: justify;
+}
+::selection {
+    text-shadow: none;
+    background: #fed136;
+}
+.descriptionDiv {
+    text-align: center;
+}
+input {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    text-align: center;
+    font-size: 90%;
 }
 small {
-    margin: 20px 0 30px;
-    
-    font-size: 9px;
-    line-height: 1.75;
-    font-family: "Droid Serif","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size: 65%;
+    color: #666;
+    margin: 1em 0 2em 0;
     font-style: italic;
-      color: #777;
+}
+.licenseDiv {
+    font-size: 75%;
+    text-align: center;
+}
+
+/*** LEGEND ***/
+
+div.legend_altiColor_segment {
+    box-sizing: border-box;
+    width: 10px;
+    height: 20px;
+    display: inline-block;
+}
+div.legend_altiColor_annot {
+    box-sizing: border-box;
+    width: 190px;
+    padding: 0;
+}
+div.legend_altiColor_annot div {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    display: inline-block;
+    font-size: 70%;
+    line-height: 80%;
+    color: #666;
+}
+div.legend_altiColor_annot_a {
+    width: 40px;
+    text-align: left;
+}
+div.legend_altiColor_annot_b {
+    width: 100px;
+    text-align: center;
+}
+div.legend_altiColor_annot_c {
+    width: 50px;
+    text-align: right;
 }
