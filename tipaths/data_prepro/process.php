@@ -1,5 +1,5 @@
 <?php
-//globals
+//globals:
 $stats = new stdClass();
 $date = (isset($_GET['date']))? $_GET['date'] : "2013-04-05";
 
@@ -65,22 +65,23 @@ function loadData($date){
     $stats->windowCount = count($windows);
     
     
-	$table = 'enram_data';
-	$con = mysqli_connect('enram.dev', 'root', '', 'enram');
+	$table = 'bird_migration_altitude_profiles';
+//	$con = mysqli_connect('enram.dev', 'root', '', 'enram');
+	$con = mysqli_connect('enram-hackaton.dev', 'root', '', 'enram');
 
     foreach($windows as $window){
         
-        $sql = "SELECT `radarID`, `altitude`";
-        $sql .= ", AVG(density) as density";
-        $sql .= ", AVG(uSpeed) as uSpeed";
-        $sql .= ", AVG(vSpeed) as vSpeed";
-        $sql .= ", AVG(groundSpeed) as groundSpeed";
-        $sql .= " FROM `enramData`";
+        $sql = "SELECT radar_id, altitude";
+        $sql .= ", AVG(bird_density) as bird_density";
+        $sql .= ", AVG(u_speed) as u_speed";
+        $sql .= ", AVG(v_speed) as v_speed";
+        //$sql .= ", AVG(ground_speed) as ground_speed";
+        $sql .= " FROM bird_migration_altitude_profiles";
         $sql .= " WHERE altitude >= '$altMin'";
         $sql .= " AND altitude <= '$altMax'";
-        $sql .= " AND density > 0";
-        $sql .= " AND `date` BETWEEN '$window[0]' AND '$window[1]'";
-        $sql .= " GROUP BY altitude, radarID";
+        $sql .= " AND bird_density > 0";
+        $sql .= " AND start_time BETWEEN '$window[0]' AND '$window[1]'";
+        $sql .= " GROUP BY altitude, radar_id";
         
         //echo "<p>$sql</p>";
         
@@ -101,30 +102,25 @@ function loadData($date){
         }
         
         while($row = mysqli_fetch_array($result)){
-            
-            //var_dump($row);
-            
             $radarIndex = 0;
             $altitudeIndex = 0;
+            $radar_id = intval($row[0]);
+            $altitude = floatval($row[1]);
+            $bird_density = floatval($row[2]);
+            $u_speed = floatval($row[3]);
+            $v_speed = floatval($row[4]);
+            $altitudeIndex = ($altitude * 10 - 3) / 2;
             
             foreach($radars as $radar){
                 if(intval($row['radarID']) == $radar) break;
                 $radarIndex++;
             }
             
-            foreach($altitudes as $altitude){
-                //echo $altitude . ' index: ' . $altitudeIndex .'<br>';
-                if(floatval($row['altitude']) == $altitude) break;
-                $altitudeIndex++;
-            }
-            
-            //BUG: ADDS OBJECT TO END OF EACH ARRAY...
-            //*
-            $windowData->densities[$altitudeIndex][$radarIndex] = floatval($row[2]);
-            $windowData->uSpeeds[$altitudeIndex][$radarIndex] = floatval($row[3]);
-            $windowData->vSpeeds[$altitudeIndex][$radarIndex] = floatval($row[4]);
-            $windowData->speeds[$altitudeIndex][$radarIndex] = floatval($row[5]);
-            //*/
+            $windowData->densities[$altitudeIndex][$radarIndex] = $bird_density;
+            $windowData->uSpeeds[$altitudeIndex][$radarIndex] = $u_speed;
+            $windowData->vSpeeds[$altitudeIndex][$radarIndex] = $v_speed;
+            $speed = sqrt($u_speed * $u_speed + $v_speed * $v_speed);
+            $windowData->speeds[$altitudeIndex][$radarIndex] = $speed;
         }
         
         $data->densities[] = $windowData->densities;
@@ -134,8 +130,6 @@ function loadData($date){
     }
     
 	mysqli_close($con);
-    
-    
     
     return $data;
 }
