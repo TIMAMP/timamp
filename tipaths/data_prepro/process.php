@@ -112,7 +112,7 @@ function loadData($date){
             $altitudeIndex = ($altitude * 10 - 3) / 2;
             
             foreach($radars as $radar){
-                if(intval($row['radarID']) == $radar) break;
+                if($radar_id == $radar) break;
                 $radarIndex++;
             }
             
