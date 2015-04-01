@@ -23,12 +23,13 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         loadLocal : false,
         altitudes : [0.3, 0.5, 0.7, 0.9, 1.1, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1, 3.3, 3.5, 3.7, 3.9],
         maxDensity : 3200,
-        maxPathCnt : 3200 / 100 * 2,
+        maxPathCnt : undefined,
         altiHueMin : 0.5,
         altiHueMax : 1,
         altiSaturation : 0.8,
         altiBrightness : 0.8
     };
+    config.maxPathCnt = config.maxDensity / config.altitudes.length / 4;
     
     var map,
         canvas,
