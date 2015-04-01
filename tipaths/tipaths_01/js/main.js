@@ -23,7 +23,7 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         loadLocal : false,
         altitudes : [0.3, 1.1, 2.1, 3.1],
         maxDensity : 3200,
-        maxPathCnt : 3200 / 100 * 2,
+        maxPathCnt : 3200 / 100 * 5,
         altiHueMin : 0.5,
         altiHueMax : 1,
         altiSaturation : 0.8,
