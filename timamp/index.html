@@ -102,8 +102,8 @@
                 </div>
                 <div class="col-md-6">
                     <h4 class="service-heading">Our contribution</h4>
-                    <p class="text-muted text-justify">To help tackle this challenge, the <a href="http://www.enram.eu">European Network for the Radar Surveillance of Animal Movement (ENRAM)</a> organized the <a href="http://enram.challengepost.com">Bird Migration Visualization Challenge &amp; Hackathon</a> in March 2015 with the support of the <a href="">European Cooperation in Science and Technology (COST)</a> programme. We participated and investigated a particular approach.</p>
-                    <p class="text-muted text-justify">Using radar measures of bioscatter (birds, bats, and insects), algorithms can estimate the density, speed, and direction of migration movement at different altitudes. By interpolating these data spatally and/or temporally and mapping it geographically in the form of flowlines, a visualisation might be obtained that offers insights in the migration patterns when applied to a large-scale dataset. The result is an experimental interactive web-based visualisation that dynamically loads data from the given case study served by the <a href="http://cartodb.com">CartoDB</a> system.</p>
+                    <p class="text-muted text-justify">To help tackle this challenge, the <a href="http://www.enram.eu">European Network for the Radar Surveillance of Animal Movement (ENRAM)</a> organized the <a href="http://enram.challengepost.com">Bird Migration Visualization Challenge &amp; Hackathon</a> in March 2015 with the support of the <a href="">European Cooperation in Science and Technology (COST)</a> programme. We participated and explored a particular approach.</p>
+                    <p class="text-muted text-justify">Using radar measures of bioscatter (birds, bats, and insects), algorithms can estimate the density, speed, and direction of migration movement at different altitudes around a radar. By interpolating these data both spatally and temporally, and next mapping these geographically in the form of flow lines, a visualisation might be obtained that offers insights in the migration patterns when applied to a large-scale dataset. The result is an experimental interactive web-based visualisation that dynamically loads data from the given case study served by the <a href="http://cartodb.com">CartoDB</a> system.</p>
                 </div>
             </div>
             
@@ -114,8 +114,8 @@
             </div>
         </div>
     </section>
-
-   
+    
+    
     <!-- Portfolio-1 Grid Section -->
     <section id="portfolio-1" class="bg-light-gray">
         <div class="container">
@@ -127,15 +127,15 @@
             </div>
             
             <div class="row text-justify">
-                <div class="col-md-6">
+                <div class="col-sm-6">
                     <!--<h4 class="service-heading">Radar locations and measures</h4>-->
                     <p class="text-muted">The visualizations utilizes data from five radar locations from The Netherlands and Belgium; Den Helder, De Bilt, Jabbeke, Zaventem, and Wideumont. These visualisations depict general migratory patterns from radar measures interpolated across a sequence of 20-minute time windows.
-Flowline color indicates height of observation (0.3-3.9 km), density of lines reflects bird density (birds/km<sup>3</sup>), line length corresponds with ground speed (m/s), and  direction of line segments matches the average track position (degree). The flowlines are initialized from random positions within the radar domain (radius 100 km) according to the &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+Flow line color indicates height of observation (0.3-3.9 km), density of lines reflects bird density (birds/km<sup>3</sup>), line length corresponds with ground speed (m/s), and  direction of line segments matches the average movement direction (degree).</p>
+                    <p class="text-muted">The flow lines are initialized at random positions within the radar domain (radius 100 km). The amount of lines corresponds linearly to the average density over the full duration of the shown period. </p>
                 </div>
-                <div class="col-md-6">
-                    <p class="text-muted">average density over the complete time window. The length and direction of individual line segments match the interpolated (inverse distance weighting with power 2) average speed and direction during the corresponding interval.</p>
-                    <!--<h4 class="service-heading">Examples</h4>-->
-                    <p class="text-muted">The following examples show the time-integrated flowlines for six consecutive nights for approximately six hours from 21h00 till 3h00 during the spring migration season in 2013. </p>
+                <div class="col-sm-6">
+                    <p class="text-muted">Each flow line consists of a number of segments, one for each time window. The direction of each segment is the average direction observed during the given time window at the given altitude. The length of each section reflects the distance traveled during the time window at the average speed observed during the given time window at the given altitude. Both the speed and the direction are interpolated at the (starting) position of each segment on the map using inverse distance weighting with power 2.</p>
+                    <p class="text-muted">The following examples show the time-integrated flow lines for six consecutive nights for approximately six hours from 21h00 till 3h00 during the spring migration season in 2013. </p>
                 </div>
             </div>
             
@@ -204,7 +204,7 @@ Flowline color indicates height of observation (0.3-3.9 km), density of lines re
             </div>
             
             <div class="row text-justify">
-                <div class="col-md-6">
+                <div class="col-lg-12">
                     <!--<h4 class="service-heading">Radar locations and measures</h4>-->
                     <p class="text-muted">The following interactive visualisations allow you to explore migration data in the the case study, which covers seven consecutive days during the spring migration season in 2013.</p>
                 </div>
@@ -213,7 +213,8 @@ Flowline color indicates height of observation (0.3-3.9 km), density of lines re
             </div>
             
             <div class="row">
-                <div class="col-md-4 col-sm-6 portfolio-item">
+<!--                <div class="col-md-4 col-sm-6 portfolio-item">-->
+                <div class="col-md-6 col-sm-6 portfolio-item">
                     <a href="#portfolioModal1" class="portfolio-link" data-toggle="modal">
                         <div class="portfolio-hover">
                             <div class="portfolio-hover-content">
@@ -243,7 +244,8 @@ Flowline color indicates height of observation (0.3-3.9 km), density of lines re
                         <p class="text-muted"><a href="../tipaths/tipaths_02/" target="_blank">Open visualisation in new window</a></p>
                     </div>
                 </div>-->
-                <div class="col-md-4 col-sm-6 portfolio-item">
+<!--                <div class="col-md-4 col-sm-6 portfolio-item">-->
+                <div class="col-md-6 col-sm-6 portfolio-item">
                     <a href="#portfolioModal3" class="portfolio-link" data-toggle="modal">
                         <div class="portfolio-hover">
                             <div class="portfolio-hover-content">
@@ -283,8 +285,9 @@ Flowline color indicates height of observation (0.3-3.9 km), density of lines re
                     <div class="team-member">
                         <img src="img/team/1.jpg" class="img-responsive img-circle" alt="">
                         <h4>Wouter Van den Broeck</h4>
-                        <p class="text-muted">Data Visualisation and Creative Programming Lecturer at Multec, Erasmus University College Brussels, BE</p>
+                        <p class="text-muted">Researcher, lecturer and developer at Erasmus University College Brussels and Narranova.org, BE</p>
                         <ul class="list-inline social-buttons">
+                            <li><a href="http://addith.be" target="_blank"><i class="fa fa-user"></i></a>
                             <li><a href="http://be.linkedin.com/in/woutervandenbroeck" target="_blank"><i class="fa fa-linkedin"></i></a>
                             </li>
                         </ul>
@@ -294,7 +297,7 @@ Flowline color indicates height of observation (0.3-3.9 km), density of lines re
                     <div class="team-member">
                         <img src="img/team/2.jpg" class="img-responsive img-circle" alt="">
                         <h4>Jan Klaas Van Den Meersche</h4>
-                        <p class="text-muted">Web Development Lecturer at Multec, Erasmus University College Brussels, BE</p>
+                        <p class="text-muted">Web Development Lecturer at Erasmus University College Brussels, BE</p>
                         <ul class="list-inline social-buttons">
                             <li><a href="https://www.linkedin.com/pub/jan-klaas-van-den-meersche/30/58b/547" target="_blank"><i class="fa fa-linkedin"></i></a>
                             </li>
@@ -307,7 +310,7 @@ Flowline color indicates height of observation (0.3-3.9 km), density of lines re
                         <h4>Sérgio Branco</h4>
                         <p class="text-muted">Student in Electrical Engineering, University of Minho, PT</p>
                         <ul class="list-inline social-buttons">
-                            <li><a href="#"><i class="fa fa-linkedin"></i></a>
+                            <li><a href="https://www.linkedin.com/profile/view?id=315468238"><i class="fa fa-linkedin"></i></a>
                             </li>
                         </ul>
                     </div>
@@ -328,32 +331,6 @@ Flowline color indicates height of observation (0.3-3.9 km), density of lines re
     </section>
 
     <footer>
-        <div class="container">
-            <div class="row">
-                <div class="col-md-4">
-                </div>
-                <!--
-                <div class="col-md-4">
-                    <ul class="list-inline social-buttons">
-                        <li><a href="#"><i class="fa fa-twitter"></i></a>
-                        </li>
-                        <li><a href="#"><i class="fa fa-facebook"></i></a>
-                        </li>
-                        <li><a href="#"><i class="fa fa-linkedin"></i></a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="col-md-4">
-                    <ul class="list-inline quicklinks">
-                        <li><a href="#">Privacy Policy</a>
-                        </li>
-                        <li><a href="#">Terms of Use</a>
-                        </li>
-                    </ul>
-                </div>
-                -->
-            </div>
-        </div>
         <div class="license-div">
             <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br /><span xmlns:dct="http://purl.org/dc/terms/" property="dct:title">Time Integrated Multi-Altitude Migration Patterns</span> by <a xmlns:cc="http://creativecommons.org/ns#" href="http://wouter-vdb.github.io/enram-hackaton/timamp/" property="cc:attributionName" rel="cc:attributionURL">Wouter Van den Broeck, Jan Klaas Van Den Meersche, Kyle Horton and S&eacute;rgio Branco</a><br>is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
         </div>

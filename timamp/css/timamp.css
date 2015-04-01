@@ -15,3 +15,8 @@ a:active,
 a.active {
     color: #deb72f;
 }
+
+.navbar-default .navbar-brand {
+/*    font-family: "Droid Serif","Helvetica Neue",Helvetica,Arial,sans-serif;*/
+    font-family: Montserrat, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
