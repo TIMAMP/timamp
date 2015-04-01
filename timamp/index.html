@@ -105,22 +105,23 @@
             </div>
             <div class="row text-center">
                 <div class="col-md-6">
-                    <h4 class="service-heading">Bird Migration</h4>
-                    <p class="text-muted">Every year hundreds of millions of birds migrate to and from their wintering and breeding ground, often traveling hundreds, if not thousands of kilometers twice a year. Many of these individuals make concentrated movements under the cover of darkness, and often at high altitudes, making it exceedingly difficult to precisely monitor the passage of these animals. However one tool, radar, has the ability to measure the mass flow of migrants both day and night at a temporal and spatial resolution that cannot be matched by any other monitoring tool. Weather surveillance radars such as those of the OPERA and NEXRAD networks continually monitor and collect data in real-time, monitoring meteorological phenomena, but also biological scatters (birds, bats, and insects). For this reason radar offers a unique tool that has the potential to observe large-scale biological movements.</p>
+<!--                    <h4 class="service-heading">Bird Migration</h4>-->
+                    <p class="text-muted text-justify">Every year hundreds of millions of birds migrate to and from their wintering and breeding ground, often traveling hundreds, if not thousands of kilometers twice a year. Many of these individuals make concentrated movements under the cover of darkness, and often at high altitudes, making it exceedingly difficult to precisely monitor the passage of these animals. However one tool, radar, has the ability to measure the mass flow of migrants both day and night at a temporal and spatial resolution that cannot be matched by any other monitoring tool. Weather surveillance radars such as those of the OPERA and NEXRAD networks continually monitor and collect data in real-time, monitoring meteorological phenomena, but also biological scatters (birds, bats, and insects). For this reason radar offers a unique tool that has the potential to observe large-scale biological movements.</p>
                 </div>
                    <div class="col-md-6">
-                    <h4 class="service-heading">Radar measures</h4>
-                    <p class="text-muted">Using radar measures of bioscatter (birds, bats, and insects) researchers can begin to understand the distribution of migrants within the atmosphere; recording the density, speed, and direction of these movements. From these three products interpolation algorithms can be used disseminate the general movements of migrants, presenting unique and remarkable behaviors unforeseen in previous radar visualizations.</p>
-                    <h4 class="service-heading">Visualising the data</h4>
-                    <p class="text-muted">However visualizing these data products in a single, comprehensive manner has remained difficult. We developed a visualization that maps general bird migrations to illuminate behaviors unforeseen in previous radar visualizations.</p>
+<!--                    <h4 class="service-heading">Radar measures</h4>-->
+                    <p class="text-muted text-justify">Using radar measures of bioscatter (birds, bats, and insects) researchers can begin to understand the distribution of migrants within the atmosphere; recording the density, speed, and direction of these movements. From these three products interpolation algorithms can be used disseminate the general movements of migrants, presenting unique and remarkable behaviors unforeseen in previous radar visualizations.</p>
+<!--                    <h4 class="service-heading">Visualising the data</h4>-->
+                    <p class="text-muted text-justify">However visualizing these data products in a single, comprehensive manner has remained difficult. We developed a visualization that maps general bird migrations to illuminate behaviors unforeseen in previous radar visualizations.</p>
     
                 </div>
             </div>
             
             <div class="row">
                 <div class="col-lg-12 text-center">
-                    <h2 class="section-heading">The solution</h2>
-                    <h3 class="section-subheading text-muted">An experimental visualization that maps general bird migrations to illuminate behaviors unforeseen in previous radar visualizations.</h3>
+                    <h2 class="section-heading" style="margin-top: 1em">The solution</h2>
+                    <h3 class="section-subheading text-muted">An experimental visualization that maps general bird migrations<br>
+                    to illuminate behaviors unforeseen in previous radar visualizations.</h3>
                     
                     <a href="#portfolio" class="page-scroll btn btn-xl">See the visualisation results</a>
                 </div>
@@ -134,20 +135,20 @@
             <div class="row">
                 <div class="col-lg-12 text-center">
                     <h2 class="section-heading">Results</h2>
-                    <h3 class="section-subheading text-muted">Time Integrated Multi-Altitude Migration Patterns.</h3>
+                    <h3 class="section-subheading text-muted">Example visualisations</h3>
                 </div>
             </div>
             
-            <div class="row text-center">
+            <div class="row text-justify">
                 <div class="col-md-6">
-                    <h4 class="service-heading">Radar locations and measures</h4>
-                    <p class="text-muted">The visualizations utilizes data from five radar locations from The Netherlands and Belgium; Den Helder, De Bilt, Jabbeke, Zaventem, and Wideumont. This animation depicts general migratory patterns from radar measures interpolated across 20-minute time windows, at 5-minute intervals (i.e. rolling average).
-Line color indicates height of observation (0.3-3.9 km), density of lines reflective of bird density (birds km-3), line length reflective of ground speed (m s-1), and direction of line segments the average track position (degree). All lines are initialized from random positions within the radar domain (radius 100 km), and regenerated for every interval.  </p>
+                    <!--<h4 class="service-heading">Radar locations and measures</h4>-->
+                    <p class="text-muted">The visualizations utilizes data from five radar locations from The Netherlands and Belgium; Den Helder, De Bilt, Jabbeke, Zaventem, and Wideumont. These visualisations depict general migratory patterns from radar measures interpolated across a sequence of 20-minute time windows.
+Flowline color indicates height of observation (0.3-3.9 km), density of lines reflects bird density (birds/km<sup>3</sup>), line length corresponds with ground speed (m/s), and  direction of line segments matches the average track position (degree). The flowlines are initialized from random positions within the radar domain (radius 100 km) according to the &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
                 </div>
-                   <div class="col-md-6">
-                    <h4 class="service-heading">How to read the visualisation</h4>
-                    <p class="text-muted">The following visualization displayed path integrated movements. Relative density was measured approximately 1-hour after local sunset, and paths projected for 8-hours after initialization. Again the following depict general migratory patterns, with line color indicating height of observation (0.3-3.9 km), density of lines reflective of bird density (birds km-3), line length reflective of ground speed (m s-1), and direction of line segments the average track position (degree). All lines are initialized from random positions within the radar domain (radius 100 km).  </p>
-                    
+                <div class="col-md-6">
+                    <p class="text-muted">average density over the complete time window. The length and direction of individual line segments match the interpolated (inverse distance weighting with power 2) average speed and direction during the corresponding interval.</p>
+                    <!--<h4 class="service-heading">Examples</h4>-->
+                    <p class="text-muted">The following examples show the time-integrated flowlines for six consecutive nights for approximately six hours from 21h00 till 3h00 during the spring migration season in 2013. </p>
                 </div>
             </div>
             
@@ -200,8 +201,17 @@ Line color indicates height of observation (0.3-3.9 km), density of lines reflec
         <div class="container">
             <div class="row">
                 <div class="col-lg-12 text-center">
-                    <h2 class="section-heading">Results</h2>
-                    <h3 class="section-subheading text-muted">Select one of the visualisations to play with.</h3>
+<!--                    <h2 class="section-heading">Results</h2>-->
+                    <h3 class="section-subheading text-muted">Interactive visualisations</h3>
+                </div>
+            </div>
+            
+            <div class="row text-justify">
+                <div class="col-md-6">
+                    <!--<h4 class="service-heading">Radar locations and measures</h4>-->
+                    <p class="text-muted">The following interactive visualisations allow you to explore migration data in the the case study, which covers seven consecutive days during the spring migration season in 2013.</p>
+                </div>
+                <div class="col-md-6">
                 </div>
             </div>
             
@@ -216,7 +226,7 @@ Line color indicates height of observation (0.3-3.9 km), density of lines reflec
                         <img src="img/screenshots/tipaths3.png" class="img-responsive" alt="">
                     </a>
                     <div class="portfolio-caption">
-                        <h4>Time Integrated Multi-Altitude Migration Patterns</h4>
+                        <h4>Time Integrated Multi-Altitude Migration Flows</h4>
                         <p class="text-muted"><a href="#portfolioModal1" class="portfolio-link" data-toggle="modal">Open visualisation</a></p>
                         <p class="text-muted"><a href="../tipaths/tipaths_03/" target="_blank">Open visualisation in new window</a></p>
                     </div>
@@ -246,7 +256,7 @@ Line color indicates height of observation (0.3-3.9 km), density of lines reflec
                         <img src="img/screenshots/tipaths1.png" class="img-responsive" alt="">
                     </a>
                     <div class="portfolio-caption">
-                        <h4>Time Integrated Multi-Strata Migration Patterns</h4>
+                        <h4>Time Integrated 4-Strata Migration Flows</h4>
                         <p class="text-muted"><a href="#portfolioModal3" class="portfolio-link" data-toggle="modal">Open visualisation</a></p>
                         <p class="text-muted"><a href="../tipaths/tipaths_01/" target="_blank">Open visualisation in new window</a></p>
                     </div>
