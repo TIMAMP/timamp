@@ -1,0 +1,17 @@
+
+.license-div {
+    font-size: 80%;
+    text-align: center;
+}
+
+.license-div img {
+    margin-bottom: .2em;
+}
+
+a,
+a:hover,
+a:focus,
+a:active,
+a.active {
+    color: #8e751e;
+}
