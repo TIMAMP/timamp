@@ -61,21 +61,11 @@
                         <a class="page-scroll" href="#project">Project</a>
                     </li>
                     <li>
-                        <a class="page-scroll" href="#portfolio">Results</a>
+                        <a class="page-scroll" href="#portfolio-1">Results</a>
                     </li>
-                    <!--
-                    <li>
-                        <a class="page-scroll" href="#about">About</a>
-                    </li>
-                    -->
                     <li>
                         <a class="page-scroll" href="#team">Team</a>
                     </li>
-                    <!--
-                    <li>
-                        <a class="page-scroll" href="#contact">Contact</a>
-                    </li>
-                    -->
                 </ul>
             </div>
             <!-- /.navbar-collapse -->
@@ -99,43 +89,40 @@
         <div class="container">
             <div class="row">
                 <div class="col-lg-12 text-center">
-                    <h2 class="section-heading">The problem</h2>
-                    <!--<h3 class="section-subheading text-muted">Lorem ipsum dolor sit amet consectetur.</h3>-->
+                    <h2 class="section-heading">The project</h2>
+<!--                    <h3 class="section-subheading text-muted">The Problem</h3>-->
                 </div>
             </div>
             <div class="row text-center">
                 <div class="col-md-6">
-<!--                    <h4 class="service-heading">Bird Migration</h4>-->
-                    <p class="text-muted text-justify">Every year hundreds of millions of birds migrate to and from their wintering and breeding ground, often traveling hundreds, if not thousands of kilometers twice a year. Many of these individuals make concentrated movements under the cover of darkness, and often at high altitudes, making it exceedingly difficult to precisely monitor the passage of these animals. However one tool, radar, has the ability to measure the mass flow of migrants both day and night at a temporal and spatial resolution that cannot be matched by any other monitoring tool. Weather surveillance radars such as those of the OPERA and NEXRAD networks continually monitor and collect data in real-time, monitoring meteorological phenomena, but also biological scatters (birds, bats, and insects). For this reason radar offers a unique tool that has the potential to observe large-scale biological movements.</p>
+                    <h4 class="service-heading">The Problem</h4>
+                    <p class="text-muted text-justify">Every year hundreds of millions of birds migrate to and from their wintering and breeding ground, often traveling hundreds, if not thousands of kilometers twice a year. Many of these individuals make concentrated movements under the cover of darkness, and often at high altitudes, making it exceedingly difficult to precisely monitor the passage of these animals.</p>
+                    <p class="text-muted text-justify">However one tool, radar, has the ability to measure the mass flow of migrants both day and night at a temporal and spatial resolution that cannot be matched by any other monitoring tool. Weather surveillance radars such as those of the <a href="http://www.eumetnet.eu/radar-network">EUMETNET/OPERA</a> and <a href="http://www.roc.noaa.gov/WSR88D/Maps.aspx">NEXRAD</a> networks continually monitor and collect data in real-time, monitoring meteorological phenomena, but also biological scatters (birds, bats, and insects). For this reason radar offers a unique tool for collecting large-scale data on biological movements.</p>
+                    <p class="text-muted text-justify">However, visualizing these data in a comprehensive manner that facilitates insight acquisition, remains a challenge.</p>
                 </div>
-                   <div class="col-md-6">
-<!--                    <h4 class="service-heading">Radar measures</h4>-->
-                    <p class="text-muted text-justify">Using radar measures of bioscatter (birds, bats, and insects) researchers can begin to understand the distribution of migrants within the atmosphere; recording the density, speed, and direction of these movements. From these three products interpolation algorithms can be used disseminate the general movements of migrants, presenting unique and remarkable behaviors unforeseen in previous radar visualizations.</p>
-<!--                    <h4 class="service-heading">Visualising the data</h4>-->
-                    <p class="text-muted text-justify">However visualizing these data products in a single, comprehensive manner has remained difficult. We developed a visualization that maps general bird migrations to illuminate behaviors unforeseen in previous radar visualizations.</p>
-    
+                <div class="col-md-6">
+                    <h4 class="service-heading">Our contribution</h4>
+                    <p class="text-muted text-justify">To help tackle this challenge, the <a href="http://www.enram.eu">European Network for the Radar Surveillance of Animal Movement (ENRAM)</a> organized the <a href="http://enram.challengepost.com">Bird Migration Visualization Challenge &amp; Hackathon</a> in March 2015 with the support of the <a href="">European Cooperation in Science and Technology (COST)</a> programme. We participated and investigated a particular approach.</p>
+                    <p class="text-muted text-justify">Using radar measures of bioscatter (birds, bats, and insects), algorithms can estimate the density, speed, and direction of migration movement at different altitudes. By interpolating these data spatally and/or temporally and mapping it geographically in the form of flowlines, a visualisation might be obtained that offers insights in the migration patterns when applied to a large-scale dataset. The result is an experimental interactive web-based visualisation that dynamically loads data from the given case study served by the <a href="http://cartodb.com">CartoDB</a> system.</p>
                 </div>
             </div>
             
-            <div class="row">
+            <div class="row" style="margin-top: 1em">
                 <div class="col-lg-12 text-center">
-                    <h2 class="section-heading" style="margin-top: 1em">The solution</h2>
-                    <h3 class="section-subheading text-muted">An experimental visualization that maps general bird migrations<br>
-                    to illuminate behaviors unforeseen in previous radar visualizations.</h3>
-                    
-                    <a href="#portfolio" class="page-scroll btn btn-xl">See the visualisation results</a>
+                    <a href="#portfolio-1" class="page-scroll btn btn-xl">See the results</a>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Portfolio Grid Section -->
-    <section id="portfolio" class="bg-light-gray">
+   
+    <!-- Portfolio-1 Grid Section -->
+    <section id="portfolio-1" class="bg-light-gray">
         <div class="container">
             <div class="row">
                 <div class="col-lg-12 text-center">
                     <h2 class="section-heading">Results</h2>
-                    <h3 class="section-subheading text-muted">Example visualisations</h3>
+                    <h3 class="section-subheading text-muted">Examples</h3>
                 </div>
             </div>
             
@@ -195,13 +182,23 @@ Flowline color indicates height of observation (0.3-3.9 km), density of lines re
                         <p class="text-muted">Night of April 10, 2013, 21h-03h</p>
                     </div>
                 </div>
-                
+            </div>
+            
+            <div class="row" style="margin-top: 1em">
+                <div class="col-lg-12 text-center">
+                    <a href="#portfolio-2" class="page-scroll btn btn-xl">Test the interactive visualisations</a>
+                </div>
             </div>
         </div>
+    </section>
+        
+
+    <!-- Portfolio-2 Grid Section -->
+    <section id="portfolio-2" class="bg-light-gray">
         <div class="container">
             <div class="row">
                 <div class="col-lg-12 text-center">
-<!--                    <h2 class="section-heading">Results</h2>-->
+                    <h2 class="section-heading">Results</h2>
                     <h3 class="section-subheading text-muted">Interactive visualisations</h3>
                 </div>
             </div>
@@ -264,91 +261,14 @@ Flowline color indicates height of observation (0.3-3.9 km), density of lines re
                 </div>
                 
             </div>
-        </div>
-    </section>
-
-    <!-- About Section -->
-    <!--
-    <section id="about">
-        <div class="container">
-            <div class="row">
+            
+            <div class="row" style="margin-top: 1em">
                 <div class="col-lg-12 text-center">
-                    <h2 class="section-heading">About</h2>
-                    <h3 class="section-subheading text-muted">Lorem ipsum dolor sit amet consectetur.</h3>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-lg-12">
-                    <ul class="timeline">
-                        <li>
-                            <div class="timeline-image">
-                                <img class="img-circle img-responsive" src="img/about/1.jpg" alt="">
-                            </div>
-                            <div class="timeline-panel">
-                                <div class="timeline-heading">
-                                    <h4>2009-2011</h4>
-                                    <h4 class="subheading">Our Humble Beginnings</h4>
-                                </div>
-                                <div class="timeline-body">
-                                    <p class="text-muted">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Sunt ut voluptatum eius sapiente, totam reiciendis temporibus qui quibusdam, recusandae sit vero unde, sed, incidunt et ea quo dolore laudantium consectetur!</p>
-                                </div>
-                            </div>
-                        </li>
-                        <li class="timeline-inverted">
-                            <div class="timeline-image">
-                                <img class="img-circle img-responsive" src="img/about/2.jpg" alt="">
-                            </div>
-                            <div class="timeline-panel">
-                                <div class="timeline-heading">
-                                    <h4>March 2011</h4>
-                                    <h4 class="subheading">An Agency is Born</h4>
-                                </div>
-                                <div class="timeline-body">
-                                    <p class="text-muted">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Sunt ut voluptatum eius sapiente, totam reiciendis temporibus qui quibusdam, recusandae sit vero unde, sed, incidunt et ea quo dolore laudantium consectetur!</p>
-                                </div>
-                            </div>
-                        </li>
-                        <li>
-                            <div class="timeline-image">
-                                <img class="img-circle img-responsive" src="img/about/3.jpg" alt="">
-                            </div>
-                            <div class="timeline-panel">
-                                <div class="timeline-heading">
-                                    <h4>December 2012</h4>
-                                    <h4 class="subheading">Transition to Full Service</h4>
-                                </div>
-                                <div class="timeline-body">
-                                    <p class="text-muted">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Sunt ut voluptatum eius sapiente, totam reiciendis temporibus qui quibusdam, recusandae sit vero unde, sed, incidunt et ea quo dolore laudantium consectetur!</p>
-                                </div>
-                            </div>
-                        </li>
-                        <li class="timeline-inverted">
-                            <div class="timeline-image">
-                                <img class="img-circle img-responsive" src="img/about/4.jpg" alt="">
-                            </div>
-                            <div class="timeline-panel">
-                                <div class="timeline-heading">
-                                    <h4>July 2014</h4>
-                                    <h4 class="subheading">Phase Two Expansion</h4>
-                                </div>
-                                <div class="timeline-body">
-                                    <p class="text-muted">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Sunt ut voluptatum eius sapiente, totam reiciendis temporibus qui quibusdam, recusandae sit vero unde, sed, incidunt et ea quo dolore laudantium consectetur!</p>
-                                </div>
-                            </div>
-                        </li>
-                        <li class="timeline-inverted">
-                            <div class="timeline-image">
-                                <h4>Be Part
-                                    <br>Of Our
-                                    <br>Story!</h4>
-                            </div>
-                        </li>
-                    </ul>
+                    <a href="#team" class="page-scroll btn btn-xl">Meet the team</a>
                 </div>
             </div>
         </div>
     </section>
-    -->
 
     <!-- Team Section -->
     <section id="team" class="bg-light-gray">
@@ -407,80 +327,6 @@ Flowline color indicates height of observation (0.3-3.9 km), density of lines re
         </div>
     </section>
 
-    <!-- Clients Aside -->
-    <!--
-    <aside class="clients">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-3 col-sm-6">
-                    <a href="#">
-                        <img src="img/logos/envato.jpg" class="img-responsive img-centered" alt="">
-                    </a>
-                </div>
-                <div class="col-md-3 col-sm-6">
-                    <a href="#">
-                        <img src="img/logos/designmodo.jpg" class="img-responsive img-centered" alt="">
-                    </a>
-                </div>
-                <div class="col-md-3 col-sm-6">
-                    <a href="#">
-                        <img src="img/logos/themeforest.jpg" class="img-responsive img-centered" alt="">
-                    </a>
-                </div>
-                <div class="col-md-3 col-sm-6">
-                    <a href="#">
-                        <img src="img/logos/creative-market.jpg" class="img-responsive img-centered" alt="">
-                    </a>
-                </div>
-            </div>
-        </div>
-    </aside>
-    -->
-    <!--
-    <section id="contact">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-12 text-center">
-                    <h2 class="section-heading">Contact Us</h2>
-                    <h3 class="section-subheading text-muted">Lorem ipsum dolor sit amet consectetur.</h3>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-lg-12">
-                    <form name="sentMessage" id="contactForm" novalidate>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <input type="text" class="form-control" placeholder="Your Name *" id="name" required data-validation-required-message="Please enter your name.">
-                                    <p class="help-block text-danger"></p>
-                                </div>
-                                <div class="form-group">
-                                    <input type="email" class="form-control" placeholder="Your Email *" id="email" required data-validation-required-message="Please enter your email address.">
-                                    <p class="help-block text-danger"></p>
-                                </div>
-                                <div class="form-group">
-                                    <input type="tel" class="form-control" placeholder="Your Phone *" id="phone" required data-validation-required-message="Please enter your phone number.">
-                                    <p class="help-block text-danger"></p>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <textarea class="form-control" placeholder="Your Message *" id="message" required data-validation-required-message="Please enter a message."></textarea>
-                                    <p class="help-block text-danger"></p>
-                                </div>
-                            </div>
-                            <div class="clearfix"></div>
-                            <div class="col-lg-12 text-center">
-                                <div id="success"></div>
-                                <button type="submit" class="btn btn-xl">Send Message</button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </section>
-    -->
     <footer>
         <div class="container">
             <div class="row">
@@ -577,87 +423,6 @@ Flowline color indicates height of observation (0.3-3.9 km), density of lines re
                         <div class="modal-body">
                             <!-- Project Details Go Here -->
                             <iframe src="../tipaths/tipaths_01/index.html" width="800" height="900" style="border:0"></iframe>
-                            <button type="button" class="btn btn-primary" data-dismiss="modal"><i class="fa fa-times"></i> Close Project</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Portfolio Modal 4 -->
-    <div class="portfolio-modal modal fade" id="portfolioModal4" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-content">
-            <div class="close-modal" data-dismiss="modal">
-                <div class="lr">
-                    <div class="rl">
-                    </div>
-                </div>
-            </div>
-            <div class="container">
-                <div class="row">
-                    <div class="col-lg-8 col-lg-offset-2">
-                        <div class="modal-body">
-                            <!-- Project Details Go Here -->
-                            <h2>Project Name</h2>
-                            <p class="item-intro text-muted">Lorem ipsum dolor sit amet consectetur.</p>
-                            <img class="img-responsive img-centered" src="img/portfolio/golden-preview.png" alt="">
-                            <p>Start Bootstrap's Agency theme is based on Golden, a free PSD website template built by <a href="https://www.behance.net/MathavanJaya">Mathavan Jaya</a>. Golden is a modern and clean one page web template that was made exclusively for Best PSD Freebies. This template has a great portfolio, timeline, and meet your team sections that can be easily modified to fit your needs.</p>
-                            <p>You can download the PSD template in this portfolio sample item at <a href="http://freebiesxpress.com/gallery/golden-free-one-page-web-template/">FreebiesXpress.com</a>.</p>
-                            <button type="button" class="btn btn-primary" data-dismiss="modal"><i class="fa fa-times"></i> Close Project</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Portfolio Modal 5 -->
-    <div class="portfolio-modal modal fade" id="portfolioModal5" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-content">
-            <div class="close-modal" data-dismiss="modal">
-                <div class="lr">
-                    <div class="rl">
-                    </div>
-                </div>
-            </div>
-            <div class="container">
-                <div class="row">
-                    <div class="col-lg-8 col-lg-offset-2">
-                        <div class="modal-body">
-                            <!-- Project Details Go Here -->
-                            <h2>Project Name</h2>
-                            <p class="item-intro text-muted">Lorem ipsum dolor sit amet consectetur.</p>
-                            <img class="img-responsive img-centered" src="img/portfolio/escape-preview.png" alt="">
-                            <p>Escape is a free PSD web template built by <a href="https://www.behance.net/MathavanJaya">Mathavan Jaya</a>. Escape is a one page web template that was designed with agencies in mind. This template is ideal for those looking for a simple one page solution to describe your business and offer your services.</p>
-                            <p>You can download the PSD template in this portfolio sample item at <a href="http://freebiesxpress.com/gallery/escape-one-page-psd-web-template/">FreebiesXpress.com</a>.</p>
-                            <button type="button" class="btn btn-primary" data-dismiss="modal"><i class="fa fa-times"></i> Close Project</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Portfolio Modal 6 -->
-    <div class="portfolio-modal modal fade" id="portfolioModal6" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-content">
-            <div class="close-modal" data-dismiss="modal">
-                <div class="lr">
-                    <div class="rl">
-                    </div>
-                </div>
-            </div>
-            <div class="container">
-                <div class="row">
-                    <div class="col-lg-8 col-lg-offset-2">
-                        <div class="modal-body">
-                            <!-- Project Details Go Here -->
-                            <h2>Project Name</h2>
-                            <p class="item-intro text-muted">Lorem ipsum dolor sit amet consectetur.</p>
-                            <img class="img-responsive img-centered" src="img/portfolio/dreams-preview.png" alt="">
-                            <p>Dreams is a free PSD web template built by <a href="https://www.behance.net/MathavanJaya">Mathavan Jaya</a>. Dreams is a modern one page web template designed for almost any purpose. It’s a beautiful template that’s designed with the Bootstrap framework in mind.</p>
-                            <p>You can download the PSD template in this portfolio sample item at <a href="http://freebiesxpress.com/gallery/dreams-free-one-page-web-template/">FreebiesXpress.com</a>.</p>
                             <button type="button" class="btn btn-primary" data-dismiss="modal"><i class="fa fa-times"></i> Close Project</button>
                         </div>
                     </div>
