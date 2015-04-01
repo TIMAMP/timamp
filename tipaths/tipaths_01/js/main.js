@@ -288,43 +288,20 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         img = new Image();
         img.onload = function() {
             ctx.drawImage(img, 0, 0);
-
-            // Draw frame:
-    //        ctx.lineWidth   = 1;
-    //        ctx.strokeStyle = "#aaaaaa";
-    //        ctx.strokeRect(0, 0, map.width, map.height);
-
+            
             // Draw radars and interpolation:
             for (radi = 0; radi < radn; radi++) {
                 radx = rdata.xPositions[radi];
                 rady = rdata.yPositions[radi];
-
+                
                 // Draw radar shapes:
                 ctx.strokeStyle = "rgba(" + clr + ", 0.4)";
-
-                // 50 km circle:
-    //            ctx.beginPath();
-    //            ctx.arc(radx, rady, r50, 0, 2 * Math.PI);
-    //            ctx.stroke();
-
-                // 100 km circle:
-    //            ctx.beginPath();
-    //            ctx.arc(radx, rady, r100, 0, 2 * Math.PI);
-    //            ctx.stroke();
-
+                
                 // radar center:
                 ctx.beginPath();
                 ctx.fillStyle = "rgb(" + clr + ")";
                 ctx.arc(radx, rady, 2, 0, 2 * Math.PI);
                 ctx.fill();
-
-                // draw average travel vector:
-                ctx.strokeStyle = "rgb(" + clr + ")";
-                ctx.beginPath();
-                ctx.moveTo(radx, rady);
-                ctx.lineTo(radx + rdata.uSpeeds[radi] * drawFactor,
-                           rady - rdata.vSpeeds[radi] * drawFactor);
-                ctx.stroke();
             }
             handler();
         }
