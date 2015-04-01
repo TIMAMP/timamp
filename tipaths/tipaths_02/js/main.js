@@ -8,7 +8,6 @@ requirejs.config({
         'proj4': { exports: 'proj4' },
         'kriging': { exports: 'kriging' }
     },
-    // Third party code lives in js/lib
     paths: {
         jquery: 'lib/jquery',
         proj4: 'lib/proj4',
@@ -19,79 +18,208 @@ requirejs.config({
 require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, Map, util, interpolation) {
     "use strict";
     
-    var debug = util.debug,
-        config = {
-            maxDensity : 600
-        },
-        map = new Map(700);
+    // Configuration settings that do not change:
+    var config = {
+        loadLocal : false,
+        altitudes : [0.3, 0.5, 0.7, 0.9, 1.1, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1 , 3.3, 3.5, 3.7, 3.9],
+        maxDensity : 3200,
+        maxPathCnt : 3200 / 100 * 2,
+        altiHueMin : 0.5,
+        altiHueMax : 1,
+        altiSaturation : 0.8,
+        altiBrightness : 0.8
+    };
+    
+    var map,
+        canvas,
+        r100, r50;
     
     function init() {
-        var canvas = $("#canvas");
-        canvas.attr({
-            width: map.width,
-            height: map.height
+        canvas = $("#canvas");
+        data.loadRadars(function () {
+            map = new Map(700);
+            //console.log("- map.width: " + map.width);
+            canvas.attr({
+                width: map.width,
+                height: map.height
+            });
+            r100 = map.dmxToPxl(100000); // 100 km
+            r50 = map.dmxToPxl(50000); // 50 km
+
+            $("#input_days").change(redraw);
+            $("#input_hours").change(redraw);
+            $("#input_minutes").change(redraw);
+            $("#input_duration").change(redraw);
+            
+            redraw();
         });
+        drawLegend();
+    }
+    
+    function drawLegend() {
+        var alti, altn = config.altitudes.length,
+            lac = $(".legend_altiColor"),
+            hue;
         
-        $("#input_datetime").change(redraw);
-        $("#input_duration").change(redraw);
-
-        // interpolation settings:
-        config.interpolation = {};
-        $("#button_redraw").click(redraw);
-
-        redraw();
+        for (alti = 0; alti < altn; alti++) {
+            hue = util.map(alti, 0, altn, config.altiHueMin, config.altiHueMax);
+            lac.append("<div class='legend_altiColor_segment'"
+                       + " style='background: " + util.hsvToHex(hue, config.altiSaturation, config.altiBrightness) + "'></div>");
+        }
     }
     
     function redraw() {
-        updateInterpolationParams();
-        redrawMap(canvas);
+        var days = parseInt($("#input_days").val());
+        var daysMin = parseInt($("#input_days").attr("min"));
+        var daysMax = parseInt($("#input_days").attr("max"));
+        
+        var hours = parseInt($("#input_hours").val());
+        var hoursMin = parseInt($("#input_hours").attr("min"));
+        var hoursMax = parseInt($("#input_hours").attr("max"));
+        
+        var minutes = parseInt($("#input_minutes").val());
+        var minutesStep = parseInt($("#input_minutes").attr("step"));
+        
+        if (minutes >= 60) {
+            if (hours === 23 && days === daysMax) { minutes = 50; }
+            else {
+                hours++;
+                minutes -= 60;
+            }
+        }
+        else if (minutes < 0) {
+            if (hours === 0 && days === daysMin) { minutes = 0; }
+            else {
+                hours--;
+                minutes += 60;
+            }
+        }
+        if (hours >= 24) {
+            if (days === daysMax) { hours = 23; }
+            else {
+                days++;
+                hours = 0;
+            }
+        }
+        else if (hours < 0) {
+            if (days === daysMin) { hours = 0; }
+            else {
+                days--;
+                hours = 23;
+            }
+        }
+        
+        $("#input_days").val(days);
+        $("#input_hours").val(hours);
+        $("#input_minutes").val(minutes);
+        
+        var pathLen = parseInt($("#input_duration").val()) * 3;
+        var from = new Date(2013, 3, days, hours, minutes);
+        
+        function proceed(rdata) {
+            drawMap(canvas, rdata);
+            drawPaths(canvas, rdata);
+        }
+        
+        if (config.loadLocal) {
+            //loadLocalJSON("../data_prepro/data/enram-data-2013-04-05.json", proceed);
+        }
+        else {
+            loadFromCartoDB(from, pathLen, proceed);
+        }
     }
     
-    function updateInterpolationParams() {
-        // TODO: check if time handling is correct given the timezone differences...
-        config.from = new Date($("#input_datetime").val());
-        config.duration = parseInt($("#input_duration").val(), 10);
-
-        config.till = new Date(config.from.getTime());
-        config.till.setMinutes(config.till.getMinutes() + config.duration);
-    }
-    
-    function redrawMap(canvas) {
+    function loadFromCartoDB(from, pathLen, handler) {
         var rdata = {
-                startTime: "2013-04-05T00:00:00Z",
-                windowDuration : 20,
-                deltaStartTime : 5,
+                startTime: from,
+                windowDuration : 20 /* the duration of a window in minutes */,
+                pathLen: pathLen,
+                deltaStartTime : undefined /* the duration of one step in minutes */ ,
                 radars : [],
-                altitudes : [0.3, 0.5, 0.7, 0.9, 1.1, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1 , 3.3, 3.5, 3.7, 3.9],
+                altitudes : config.altitudes,
                 xPositions : [],
                 yPositions : [],
                 densities : [],
+                avDensities : undefined,
                 uSpeeds : [],
                 vSpeeds : [],
-                speeds : [],
-                radarIndices : {}
+                speeds : []
             },
-            radi,
-            radn,
+            radi, radn = data.radars.length;
+        
+        for (radi = 0; radi < radn; radi++) {
+            rdata.radars.push(data.radars[radi].radar_id);
+        }
+        rdata.radars.sort();
+        initRadarMapData(rdata);
+        rdata.deltaStartTime = rdata.windowDuration;
+        console.log("Loading from " + from + " for one windows of " + rdata.windowDuration + " minutes each.");
+        data.loadData_3(from, rdata.windowDuration, 0.3, 3.9, function (json) {
+            processData(json, rdata);
+            handler(rdata);
+        });
+    }
+    
+    /**
+     * Helper function of loadFromCartoDB().
+     * @param {Object} json  The JSON-object with the loaded data.
+     * @param {Object} rdata The data object in which to organise the data.
+     */
+    function processData(json, rdata) {
+        //console.log(JSON.stringify(json));
+        var alti, altn = rdata.altitudes.length,
+            rowi, rown = json.total_rows,
+            row,
+            radi, radn = rdata.radars.length,
+            radar,
+            densities = [],
+            uSpeeds = [],
+            vSpeeds = [],
+            speeds = [];
+        
+        for (alti = 0; alti < altn; alti++) {
+            densities.push(util.zeroArray(radn));
+            uSpeeds.push(util.zeroArray(radn));
+            vSpeeds.push(util.zeroArray(radn));
+            speeds.push(util.zeroArray(radn));
+        }
+        rdata.densities = densities;
+        rdata.uSpeeds = uSpeeds;
+        rdata.vSpeeds = vSpeeds;
+        rdata.speeds = speeds;
+        
+        // Fill the data structure with the given data:
+        for (rowi = 0; rowi < rown; rowi++) {
+            row = json.rows[rowi];
+            alti = ((row.altitude * 10) - 3) / 2;
+            radi = rdata.radarIndices[row.radar_id];
+            densities[alti][radi] = row.bird_density;
+            uSpeeds[alti][radi] = row.u_speed;
+            vSpeeds[alti][radi] = row.v_speed;
+            speeds[alti][radi] = row.speed;
+        }
+    }
+    
+    /**
+     * Add mapping from radar_ids to indices in data arrays.
+     * @param {Object} rdata The radar-data object.
+     */
+    function initRadarMapData(rdata) {
+        var radi,
+            radn = data.radars.length,
             radar,
             ri,
             rp;
         
-        // Create mapping from radar_ids to indices:
-        //console.log(data.radars);
-        radn = data.radars.length;
-        for (radi = 0; radi < radn; radi++) {
-            radar = data.radars[radi];
-            rdata.radars.push(radar.radar_id);
-        }
-        rdata.radars.sort();
-        //console.log("- rdata.radars: " + rdata.radars);
+        rdata.radarIndices = {};
         
+        // Create mapping from radar_ids to indices:
+        rdata.radarIndices = {};
         for (radi = 0; radi < radn; radi++) {
             rdata.radarIndices[rdata.radars[radi]] = radi;
         }
-        //console.log("- rdata.radarIndices: " + rdata.radarIndices);
         
+        // Update radar positions:
         for (radi = 0; radi < radn; radi++) {
             radar = data.radars[radi];
             //console.log(radar);
@@ -100,90 +228,14 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
             rdata.xPositions[ri] = rp.x;
             rdata.yPositions[ri] = rp.y;
         }
-        
-        data.loadData_3(config.from, config.till, 0.3, 3.9, function (json) {
-//        $.getJSON("data/td1.json", function(json) {
-//            $("#debug").append(JSON.stringify(json));
-//            console.log(json);
-            processData(json, rdata);
-            drawMap(rdata);
-            drawPaths(rdata, 0);
-        });
     }
     
-    function processData(json, rdata) {
-        //debug("JSON", JSON.stringify(json, null, 4));
-        //console.log(json);
-        var rowi,
-            rows,
-            alti,
-            radi,
-            radar,
-            row,
-            densities = [],
-            uSpeeds = [],
-            vSpeeds = [],
-            speeds = [],
-            speedMin = 1000000,
-            speedMax = -1000000,
-            densityMin = 1000000,
-            densityMax = -1000000;
-        
-        function newZeroArray(length) {
-            var result = [];
-            for (var i = 0; i < length; i++) {
-                result.push(0);
-            }
-            return result;
-        }
-        for (alti = 0; alti < rdata.altitudes.length; alti++) {
-            densities.push(newZeroArray(5));
-            uSpeeds.push(newZeroArray(5));
-            vSpeeds.push(newZeroArray(5));
-            speeds.push(newZeroArray(5));
-        }
-        rdata.densities.push(densities);
-        rdata.uSpeeds.push(uSpeeds);
-        rdata.vSpeeds.push(vSpeeds);
-        rdata.speeds.push(speeds);
-        
-        rows = json.total_rows;
-        for (rowi = 0; rowi < rows; rowi++) {
-            row = json.rows[rowi];
-            alti = data.altIndex(row.altitude, 0.3);
-            radi = rdata.radarIndices[row.radar_id];
-            densities[alti][radi] = row.bird_density;
-            uSpeeds[alti][radi] = row.u_speed;
-            vSpeeds[alti][radi] = row.v_speed;
-            var speed = util.distance(row.u_speed, row.v_speed);
-            speeds[alti][radi] = speed;
-            
-            //console.log(" - altitude: " + row.altitude + " - altIndex: " + data.altIndex(row.altitude, 0.3));
-            
-            if (speed < speedMin) { speedMin = speed; }
-            else if (speed > speedMax) { speedMax = speed; }
-            if (row.bird_density < densityMin) { densityMin = row.bird_density; }
-            else if (row.bird_density > densityMax) { densityMax = row.bird_density; }
-        }
-        
-//        console.log("speed min: " + speedMin + " - max: " + speedMax);
-//        console.log("density min: " + densityMin + " - max: " + densityMax);
-        
-        return rdata;
-    }
-    
-    function drawMap(rdata) {
-        var radi,
-            rlen,
-            radar,
-            rd,
-            canvas = $("#canvas"),
+    function drawMap(canvas, rdata) {
+        var radi, radn = rdata.radars.length,
+            radx, rady,
             ctx = canvas[0].getContext("2d"),
-            clr = "53, 106, 164",
-            di,
-            density,
-            radx, 
-            rady;
+            clr = "120, 146, 164",
+            drawFactor = 10;
         
         // Draw the map bitmap:
         ctx.drawImage($("#img_map")[0], 0, 0);
@@ -194,12 +246,7 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
 //        ctx.strokeRect(0, 0, map.width, map.height);
         
         // Draw radars and interpolation:
-        var drawFactor = 10;
-        var r50 = map.dmxToPxl(50000); // 50 km
-        var r100 = map.dmxToPxl(100000); // 100 km
-        
-        rlen = rdata.radars.length;
-        for (radi = 0; radi < rlen; radi++) {
+        for (radi = 0; radi < radn; radi++) {
             radx = rdata.xPositions[radi];
             rady = rdata.yPositions[radi];
             
@@ -207,14 +254,14 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
             ctx.strokeStyle = "rgba(" + clr + ", 0.4)";
             
             // 50 km circle:
-            ctx.beginPath();
-            ctx.arc(radx, rady, r50, 0, 2 * Math.PI);
-            ctx.stroke();
+//            ctx.beginPath();
+//            ctx.arc(radx, rady, r50, 0, 2 * Math.PI);
+//            ctx.stroke();
             
             // 100 km circle:
-            ctx.beginPath();
-            ctx.arc(radx, rady, r100, 0, 2 * Math.PI);
-            ctx.stroke();
+//            ctx.beginPath();
+//            ctx.arc(radx, rady, r100, 0, 2 * Math.PI);
+//            ctx.stroke();
             
             // radar center:
             ctx.beginPath();
@@ -232,116 +279,61 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         }
     }
     
-    function drawPaths(rdata) {
-        var alti,
-            altn = rdata.altitudes.length,
-            radi,
-            radn = rdata.radars.length,
-            rlen,
-            radar,
-            rd,
-            canvas = $("#canvas"),
-            ctx = canvas[0].getContext("2d"),
-            pathCnt,
-            path,
-            pathLen = 20,
-            sectie,
-            sectieFactor = 1,
-            uSpeed,
-            vSpeed,
-            speed,
+    function drawPaths(canvas, rdata) {
+        var alti, altn = rdata.altitudes.length,
+            radi, radn = rdata.radars.length,
+            pathi, pathn,
+            pari, parn = rdata.pathLen,
+            densities, uSpeeds, vSpeeds,
             hue,
-            ha = 0,
-            hb = 0.2,
-            uSpeedInterpolator,
-            vSpeedInterpolator,
-            speedInterpolator,
-            r100 = map.dmxToPxl(100000) /* 100 km */,
-            r50 = map.dmxToPxl(50000) /* 50 km */,
-            pa = 0,
-            pd,
-            px,
-            py,
-            di,
-            density,
-            radx, 
-            rady;
+            radx, rady,
+            pa = 0, pd, px, py, dx, dy,
+            ctx = canvas[0].getContext("2d"),
+            xps = rdata.xPositions,
+            yps = rdata.yPositions,
+            idw = interpolation.idw,
+            alpha;
         
-        //console.log("r100: " + r100);
-        //console.log("rdata.uSpeeds[0].length: " + rdata.uSpeeds[windowIdx].length);
+        // pixels secs per meter
+        var pspm = map.dmxToPxl(1) * rdata.windowDuration * 60;
+//        console.log("pspm: " + pspm
+//                    + " - map.dmxToPxl(1): " + map.dmxToPxl(1) 
+//                    + " - rdata.deltaStartTime: " + rdata.deltaStartTime);
         
-        var wini = 0;
-        var wDensities = rdata.densities[wini];
-        var wUSpeeds = rdata.uSpeeds[wini];
-        var wVSpeeds = rdata.vSpeeds[wini];
-        var wSpeeds = rdata.speeds[wini];
-        //console.log("rdata.uSpeeds: " + rdata.uSpeeds);
-        //console.log("wUSpeeds: " + wUSpeeds);
-        
-        // for each altitude
+        // for each altitude:
         for (alti = 0; alti < altn; alti++) {
-            var densities = wDensities[alti];
-            var uSpeeds = wUSpeeds[alti];
-            var vSpeeds = wVSpeeds[alti];
-            var speeds = wSpeeds[alti];
-            //console.log("uSpeeds: " + uSpeeds);
-            uSpeedInterpolator = interpolation.IDWInterpolator(
-                uSpeeds,
-                rdata.xPositions,
-                rdata.yPositions,
-                2
-            );
-            vSpeedInterpolator = interpolation.IDWInterpolator(
-                vSpeeds,
-                rdata.xPositions,
-                rdata.yPositions,
-                2
-            );
-            speedInterpolator = interpolation.IDWInterpolator(
-                speeds,
-                rdata.xPositions,
-                rdata.yPositions,
-                2
-            );
-            hue = util.map(alti, 0, 18, 0.15, 0.83);
+            densities = rdata.densities[alti];
+            uSpeeds = rdata.uSpeeds[alti];
+            vSpeeds = rdata.vSpeeds[alti];
+            hue = util.map(alti, 0, altn, config.altiHueMin, config.altiHueMax);
             
             // for each radar:
             for (radi = 0; radi < radn; radi++) {
-                density = densities[radi];
                 radx = rdata.xPositions[radi];
                 rady = rdata.yPositions[radi];
-                pathCnt = util.constrain(util.map(density, 0, 350, 0, 100), 0, 5);
-
-                for (path = 0; path < pathCnt; path++) {
-                    pa = Math.random() * Math.PI * 2;
+                
+                // for each path:
+                pathn = util.map(densities[radi], 0, config.maxDensity, 0, config.maxPathCnt);
+                for (pathi = 0; pathi < pathn; pathi++) {
                     //pa += .2 + Math.random();
+                    pa = Math.random() * Math.PI * 2;
                     //pd = Math.random() * r100;
-                    pd = util.map(path, 0, pathCnt, 0, r50);
+                    pd = util.map(pathi, 0, pathn, 0, r100);
                     px = radx + Math.cos(pa) * pd;
                     py = rady + Math.sin(pa) * pd;
-
-        //            uSpeed = uSpeedInterpolator(px, py) * sectieFactor;
-        //            vSpeed = vSpeedInterpolator(px, py) * sectieFactor;
-        //            ctx.strokeStyle = "rbg(190, 0, 0)";
-        //            ctx.beginPath();
-        //            ctx.moveTo(px, py);
-        //            ctx.lineTo(px + uSpeed * drawFactor,
-        //                       py - vSpeed * drawFactor);
-        //            ctx.stroke();
-
-                    for (sectie = 0; sectie < pathLen; sectie++) {
-                        uSpeed = uSpeedInterpolator(px, py) * sectieFactor;
-                        vSpeed = vSpeedInterpolator(px, py) * sectieFactor;
-                        speed = speedInterpolator(px, py) * sectieFactor;
-                        //hue = util.map(speed, 0, 10, 0, 0.5);
-
-                        var alpha = util.map(sectie, 0, pathLen, .1, 1);
-                        //ctx.strokeStyle = util.hsvToHex(hue, 0.8, 0.6);
-                        ctx.strokeStyle = util.hsvaToRgba(hue, 0.8, 0.6, alpha);
+                    
+                    for (pari = 0; pari < parn; pari++) {
+                        
+                        // d[pxl] = speed[m/s] * (duration[s] * conv[pxl/m])
+                        dx = idw(px, py, uSpeeds, xps, yps, 2) * pspm;
+                        dy = idw(px, py, vSpeeds, xps, yps, 2) * pspm;
+                        
+                        alpha = util.map(pari, 0, parn - 1, 0.6, 0.9);
+                        ctx.strokeStyle = util.hsvaToRgba(hue, config.altiSaturation, config.altiBrightness, alpha);
                         ctx.beginPath();
                         ctx.moveTo(px, py);
-                        px += uSpeed;
-                        py -= vSpeed;
+                        px += dx;
+                        py -= dy;
                         ctx.lineTo(px, py);
                         ctx.stroke();
 
@@ -361,5 +353,5 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         }
     }
     
-    data.loadRadars(init);
+    init();
 });

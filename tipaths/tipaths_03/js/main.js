@@ -21,7 +21,7 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
     // Configuration settings that do not change:
     var config = {
         loadLocal : false,
-        altitudes : [0.3, 0.5, 0.7, 0.9, 1.1, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1 , 3.3, 3.5, 3.7, 3.9],
+        altitudes : [0.3, 0.5, 0.7, 0.9, 1.1, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1, 3.3, 3.5, 3.7, 3.9],
         maxDensity : 3200,
         maxPathCnt : 3200 / 100 * 2,
         altiHueMin : 0.5,
@@ -37,33 +37,30 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
     function init() {
         canvas = $("#canvas");
         data.loadRadars(function () {
-            data.printSpecifics(function (specifics) {
-                
-                map = new Map(700);
-                //console.log("- map.width: " + map.width);
-                canvas.attr({
-                    width: map.width,
-                    height: map.height
-                });
-                r100 = map.dmxToPxl(100000); // 100 km
-                r50 = map.dmxToPxl(50000); // 50 km
-
-                $("#input_days").change(redraw);
-                $("#input_hours").change(redraw);
-                $("#input_minutes").change(redraw);
-                $("#input_duration").change(redraw);
-                
-                redraw();
+            map = new Map(700);
+            //console.log("- map.width: " + map.width);
+            canvas.attr({
+                width: map.width,
+                height: map.height
             });
+            r100 = map.dmxToPxl(100000); // 100 km
+            r50 = map.dmxToPxl(50000); // 50 km
+
+            $("#input_days").change(redraw);
+            $("#input_hours").change(redraw);
+            $("#input_minutes").change(redraw);
+            $("#input_duration").change(redraw);
+            
+            redraw();
         });
-        drawLegend();
+        data.printSpecifics(drawLegend);
     }
     
     function drawLegend() {
         var alti, altn = config.altitudes.length,
             lac = $(".legend_altiColor"),
             hue;
-        console.log("altn: " + altn);
+        
         for (alti = 0; alti < altn; alti++) {
             hue = util.map(alti, 0, altn, config.altiHueMin, config.altiHueMax);
             lac.append("<div class='legend_altiColor_segment'"
@@ -117,8 +114,7 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         $("#input_minutes").val(minutes);
         
         var windowCount = parseInt($("#input_duration").val()) * 3;
-        
-        config.from = new Date(2013, 3, days, hours, minutes);
+        var from = new Date(2013, 3, days, hours, minutes);
         
         function proceed(rdata) {
             drawMap(canvas, rdata);
@@ -129,15 +125,13 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
             loadLocalJSON("../data_prepro/data/enram-data-2013-04-05.json", proceed);
         }
         else {
-            loadFromCartoDB(windowCount, proceed);
+            loadFromCartoDB(from, windowCount, proceed);
         }
     }
     
-    function loadFromCartoDB(windowCount, handler) {
-        var loadWinI = 0,
-            from = config.from,
-            rdata = {
-                startTime: undefined,
+    function loadFromCartoDB(from, windowCount, handler) {
+        var rdata = {
+                startTime: from,
                 windowDuration : 20 /* the duration of a window in minutes */,
                 windowCount: windowCount,
                 deltaStartTime : undefined /* the duration of one step in minutes */ ,
@@ -151,10 +145,7 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
                 vSpeeds : [],
                 speeds : []
             },
-            radi,
-            radn = data.radars.length,
-            loadNext = function () {
-            };
+            radi, radn = data.radars.length;
         
         for (radi = 0; radi < radn; radi++) {
             rdata.radars.push(data.radars[radi].radar_id);
@@ -175,11 +166,11 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
      * @param {Object} rdata The data object in which to organise the data.
      */
     function processData(json, rdata) {
-        //debug("JSON", JSON.stringify(json, null, 4));
         //console.log(JSON.stringify(json));
         var wini, winn = rdata.windowCount,
             alti, altn = rdata.altitudes.length,
-            rowi, rown = json.total_rows, row,
+            rowi, rown = json.total_rows,
+            row,
             radi, radn = rdata.radars.length,
             radar,
             densities,
@@ -206,7 +197,7 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
             rdata.speeds.push(speeds);
         }
         
-        // Fill jthe data structure with the given data:
+        // Fill the data structure with the given data:
         for (rowi = 0; rowi < rown; rowi++) {
             row = json.rows[rowi];
             wini = row.window_idx;
@@ -285,10 +276,8 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
     }
     
     function drawMap(canvas, rdata) {
-        var radi,
-            radn = rdata.radars.length,
-            radx, 
-            rady,
+        var radi, radn = rdata.radars.length,
+            radx, rady,
             ctx = canvas[0].getContext("2d"),
             clr = "120, 146, 164",
             drawFactor = 10;
@@ -337,19 +326,14 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
     
     function drawPaths(canvas, rdata) {
         var win0 = 0,
-            wini,
+            wini, winn = rdata.windowCount,
             alti, altn = rdata.altitudes.length,
             radi, radn = rdata.radars.length,
             pathi, pathn,
-            densities,
-            density,
-            uSpeeds, vSpeeds,
-            speeds,
-            dx, dy,
+            densities, uSpeeds, vSpeeds,
             hue,
             radx, rady,
-            pa = 0, pd,
-            px, py,
+            pa = 0, pd, px, py, dx, dy,
             ctx = canvas[0].getContext("2d"),
             xps = rdata.xPositions,
             yps = rdata.yPositions,
@@ -366,7 +350,7 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         // radius by 200m:
         var contextVolume = Math.PI * 100 * 100 / 5;
         
-        // for each altitude
+        // for each altitude:
         for (alti = 0; alti < altn; alti++) {
             //densities = rdata.densities[win0][alti];
             densities = rdata.avDensities[alti];
@@ -374,12 +358,11 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
             
             // for each radar:
             for (radi = 0; radi < radn; radi++) {
-                density = densities[radi];
                 radx = rdata.xPositions[radi];
                 rady = rdata.yPositions[radi];
                 
-                // for each path
-                pathn = util.map(density, 0, config.maxDensity, 0, config.maxPathCnt);
+                // for each path:
+                pathn = util.map(densities[radi], 0, config.maxDensity, 0, config.maxPathCnt);
                 for (pathi = 0; pathi < pathn; pathi++) {
                     //pa += .2 + Math.random();
                     pa = Math.random() * Math.PI * 2;
@@ -387,8 +370,8 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
                     pd = util.map(pathi, 0, pathn, 0, r100);
                     px = radx + Math.cos(pa) * pd;
                     py = rady + Math.sin(pa) * pd;
-
-                    for (wini = win0; wini < rdata.windowCount; wini++) {
+                    
+                    for (wini = win0; wini < winn; wini++) {
                         //console.log("wini: " + wini + " - alti: " + alti);
                         if (rdata.uSpeeds[wini] === undefined) { // DEBUG
                             console.error("rdata.uSpeeds[wini] is undefined for"
@@ -401,8 +384,7 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
                         dx = idw(px, py, uSpeeds, xps, yps, 2) * pspm;
                         dy = idw(px, py, vSpeeds, xps, yps, 2) * pspm;
                         
-                        var alpha = util.map(wini, 0, rdata.windowCount - 1, 0.6, .9);
-                        //ctx.strokeStyle = util.hsvToHex(hue, config.altiSaturation, config.altiBrightness);
+                        alpha = util.map(wini, 0, winn - 1, 0.6, 0.9);
                         ctx.strokeStyle = util.hsvaToRgba(hue, config.altiSaturation, config.altiBrightness, alpha);
                         ctx.beginPath();
                         ctx.moveTo(px, py);

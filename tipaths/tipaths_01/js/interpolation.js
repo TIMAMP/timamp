@@ -1,3 +1,5 @@
+/*global define */
+
 define(["kriging"], function (kriging) {
     "use strict";
     
@@ -34,17 +36,17 @@ define(["kriging"], function (kriging) {
                                   config.alpha);
         return function (x, y) {
             return kriging.predict(x, y, model);
-        }
-    }
+        };
+    };
     
-    interpolation.IDWInterpolator = function (config) {
-        if (config.tValues.length != config.xValues.length) {
-            throw "config.tValues.length != config.xValues.length";
+    interpolation.IDWInterpolator = function (tValues, xValues, yValues, power) {
+        if (tValues.length != xValues.length) {
+            throw "tValues.length != xValues.length";
         }
-        if (config.xValues.length != config.yValues.length) {
-            throw "config.xValues.length != config.yValues.length";
+        if (xValues.length != yValues.length) {
+            throw "xValues.length != yValues.length";
         }
-        var len = config.tValues.length;
+        var len = tValues.length;
         return function (x, y, debug) {
             var i,
                 dx,
@@ -53,15 +55,39 @@ define(["kriging"], function (kriging) {
                 ws = 0,
                 r = 0;
             for (i = 0; i < len; i++) {
-                dx = x - config.xValues[i];
-                dy = y - config.yValues[i];
-                wi = 1 / Math.pow(Math.sqrt(dx * dx + dy * dy), config.power);
-                r += wi * config.tValues[i];
+                dx = x - xValues[i];
+                dy = y - yValues[i];
+                wi = 1 / Math.pow(Math.sqrt(dx * dx + dy * dy), power);
+                r += wi * tValues[i];
                 ws += wi;
             }
             return r / ws;
         };
-    }
+    };
+    
+    interpolation.idw = function (x, y, tValues, xValues, yValues, power) {
+        if (tValues.length != xValues.length) {
+            throw "tValues.length != xValues.length";
+        }
+        if (xValues.length != yValues.length) {
+            throw "xValues.length != yValues.length";
+        }
+        var len = tValues.length,
+            i,
+            dx,
+            dy,
+            wi,
+            ws = 0,
+            r = 0;
+        for (i = 0; i < len; i++) {
+            dx = x - xValues[i];
+            dy = y - yValues[i];
+            wi = 1 / Math.pow(Math.sqrt(dx * dx + dy * dy), power);
+            r += wi * tValues[i];
+            ws += wi;
+        }
+        return r / ws;
+    };
     
     return interpolation;
 });

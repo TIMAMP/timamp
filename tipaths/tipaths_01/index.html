@@ -1,38 +1,41 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>TIPaths 01</title>
-        <style>
-            body {
-                margin:0;
-            }
-            #frameDiv {
-                width: 730px;
-                /*border: 1px solid #999900;*/
-            }
-            #sideDiv {
-                width: 170px;
-                float: right;
-            }
-        </style>
-        <link rel="stylesheet" href="css/tipaths.css">
+        <title>Time Integrated Multi-Altitude Migration Flows 01</title>
+        <link rel="stylesheet" type="text/css" href="css/tipaths.css">
         <script data-main="js/main" src="js/lib/require.js"></script>
     </head>
     <body>
-        <h1>TIPaths 01</h1>
-        <p></p>
-        <div style="margin-bottom: .5em;">
-            <form>
-                from <input id="input_datetime" type="datetime-local" value="2013-04-07T21:00:00" min="2013-04-05T00:00:00" max="2013-04-09T00:00:00" step="90"> - duration (minutes) <input type="text" id="input_duration" value="20" min="1" size="3"> - altitude <select id="select_altitude" value="3.9"></select>
-                <br><button id="button_redraw" type="button">redraw</button>
-            </form>
+        <div class="frameDiv">
+            <canvas id="canvas" width="536" height="700"></canvas>
+            <div class="sideDiv">
+                <div class="sideTopDiv">
+                    <h1>Time Integrated Multi-Altitude Migration Flows</h1>
+                    <form>
+                        <h3>Start time</h3>
+                        <p>April <input id="input_days" type="number" min="5" max="11" step="1" value="7" size="1">, 2013<br>
+                        <input id="input_hours" type="number" min="-1" max="24" step="1" value="21" size="1"> hrs <input id="input_minutes" type="number" min="-10" max="70" step="10" value="0" size="1"> min</p>
+                        <h3>Window duration</h3>
+                        <p><input id="input_duration" type="number" min="1" max="8" step="1" value="3" size="1"> hrs</p>
+                        <!--<button id="button_redraw" type="button">redraw</button>-->
+                    </form>
+                    <p>This visualisation shows bird migration flowlines for four altitude-ranges during an observation window of 1 to 8 hours. The flowlines represent bird movement data, integrated over time. The density of the flows is based on the density data averaged over the given window.</p>
+                </div>
+                <div class="sideBottomDiv">
+                    <div class="legend_altiColor_annot"><div class="legend_altiColor_annot_a">200m<br><img src="images/legend-mark-left.png" width="5" height="5" alt="|"></div><div class="legend_altiColor_annot_b">2000m<br><img src="images/legend-mark-center.png" width="10" height="5" alt="|"></div><div class="legend_altiColor_annot_c">4000m<br><img src="images/legend-mark-right.png" width="5" height="5" alt="|"></div></div>
+                    <div class="legend_altiColor"></div>
+                </div>
+            </div>
         </div>
-        <div id="frameDiv">
-            <canvas id="canvas"></canvas>
-            <div id="sideDiv"></div>
+        <div class="descriptionDiv">
+            <small>Data served by <a href="http://cartodb.com">CartoDB</a>.</small>
+            <small>Map of Belgium and Netherlands by <a href="http://freevectormaps.com">FreeVectorMaps.com</a></small>
         </div>
-        <small>Map of Belgium and Netherlands by FreeVectorMaps.com</small>
-        <div id="debug"></div>
+        <div class="bottomDiv">
+            <div class="licenseDiv">
+                <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br /><span xmlns:dct="http://purl.org/dc/terms/" property="dct:title">Time Integrated Multi-Altitude Migration Patterns</span> by <a xmlns:cc="http://creativecommons.org/ns#" href="http://wouter-vdb.github.io/enram-hackaton/timamp/" property="cc:attributionName" rel="cc:attributionURL">Wouter Van den Broeck, Jan Klaas Van Den Meersche, Kyle Horton and S&eacute;rgio Branco</a><br>is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
+            </div>
+        </div>
         <img id="img_map" src="images/basemap_01.png" style="width: 1px; height: 1px;">
     </body>
 </html>

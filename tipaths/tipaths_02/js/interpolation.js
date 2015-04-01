@@ -65,5 +65,29 @@ define(["kriging"], function (kriging) {
         };
     };
     
+    interpolation.idw = function (x, y, tValues, xValues, yValues, power) {
+        if (tValues.length != xValues.length) {
+            throw "tValues.length != xValues.length";
+        }
+        if (xValues.length != yValues.length) {
+            throw "xValues.length != yValues.length";
+        }
+        var len = tValues.length,
+            i,
+            dx,
+            dy,
+            wi,
+            ws = 0,
+            r = 0;
+        for (i = 0; i < len; i++) {
+            dx = x - xValues[i];
+            dy = y - yValues[i];
+            wi = 1 / Math.pow(Math.sqrt(dx * dx + dy * dy), power);
+            r += wi * tValues[i];
+            ws += wi;
+        }
+        return r / ws;
+    };
+    
     return interpolation;
 });

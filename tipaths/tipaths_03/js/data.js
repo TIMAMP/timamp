@@ -87,85 +87,9 @@ define(["jquery"], function ($) {
     // -----------------------------------------------------------------------------
     
     /**
-     * Loads window data for one altitude.
-     * @param {Date}     from     From datetime.
-     * @param {Date}     till     Till datetime.
-     * @param {Number}   altitude At altitude (.3, .5, .7, ..., 3.9)§
-     * @param {Function} handler  A handler function that takes a JSON object as
-     *                            sole argument.
-     */
-    data.loadData_1 = function (from, till, altitude, handler) {
-        var sql = "SELECT radar_id";
-        sql += ", AVG(bird_density) as bird_density";
-        sql += ", AVG(u_speed) as u_speed";
-        sql += ", AVG(v_speed) as v_speed";
-        sql += ", AVG(ground_speed) as ground_speed";
-        sql += " FROM bird_migration_altitude_profiles";
-        sql += " WHERE altitude = '" + altitude + "'";
-        sql += " AND bird_density > 0";
-        sql += " AND start_time >= '" + data.cartoDB.toString(from) + "'";
-        sql += " AND start_time < '" + data.cartoDB.toString(till) + "'";
-        sql += " GROUP BY radar_name";
-        sql += " ORDER BY radar_id";
-        //debug(sql);
-        data.cartoDB.loadData(sql, handler);
-    };
-    
-    /**
-     * Loads window data for a range of altitude, averaging over all altitudes.
-     * @param {Date}     from    From datetime.
-     * @param {Date}     till    Till datetime.
-     * @param {Number}   altMin  The minimum altitude.
-     * @param {Number}   altMax  The maximum altitude.
-     * @param {Function} handler A handler function that takes a JSON object as
-     *                           sole argument.
-     */
-    data.loadData_2 = function (from, till, altMin, altMax, handler) {
-        var sql = "SELECT radar_id";
-        sql += ", AVG(bird_density) as bird_density";
-        sql += ", AVG(u_speed) as u_speed";
-        sql += ", AVG(v_speed) as v_speed";
-//        sql += ", AVG(ground_speed) as ground_speed";
-        sql += " FROM bird_migration_altitude_profiles";
-        sql += " WHERE altitude >= '" + altMin + "'";
-        sql += " AND altitude <= '" + altMax + "'";
-        sql += " AND bird_density > 0";
-        sql += " AND start_time >= '" + data.cartoDB.toString(from) + "'";
-        sql += " AND start_time < '" + data.cartoDB.toString(till) + "'";
-        sql += " GROUP BY radar_name";
-        sql += " ORDER BY radar_id";
-        //debug(sql);
-        data.cartoDB.loadData(sql, handler);
-    };
-    
-    /**
-     * Loads window data for a range of altitudes, averaging per altitude.
-     * @param {Date}     from    From datetime.
-     * @param {Date}     till    Till datetime.
-     * @param {Number}   altMin  The minimum altitude.
-     * @param {Number}   altMax  The maximum altitude.
-     * @param {Function} handler A handler function that takes a JSON object as
-     *                           sole argument.
-     */
-    data.loadData_3 = function (from, till, altMin, altMax, handler) {
-        var sql = "SELECT radar_id, altitude";
-        sql += ", AVG(bird_density) as bird_density";
-        sql += ", AVG(u_speed) as u_speed";
-        sql += ", AVG(v_speed) as v_speed";
-        sql += " FROM bird_migration_altitude_profiles";
-        sql += " WHERE altitude >= '" + altMin + "'";
-        sql += " AND altitude <= '" + altMax + "'";
-        sql += " AND bird_density > 0";
-        sql += " AND start_time >= '" + data.cartoDB.toString(from) + "'";
-        sql += " AND start_time < '" + data.cartoDB.toString(till) + "'";
-        sql += " GROUP BY altitude, radar_id";
-        data.cartoDB.loadData(sql, handler);
-    };
-    
-    /**
      * Loads data for a range of altitudes, over a series of windows, for each
-     * radar-window-altitude combination averaging the bird_density, the u_speed and the
-     * v_speed. When the data is loaded, the handler function is called with
+     * radar-window-altitude combination averaging the bird_density, the u_speed and
+     * the v_speed. When the data is loaded, the handler function is called with
      * a JSON-object holding the data as sole argument.
      * @param {Date}     from        The start time of the series of windows
      * @param {Number}   winDuration The duration of a window in minutes.
@@ -180,8 +104,7 @@ define(["jquery"], function ($) {
             tillStr = data.cartoDB.toString(till);
         //console.log("winDuration: " + winDuration + " - winCount: " + winCount);
         //console.log("from: " + from + " - till: " + till);
-        var sql = "";
-        sql += "SELECT";
+        var sql = "SELECT";
         sql += " DIV(CAST(EXTRACT(EPOCH FROM start_time) - EXTRACT(EPOCH FROM TIMESTAMP '" + fromStr + "') AS NUMERIC), " + (winDuration * 60) + ") AS window_idx";
         sql += ", altitude, radar_id";
         sql += ", AVG(bird_density) AS bird_density";
@@ -202,6 +125,8 @@ define(["jquery"], function ($) {
         data.cartoDB.loadData(sql, handler);
     };
     
+    // -----------------------------------------------------------------------------
+    // Data Specifics:
     // -----------------------------------------------------------------------------
     
     /**
@@ -295,17 +220,18 @@ define(["jquery"], function ($) {
             //printSpecifics_03(handler);
             handler();
         });
-    }
+    };
     
     data.printSpecifics = function(handler) {
         printSpecifics_01(handler);
 //        console.log("- specifics.max_bird_density: " + specifics.max_bird_density);
 //        console.log("- specifics.max_u_speed: " + specifics.max_u_speed);
 //        console.log("- specifics.max_v_speed: " + specifics.max_v_speed);
-    }
+    };
     
     // -----------------------------------------------------------------------------
     // Various:
+    // -----------------------------------------------------------------------------
     
     /**
      * Returns the data-index for the given altitude.
@@ -358,7 +284,6 @@ define(["jquery"], function ($) {
      * - ground_speed: {Number} Horizontal speed at ground level.
      * - direction: {Number} Horizontal direction at ground level.
      * - radial_velocity_std: {Number}
-     * 
      * @param {String}   sql     The SQL to execute on the CartoDB server.
      * @param {Function} handler A handler function with one parameter, the json
      *                           object received from the server.

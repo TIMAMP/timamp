@@ -163,18 +163,53 @@ define(["jquery"], function($) {
     // Support functions
     // -----------------------------------------------------------------------------
     
+    /**
+     * Maps the value v from the source range [a, b] to the target range [c, d].
+     * @param   {Number} v The value to map.
+     * @param   {Number} a The first bound of the source range.
+     * @param   {Number} b The second bound of the source range.
+     * @param   {Number} c The first bound of the target range.
+     * @param   {Number} d The second bound of the target range.
+     * @returns {Number} The mapped value. 
+     */
     util.map = function (v, a, b, c, d) {
         return (v - a) / (b - a) * (d - c) + c;
     }
     
-    util.distance = function (dx, dy) {
+    /**
+     * Calculates the length of the vector (dx, dy).
+     * @param   {[[Type]]} dx [[Description]]
+     * @param   {[[Type]]} dy [[Description]]
+     * @returns {[[Type]]} [[Description]]
+     */
+    util.vectorLength = function (dx, dy) {
         return Math.sqrt(dx * dx + dy * dy);
     }
     
+    /**
+     * Constrains the given value v to the range [min, max]
+     * @param   {Number} v   The value to constrain.
+     * @param   {Number} min The minimum value of the range.
+     * @param   {Number} max The maximum value of the range.
+     * @returns {Number} The constrained value.
+     */
     util.constrain = function (v, min, max) {
         if (v < min) { return min; }
         else if (v > max) { return max; }
         else return v;
+    }
+    
+    /**
+     * Creates a list with n zeros.
+     * @param   {Number}   length The number of zeros to 
+     * @returns {[[Type]]} [[Description]]
+     */
+    util.zeroArray = function (length) {
+        var result = [];
+        for (var i = 0; i < length; i++) {
+            result.push(0);
+        }
+        return result;
     }
     
     // -----------------------------------------------------------------------------
