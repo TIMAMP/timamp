@@ -57,18 +57,6 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         data.printSpecifics(drawLegend);
     }
     
-    function drawLegend() {
-        var alti, altn = config.altitudes.length,
-            lac = $(".legend_altiColor"),
-            hue;
-        
-        for (alti = 0; alti < altn; alti++) {
-            hue = util.map(alti, 0, altn, config.altiHueMin, config.altiHueMax);
-            lac.append("<div class='legend_altiColor_segment'"
-                       + " style='background: " + util.hsvToHex(hue, config.altiSaturation, config.altiBrightness) + "'></div>");
-        }
-    }
-    
     function redraw() {
         var days = parseInt($("#input_days").val());
         var daysMin = parseInt($("#input_days").attr("min"));
@@ -136,7 +124,6 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
                 startTime: from,
                 windowDuration : 20 /* the duration of a window in minutes */,
                 windowCount: windowCount,
-                deltaStartTime : undefined /* the duration of one step in minutes */ ,
                 radars : [],
                 altitudes : config.altitudes,
                 xPositions : [],
@@ -154,7 +141,6 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         }
         rdata.radars.sort();
         initRadarMapData(rdata);
-        rdata.deltaStartTime = rdata.windowDuration;
         console.log("Loading from " + from + " for " + rdata.windowCount + " windows of " + rdata.windowDuration + " minutes each.");
         data.loadData_4(from, rdata.windowDuration, rdata.windowCount, 0.3, 3.9, function (json) {
             processData(json, rdata);
@@ -282,8 +268,7 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
             radi, radn = rdata.radars.length,
             radx, rady,
             ctx = canvas[0].getContext("2d"),
-            clr = "120, 146, 164",
-            drawFactor = 10;
+            clr = "120, 146, 164";
         
         // Draw the map bitmap:
         img = new Image();
@@ -328,8 +313,7 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         // pixels secs per meter
         var pspm = map.dmxToPxl(1) * rdata.windowDuration * 60;
 //        console.log("pspm: " + pspm
-//                    + " - map.dmxToPxl(1): " + map.dmxToPxl(1) 
-//                    + " - rdata.deltaStartTime: " + rdata.deltaStartTime);
+//                    + " - map.dmxToPxl(1): " + map.dmxToPxl(1));
         
         // the volume of the context in km3, i.e. area of circle with 100km
         // radius by 200m:
@@ -393,6 +377,19 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
             }
         }
     }
+    
+    function drawLegend() {
+        var alti, altn = config.altitudes.length,
+            lac = $(".legend_altiColor"),
+            hue;
+        
+        for (alti = 0; alti < altn; alti++) {
+            hue = util.map(alti, 0, altn, config.altiHueMin, config.altiHueMax);
+            lac.append("<div class='legend_altiColor_segment'"
+                       + " style='background: " + util.hsvToHex(hue, config.altiSaturation, config.altiBrightness) + "'></div>");
+        }
+    }
+    
     
     init();
 });
