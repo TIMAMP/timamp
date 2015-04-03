@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Time Integrated Multi-Altitude Migration Flows - Animation</title>
+        <link rel="stylesheet" type="text/css" href="css/tipaths.css">
+        <script data-main="js/main" src="js/lib/require.js"></script>
+    </head>
+    <body>
+        <div class="frameDiv">
+            <canvas id="canvas" width="536" height="700"></canvas>
+            <div class="sideDiv">
+               
+                <div class="sideTopDiv">
+                    <h1>Animated Migration Flowlines</h1>
+                    
+                    <div class="playerDiv"><div class="playHead"></div></div>
+                    <div class="playerButonsDiv">
+                        <div class="button" id="pauseBtn">PAUSE</div>
+                        <div class="button" id="playBtn">PLAY</div>
+                    </div>
+                    
+                    <p>This animation shows the bird migration flowlines for a sliding <span id="duration">1</span>-hour window. The length of the flowlines corresponds to the pro-jected distance travelled by the migrants during this window. The flowlines are color-coded accor-ding to their altitude. The sun rises around 7h00 and sets around 20h15.</p>
+                    
+                </div>
+                
+                <div class="sideBottomDiv">
+                    <div class="legend_altiColor_annot"><div class="legend_altiColor_annot_a">200m<br><img src="images/legend-mark-left.png" width="5" height="5" alt="|"></div><div class="legend_altiColor_annot_b">2000m<br><img src="images/legend-mark-center.png" width="10" height="5" alt="|"></div><div class="legend_altiColor_annot_c">4000m<br><img src="images/legend-mark-right.png" width="5" height="5" alt="|"></div></div>
+                    <div class="legend_altiColor"></div>
+                </div>
+                
+            </div>
+        </div>
+        <div class="descriptionDiv">
+            <small>Map of Belgium and Netherlands by <a href="http://freevectormaps.com">FreeVectorMaps.com</a></small>
+        </div>
+        <div class="bottomDiv">
+            <div class="licenseDiv">
+                <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br /><span xmlns:dct="http://purl.org/dc/terms/" property="dct:title">Time Integrated Multi-Altitude Migration Patterns</span> by <a xmlns:cc="http://creativecommons.org/ns#" href="http://wouter-vdb.github.io/enram-hackaton/timamp/" property="cc:attributionName" rel="cc:attributionURL">Wouter Van den Broeck, Jan Klaas Van Den Meersche, Kyle Horton and S&eacute;rgio Branco</a><br>is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
+            </div>
+        </div>
+        <img id="img_map" src="images/basemap_01.png" style="width: 1px; height: 1px;">
+    </body>
+</html>

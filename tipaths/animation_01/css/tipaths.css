@@ -1,0 +1,179 @@
+
+/*** STRUCTURE ***/
+
+.frameDiv {
+    width: 740px;
+    box-sizing: border-box;
+}
+.sideDiv, .sideTopDiv, .sideBottomDiv, div.legend_altiColor_annot, div#playerDiv {
+    width: 190px;
+    box-sizing: border-box;
+}
+.sideDiv {
+    height: 700px;
+    float: right;
+}
+.sideTopDiv {
+    height: 640px;
+    padding: 10px 0 0 0;
+}
+.sideBottomDiv {
+    height: 50px;
+    display: table-cell;
+    vertical-align: bottom;
+}
+.descriptionDiv {
+    width: 536px;
+    margin-top: .1em;
+    box-sizing: border-box;
+}
+form {
+    font-family: "Droid Serif","Helvetica Neue",Helvetica,Arial,sans-serif;
+    color: rgb(51, 51, 51);
+}
+.bottomDiv {
+    width: 740px;
+    box-sizing: border-box;
+    text-align: center;
+    margin-top: 3em;
+}
+.licenseDiv {
+    width: 400px;
+    display: inline-block;
+    box-sizing: border-box;
+}
+
+/*** TYPOGRAPHY ***/
+
+body, p, small {
+    font-family: 'Droid Serif', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+h1, h3 {
+    font-family: Montserrat, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+body {
+    font-family: Sans-Serif;
+    font-size: 100%;
+}
+h1 {
+    color: rgb(51, 51, 51);
+    display: block;
+    font-size: 170%;
+    font-weight: bold;
+    margin: 0 0 1em 0;
+    line-height: 100%;
+    text-transform: uppercase;
+}
+h3 {
+    font-size: 100%;
+    font-weight: 600;
+    margin: 1em 0 0 0;
+    padding: 0;
+}
+p {
+    margin: .1em 0 1em 0;
+    display: block;
+    font-size: 16px;
+    line-height: 120%;
+    color: #333;
+}
+.sideTopDiv p {
+    text-align: justify;
+}
+::selection {
+    text-shadow: none;
+    background: #fed136;
+}
+.descriptionDiv {
+    text-align: center;
+}
+input {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    text-align: center;
+    font-size: 90%;
+}
+small {
+    font-size: 65%;
+    color: #666;
+    margin: 1em 0 2em 0;
+    font-style: italic;
+}
+.licenseDiv {
+    font-size: 75%;
+    text-align: center;
+}
+button#button_stop {
+    font-size: 100%;
+}
+
+/*** LEGEND ***/
+
+div.legend_altiColor_segment {
+    box-sizing: border-box;
+    width: 10px;
+    height: 20px;
+    display: inline-block;
+}
+div.legend_altiColor_annot {
+    box-sizing: border-box;
+    padding: 0;
+}
+div.legend_altiColor_annot div {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    display: inline-block;
+    font-size: 70%;
+    line-height: 80%;
+    color: #666;
+}
+div.legend_altiColor_annot_a {
+    width: 40px;
+    text-align: left;
+}
+div.legend_altiColor_annot_b {
+    width: 100px;
+    text-align: center;
+}
+div.legend_altiColor_annot_c {
+    width: 50px;
+    text-align: right;
+}
+
+/*** PLAYER ***/
+
+div.playerDiv {
+    box-sizing: border-box;
+    height: 16px;
+    border: 1px solid #bbb;
+    background-color: #eee;
+    cursor: pointer;
+}
+div.playHead {
+    box-sizing: border-box;
+    width: 2px;
+    height: 14px;
+    background-color: #29cccc;
+}
+div.playerButonsDiv {
+    margin-bottom: 2em;
+}
+div.button {
+    box-sizing: border-box;
+    display: inline-block;
+    width: 90px;
+    height: 22px;
+    line-height: 24px;
+    margin-top: 5px;
+    border: 1px solid #bbb;
+    background-color: #eee;
+    cursor: pointer;
+    text-align: center;
+}
+div#pauseBtn {
+/*    margin-right: 5px;*/
+}
+div#playBtn {
+    float: right;
+}
