@@ -235,7 +235,7 @@ require(["jquery", "data", "Map", "util", "interpolation", "moment", "animator",
             }
             completeHandler();
         });
-        //animator.play();
+        animator.playOneFrame();
     }
     
     function updateAvDensities(rdata, win0, wind) {
