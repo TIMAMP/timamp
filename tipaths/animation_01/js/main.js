@@ -28,9 +28,9 @@ require(["jquery", "data", "Map", "util", "interpolation", "moment", "animator",
     var config = {};
     config.animStartTime = new Date(2013, 3, 6, 12, 0, 0);
     config.animEndTime = new Date(2013, 3, 11, 12, 5, 0);
-    config.flowDuration = 60; // minutes
+    config.flowDuration = 120; // minutes
     config.framesPerWindow = 4;
-    config.fps = 18;
+    config.fps = 12;
     config.altitudes = [0.3, 0.5, 0.7, 0.9, 1.1, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1, 3.3, 3.5, 3.7, 3.9];
     config.maxDensity = 3200;
     config.altiHueMin = 0.5;
@@ -42,7 +42,7 @@ require(["jquery", "data", "Map", "util", "interpolation", "moment", "animator",
     config.sunriseTimes = [[7, 11], [6, 58]];
     config.sunsetTimes = [[20, 21], [20, 31]];
     
-    var maxPathCnt = config.maxDensity / config.altitudes.length / 4 / 2;
+    var maxPathCnt = config.maxDensity / config.altitudes.length / 20;
     var drawing = false;
     var ras = [];   // random angles for flowline positions
     var rds = [];   // random distances for flowline positions
@@ -180,11 +180,9 @@ require(["jquery", "data", "Map", "util", "interpolation", "moment", "animator",
         }
         
         function updateFri(mouseX) {
-            var tmp = util.constrain(mouseX - 4, 0, 184);
-            nextFri = Math.round(util.map(tmp, 0, 184, friStart, friEnd));
-            if (animator.paused()) {
-                animator.playOneFrame();
-            }
+            var tmp = util.constrain(mouseX - 2, 0, 186);
+            nextFri = Math.round(util.map(tmp, 0, 186, friStart, friEnd));
+            if (animator.paused()) { animator.playOneFrame(); }
         }
         
         $(".playerDiv").click(function (ev) {
@@ -225,8 +223,11 @@ require(["jquery", "data", "Map", "util", "interpolation", "moment", "animator",
             drawMap(rdata, ctx);
             drawDate(flowFrom, 15, 15, 90, 25, ctx);
             drawClock(flowFrom, 60, 100, 45, ctx);
-            drawSundial(flowFrom, 60, 205, 45, ctx);
-            updatePlayHead(fri, friStart, friEnd);
+            drawSunClock(flowFrom, 60, 205, 45, ctx);
+            
+            // updatePlayHead(fri, friStart, friEnd);
+            $(".playHead").width(util.map(fri, friStart, friEnd, 1, 188));
+            
             drawPaths(rdata, fri, frpfl / 2, ctx);
             
             if (++fri >= friEnd) {
@@ -528,7 +529,7 @@ require(["jquery", "data", "Map", "util", "interpolation", "moment", "animator",
      * @param {[[Type]]} radi [[Description]]
      * @param {CanvasRenderingContext2D}    ctx  [[Description]]
      */
-    function drawSundial(time, mx, my, radi, ctx) {
+    function drawSunClock(time, mx, my, radi, ctx) {
         // The current time in minutes from midnight (24h = 1440 min):
         var min = time.getHours() * 60 + time.getMinutes();
         
@@ -565,12 +566,6 @@ require(["jquery", "data", "Map", "util", "interpolation", "moment", "animator",
         ctx.beginPath();
         ctx.arc(mx, my, radi * 1.05, 0, Math.PI);
         ctx.fill();
-    }
-    
-    // -----------------------------------------------------------------------------
-    
-    function updatePlayHead(fri, friStart, friEnd) {
-        $(".playHead").width(util.map(fri, friStart, friEnd, 2, 186));
     }
     
     // -----------------------------------------------------------------------------
