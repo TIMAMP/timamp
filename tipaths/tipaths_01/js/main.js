@@ -306,7 +306,7 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
             }
             handler();
         }
-        img.src = "images/basemap_01.png";
+        img.src = "../images/basemap_01.png";
     }
     
     function drawPaths(canvas, rdata) {

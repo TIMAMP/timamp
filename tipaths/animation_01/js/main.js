@@ -99,7 +99,7 @@ require(["jquery", "data", "Map", "util", "interpolation", "moment", "animator",
                 drawLoop(rdata);
             });
         }
-        mapImg.src = "images/basemap_01.png";
+        mapImg.src = "../images/basemap_01.png";
     }
     
     function expandData(rdata) {
