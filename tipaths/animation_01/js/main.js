@@ -28,12 +28,12 @@ require(["jquery", "data", "Map", "util", "moment", "animator", "stats"],
     var framesPerWindow = 4;
     var fps = 12;
     var altitudes = [0.3, 0.5, 0.7, 0.9, 1.1, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1, 3.3, 3.5, 3.7, 3.9];
-    var maxDensity = 288;
+    var maxDensity = 2880;
     var altiHueMin = 0.5;
     var altiHueMax = 1;
     var altiSaturation = 0.8;
     var altiBrightness = 0.8;
-    var maxPathCnt = 1;
+    var maxPathCnt = 2.5;
     var ras = [];   // random angles for flowline positions
     var rds = [];   // random distances for flowline positions
     var mapImg;     // the basemap image
@@ -327,6 +327,7 @@ require(["jquery", "data", "Map", "util", "moment", "animator", "stats"],
                 
                 // for each path:
                 pathn = util.map(densities[radi], 0, maxDensity, 0, maxPathCnt);
+                //console.log(densities[radi] + " - " + pathn);
                 for (pathi = 0; pathi < pathn; pathi++) {
                     pa = ras[alti][pathi];
                     pd = rds[alti][pathi];
