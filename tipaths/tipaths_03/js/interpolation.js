@@ -82,6 +82,13 @@ define(["kriging"], function (kriging) {
         for (i = 0; i < len; i++) {
             dx = x - xValues[i];
             dy = y - yValues[i];
+            if (dx === 0 && dy ===0) {
+                console.log("IDW: dx=0 & dy=0 : x: " + x + ", y: " + y + ", tValues: [" + tValues + "], xValues: [" + xValues + "], yValues: [" + yValues + "], power: " + power + ", i: " + i + ", dx: " + dx + ", dy: " + dy + ", wi: " + wi + ", r: " + r + ", ws: " + ws);
+//                return tValues[i];
+            }
+            if (dx === 0) {
+                throw new Error("The given x (" + x + ") equals the " + i + "-th value in the given x-positions");
+            }
             wi = 1 / Math.pow(Math.sqrt(dx * dx + dy * dy), power);
             r += wi * tValues[i];
             ws += wi;

@@ -19,54 +19,39 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
     "use strict";
     
     // Configuration settings that do not change:
-    var config = {
-        loadLocal : false,
-        altitudes : [0.3, 1.1, 2.1, 3.1],
-        maxDensity : 3200,
-        maxPathCnt : undefined,
-        altiHueMin : 0.5,
-        altiHueMax : 1,
-        altiSaturation : 0.8,
-        altiBrightness : 0.8
-    };
-    config.maxPathCnt = config.maxDensity / config.altitudes.length / 4;
+    var loadLocal = false;
+    var altitudes = [0.3, 1.1, 2.1, 3.1];
+    var maxDensity = 288;
+    var maxPathCnt = 200;
+    var altiHueMin = 0.5;
+    var altiHueMax = 1;
+    var altiSaturation = 0.8;
+    var altiBrightness = 0.8;
     
-    var map,
-        canvas,
-        r100, r50;
+    var map;
+    var canvas;
+    var r100, r50;
     
     function init() {
         canvas = $("#canvas");
-        data.loadRadars(function () {
-            map = new Map(700);
-            //console.log("- map.width: " + map.width);
-            canvas.attr({
-                width: map.width,
-                height: map.height
-            });
-            r100 = map.dmxToPxl(100000); // 100 km
-            r50 = map.dmxToPxl(50000); // 50 km
-
-            $("#input_days").change(redraw);
-            $("#input_hours").change(redraw);
-            $("#input_minutes").change(redraw);
-            $("#input_duration").change(redraw);
-            
-            redraw();
-        });
-        drawLegend();
-    }
-    
-    function drawLegend() {
-        var alti, altn = config.altitudes.length,
-            lac = $(".legend_altiColor"),
-            hue;
         
-        for (alti = 0; alti < altn; alti++) {
-            hue = util.map(alti, 0, altn, config.altiHueMin, config.altiHueMax);
-            lac.append("<div class='legend_altiColor_segment'"
-                       + " style='background: " + util.hsvToHex(hue, config.altiSaturation, config.altiBrightness) + "'></div>");
-        }
+        map = new Map(700);
+        //console.log("- map.width: " + map.width);
+        canvas.attr({
+            width: map.width,
+            height: map.height
+        });
+        r100 = map.dmxToPxl(100000); // 100 km
+        r50 = map.dmxToPxl(50000); // 50 km
+        
+        $("#input_days").change(redraw);
+        $("#input_hours").change(redraw);
+        $("#input_minutes").change(redraw);
+        $("#input_duration").change(redraw);
+        data.loadRadars(redraw);
+        
+        drawLegend();
+        //data.printSpecifics_01();
     }
     
     function redraw() {
@@ -123,7 +108,7 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
             });
         }
         
-        if (config.loadLocal) {
+        if (loadLocal) {
             loadLocalJSON("../data_prepro/data/enram-data-2013-04-05.json", proceed);
         }
         else {
@@ -138,7 +123,7 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
                 windowCount: windowCount,
                 deltaStartTime : undefined /* the duration of one step in minutes */ ,
                 radars : [],
-                altitudes : config.altitudes,
+                altitudes : altitudes,
                 xPositions : [],
                 yPositions : [],
                 densities : [],
@@ -339,7 +324,7 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         for (alti = 0; alti < altn; alti++) {
             //densities = rdata.densities[win0][alti];
             densities = rdata.avDensities[alti];
-            hue = util.map(alti, 0, altn, config.altiHueMin, config.altiHueMax);
+            hue = util.map(alti, 0, altn, altiHueMin, altiHueMax);
             
             // for each radar:
             for (radi = 0; radi < radn; radi++) {
@@ -347,7 +332,7 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
                 rady = rdata.yPositions[radi];
                 
                 // for each path:
-                pathn = util.map(densities[radi], 0, config.maxDensity, 0, config.maxPathCnt);
+                pathn = util.map(densities[radi], 0, maxDensity, 0, maxPathCnt);
                 for (pathi = 0; pathi < pathn; pathi++) {
                     //pa += .2 + Math.random();
                     pa = Math.random() * Math.PI * 2;
@@ -370,7 +355,7 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
                         dy = idw(px, py, vSpeeds, xps, yps, 2) * pspm;
                         
                         alpha = util.map(wini, 0, winn - 1, 0.6, 0.9);
-                        ctx.strokeStyle = util.hsvaToRgba(hue, config.altiSaturation, config.altiBrightness, alpha);
+                        ctx.strokeStyle = util.hsvaToRgba(hue, altiSaturation, altiBrightness, alpha);
                         ctx.beginPath();
                         ctx.moveTo(px, py);
                         px += dx;
@@ -393,6 +378,22 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
             }
         }
     }
+    
+    // -----------------------------------------------------------------------------
+    
+    function drawLegend() {
+        var alti, altn = altitudes.length,
+            lac = $(".legend_altiColor"),
+            hue;
+        
+        for (alti = 0; alti < altn; alti++) {
+            hue = util.map(alti, 0, altn, altiHueMin, altiHueMax);
+            lac.append("<div class='legend_altiColor_segment'"
+                       + " style='background: " + util.hsvToHex(hue, altiSaturation, altiBrightness) + "'></div>");
+        }
+    }
+    
+    // -----------------------------------------------------------------------------
     
     init();
 });

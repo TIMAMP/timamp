@@ -21,14 +21,15 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
     // Configuration settings that do not change:
     var config = {
         loadLocal : false,
-        altitudes : [0.3, 0.5, 0.7, 0.9, 1.1, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1 , 3.3, 3.5, 3.7, 3.9],
-        maxDensity : 288,
-        maxPathCnt : 50,
+        altitudes : [0.3, 1.1, 2.1, 3.1],
+        maxDensity : 3200,
+        maxPathCnt : undefined,
         altiHueMin : 0.5,
         altiHueMax : 1,
         altiSaturation : 0.8,
         altiBrightness : 0.8
     };
+    config.maxPathCnt = config.maxDensity / config.altitudes.length / 4;
     
     var map,
         canvas,
@@ -113,7 +114,7 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         $("#input_hours").val(hours);
         $("#input_minutes").val(minutes);
         
-        var pathLen = parseInt($("#input_duration").val()) * 3;
+        var windowCount = parseInt($("#input_duration").val()) * 3;
         var from = new Date(2013, 3, days, hours, minutes);
         
         function proceed(rdata) {
@@ -123,18 +124,18 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         }
         
         if (config.loadLocal) {
-            //loadLocalJSON("../data_prepro/data/enram-data-2013-04-05.json", proceed);
+            loadLocalJSON("../data_prepro/data/enram-data-2013-04-05.json", proceed);
         }
         else {
-            loadFromCartoDB(from, pathLen, proceed);
+            loadFromCartoDB(from, windowCount, proceed);
         }
     }
     
-    function loadFromCartoDB(from, pathLen, handler) {
+    function loadFromCartoDB(from, windowCount, handler) {
         var rdata = {
                 startTime: from,
                 windowDuration : 20 /* the duration of a window in minutes */,
-                pathLen: pathLen,
+                windowCount: windowCount,
                 deltaStartTime : undefined /* the duration of one step in minutes */ ,
                 radars : [],
                 altitudes : config.altitudes,
@@ -154,8 +155,8 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
         rdata.radars.sort();
         initRadarMapData(rdata);
         rdata.deltaStartTime = rdata.windowDuration;
-        console.log("Loading from " + from + " for one windows of " + rdata.windowDuration + " minutes each.");
-        data.loadData_3(from, rdata.windowDuration, 0.3, 3.9, function (json) {
+        console.log("Loading from " + from + " for " + rdata.windowCount + " windows of " + rdata.windowDuration + " minutes each.");
+        data.loadData_1(from, rdata.windowDuration, rdata.windowCount, 0.3, 3.9, function (json) {
             processData(json, rdata);
             handler(rdata);
         });
@@ -168,37 +169,82 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
      */
     function processData(json, rdata) {
         //console.log(JSON.stringify(json));
-        var alti, altn = rdata.altitudes.length,
+        var wini, winn = rdata.windowCount,
+            alti, altn = rdata.altitudes.length,
             rowi, rown = json.total_rows,
             row,
             radi, radn = rdata.radars.length,
             radar,
-            densities = [],
-            uSpeeds = [],
-            vSpeeds = [],
-            speeds = [];
+            densities,
+            uSpeeds,
+            vSpeeds,
+            speeds,
+            dsum, avds;
         
-        for (alti = 0; alti < altn; alti++) {
-            densities.push(util.zeroArray(radn));
-            uSpeeds.push(util.zeroArray(radn));
-            vSpeeds.push(util.zeroArray(radn));
-            speeds.push(util.zeroArray(radn));
+        // Prepare the data structure:
+        for (wini = 0; wini < winn; wini++) {
+            densities = [];
+            uSpeeds = [];
+            vSpeeds = [];
+            speeds = [];
+            for (alti = 0; alti < altn; alti++) {
+                densities.push(util.zeroArray(radn));
+                uSpeeds.push(util.zeroArray(radn));
+                vSpeeds.push(util.zeroArray(radn));
+                speeds.push(util.zeroArray(radn));
+            }
+            rdata.densities.push(densities);
+            rdata.uSpeeds.push(uSpeeds);
+            rdata.vSpeeds.push(vSpeeds);
+            rdata.speeds.push(speeds);
         }
-        rdata.densities = densities;
-        rdata.uSpeeds = uSpeeds;
-        rdata.vSpeeds = vSpeeds;
-        rdata.speeds = speeds;
         
         // Fill the data structure with the given data:
         for (rowi = 0; rowi < rown; rowi++) {
             row = json.rows[rowi];
-            alti = ((row.altitude * 10) - 3) / 2;
+            wini = row.window_idx;
+            alti = row.altitude_idx;
             radi = rdata.radarIndices[row.radar_id];
-            densities[alti][radi] = row.bird_density;
-            uSpeeds[alti][radi] = row.u_speed;
-            vSpeeds[alti][radi] = row.v_speed;
-            speeds[alti][radi] = row.speed;
+            rdata.densities[wini][alti][radi] = row.bird_density;
+            rdata.uSpeeds[wini][alti][radi] = row.u_speed;
+            rdata.vSpeeds[wini][alti][radi] = row.v_speed;
+            rdata.speeds[wini][alti][radi] = row.speed;
         }
+        
+        // Add average densities per radar-altitude combination:
+        rdata.avDensities = [];
+        for (alti = 0; alti < altn; alti++) {
+            avds = [];
+            for (radi = 0; radi < radn; radi++) {
+                dsum = 0;
+                for (wini = 0; wini < winn; wini++) {
+                    dsum += rdata.densities[wini][alti][radi];
+                }
+                avds[radi] = dsum / winn;
+            }
+            rdata.avDensities.push(avds);
+        }
+    }
+    
+    /**
+     * Loads data from a local JSON file.
+     * ! This method is currently not fully operational.
+     * @param {String}   path    The path to the JSON file.
+     * @param {Function} handler The handler that is called when the data is loaded.
+     */
+    function loadLocalJSON(path, handler) {
+        console.log(">> loading data at " + path);
+        $.getJSON(path, function(json) {
+            //console.log(json);
+            var rdata = json,
+                radi, radn = data.radars.length,
+                ri, rp;
+            
+            // Create mapping from radar_ids to indices:
+            initRadarMapData(rdata);
+            
+            handler(rdata);
+        });
     }
     
     /**
@@ -264,10 +310,11 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
     }
     
     function drawPaths(canvas, rdata) {
-        var alti, altn = rdata.altitudes.length,
+        var win0 = 0,
+            wini, winn = rdata.windowCount,
+            alti, altn = rdata.altitudes.length,
             radi, radn = rdata.radars.length,
             pathi, pathn,
-            pari, parn = rdata.pathLen,
             densities, uSpeeds, vSpeeds,
             hue,
             radx, rady,
@@ -284,11 +331,14 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
 //                    + " - map.dmxToPxl(1): " + map.dmxToPxl(1) 
 //                    + " - rdata.deltaStartTime: " + rdata.deltaStartTime);
         
+        // the volume of the context in km3, i.e. area of circle with 100km
+        // radius by 200m:
+        var contextVolume = Math.PI * 100 * 100 / 5;
+        
         // for each altitude:
         for (alti = 0; alti < altn; alti++) {
-            densities = rdata.densities[alti];
-            uSpeeds = rdata.uSpeeds[alti];
-            vSpeeds = rdata.vSpeeds[alti];
+            //densities = rdata.densities[win0][alti];
+            densities = rdata.avDensities[alti];
             hue = util.map(alti, 0, altn, config.altiHueMin, config.altiHueMax);
             
             // for each radar:
@@ -306,13 +356,20 @@ require(["jquery", "data", "Map", "util", "interpolation"], function ($, data, M
                     px = radx + Math.cos(pa) * pd;
                     py = rady + Math.sin(pa) * pd;
                     
-                    for (pari = 0; pari < parn; pari++) {
+                    for (wini = win0; wini < winn; wini++) {
+                        //console.log("wini: " + wini + " - alti: " + alti);
+                        if (rdata.uSpeeds[wini] === undefined) { // DEBUG
+                            console.error("rdata.uSpeeds[wini] is undefined for"
+                                          + " wini: " + wini + ", alti: " + alti);
+                        }
+                        uSpeeds = rdata.uSpeeds[wini][alti];
+                        vSpeeds = rdata.vSpeeds[wini][alti];
                         
                         // d[pxl] = speed[m/s] * (duration[s] * conv[pxl/m])
                         dx = idw(px, py, uSpeeds, xps, yps, 2) * pspm;
                         dy = idw(px, py, vSpeeds, xps, yps, 2) * pspm;
                         
-                        alpha = util.map(pari, 0, parn - 1, 0.6, 0.9);
+                        alpha = util.map(wini, 0, winn - 1, 0.6, 0.9);
                         ctx.strokeStyle = util.hsvaToRgba(hue, config.altiSaturation, config.altiBrightness, alpha);
                         ctx.beginPath();
                         ctx.moveTo(px, py);

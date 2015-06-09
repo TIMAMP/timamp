@@ -28,12 +28,12 @@ require(["jquery", "data", "Map", "util", "moment", "animator", "stats"],
     var framesPerWindow = 4;
     var fps = 12;
     var altitudes = [0.3, 0.5, 0.7, 0.9, 1.1, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1, 3.3, 3.5, 3.7, 3.9];
-    var maxDensity = 288;
+    var maxDensity = 3200;
     var altiHueMin = 0.5;
     var altiHueMax = 1;
     var altiSaturation = 0.8;
     var altiBrightness = 0.8;
-    var maxPathCnt = 1;
+    var maxPathCnt = maxDensity / altitudes.length / 20;
     var ras = [];   // random angles for flowline positions
     var rds = [];   // random distances for flowline positions
     var mapImg;     // the basemap image
@@ -89,8 +89,6 @@ require(["jquery", "data", "Map", "util", "moment", "animator", "stats"],
             });
         }
         mapImg.src = "../images/basemap_01.png";
-        
-        //data.printSpecifics();
     }
     
     function expandData(rdata) {
@@ -333,6 +331,13 @@ require(["jquery", "data", "Map", "util", "moment", "animator", "stats"],
                     px0 = px = radx + Math.cos(pa) * pd;
                     py0 = py = rady + Math.sin(pa) * pd;
                     winn = win0 - wind;
+
+                    //ctx.fillStyle = "rbga(0, 0, 0, .5)";
+                    ctx.fillStyle = util.hsvaToRgba(hue, 0.8, 0.6, 0.5);
+                    ctx.beginPath();
+                    ctx.arc(px, py, 1.5, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
                     for (wini = win0 - 1; wini >= winn; wini--) {
                         //console.log("wini: " + wini + " - alti: " + alti);
                         if (rdata.uSpeeds[wini] === undefined) { // DEBUG
@@ -352,34 +357,6 @@ require(["jquery", "data", "Map", "util", "moment", "animator", "stats"],
                         ctx.lineTo(px, py);
                         ctx.stroke();
                     }
-                    winn = win0 + wind;
-                    px = px0;
-                    py = py0;
-                    for (wini = win0; wini < winn; wini++) {
-                        //console.log("wini: " + wini + " - alti: " + alti);
-                        if (rdata.uSpeeds[wini] === undefined) { // DEBUG
-                            console.error("rdata.uSpeeds[wini] is undefined for"
-                                          + " wini: " + wini + ", alti: " + alti);
-                        }
-                        uSpeeds = rdata.uSpeeds[wini][alti];
-                        vSpeeds = rdata.vSpeeds[wini][alti];
-                        dx = idw(px, py, uSpeeds, xps, yps, 2) * pspm;
-                        dy = idw(px, py, vSpeeds, xps, yps, 2) * pspm;
-//                        alpha = util.map(wini, 0, winn - 1, 0.6, 0.9);
-                        ctx.strokeStyle = util.hsvaToRgba(hue, asat, abri, 0.9);
-                        ctx.beginPath();
-                        ctx.moveTo(px, py);
-                        px += dx;
-                        py -= dy;
-                        ctx.lineTo(px, py);
-                        ctx.stroke();
-                    }
-
-                    //ctx.fillStyle = "rbga(0, 0, 0, .5)";
-                    ctx.fillStyle = util.hsvaToRgba(hue, 0.8, 0.6, 0.5);
-                    ctx.beginPath();
-                    ctx.arc(px, py, 1.5, 0, 2 * Math.PI);
-                    ctx.fill();
                 }
             }
         }

@@ -103,6 +103,9 @@ small {
     font-size: 75%;
     text-align: center;
 }
+button#button_stop {
+    font-size: 100%;
+}
 
 /*** LEGEND ***/
 
@@ -136,4 +139,41 @@ div.legend_altiColor_annot_b {
 div.legend_altiColor_annot_c {
     width: 50px;
     text-align: right;
+}
+
+/*** PLAYER ***/
+
+div.playerDiv {
+    box-sizing: border-box;
+    height: 16px;
+    border: 1px solid #bbb;
+    background-color: #eee;
+    cursor: pointer;
+}
+div.playHead {
+    box-sizing: border-box;
+    width: 2px;
+    height: 14px;
+    background-color: #29cccc;
+}
+div.playerButonsDiv {
+    margin-bottom: 2em;
+}
+div.button {
+    box-sizing: border-box;
+    display: inline-block;
+    width: 90px;
+    height: 22px;
+    line-height: 24px;
+    margin-top: 5px;
+    border: 1px solid #bbb;
+    background-color: #eee;
+    cursor: pointer;
+    text-align: center;
+}
+div#pauseBtn {
+/*    margin-right: 5px;*/
+}
+div#playBtn {
+    float: right;
 }

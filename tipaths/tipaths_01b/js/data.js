@@ -126,23 +126,6 @@ define(["jquery"], function ($) {
         data.cartoDB.loadData(sql, handler);
     };
     
-    data.printSpecifics_01 = function (handler) {
-        var sql = "SELECT DISTINCT altitude, radar_name, start_time, bird_density";
-        sql += " FROM bird_migration_altitude_profiles";
-        sql += " WHERE bird_density =";
-        sql += " (SELECT MAX(bird_density) FROM bird_migration_altitude_profiles)";
-        data.cartoDB.loadData(sql, function (json) {
-            //console.log("json: " + JSON.stringify(json));
-            var row = json.rows[0];
-            console.log("specifics: max bird_density: " + row.bird_density
-                        + ", radar: " + row.radar_name
-                        + ", altitude: " + row.altitude
-                        + ", start_time: " + row.start_time);
-            //printSpecifics_02(handler);
-        });
-    }
-    
-    
     // -----------------------------------------------------------------------------
     // Various:
     // -----------------------------------------------------------------------------

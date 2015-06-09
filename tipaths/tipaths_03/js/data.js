@@ -2,7 +2,7 @@
 /*jslint vars: true, plusplus: true*/
 /*global define*/
 
-define(["jquery"], function ($) {
+define(["jquery", "util"], function ($, util) {
     "use strict";
     
     // Root data object.
@@ -91,21 +91,25 @@ define(["jquery"], function ($) {
      * radar-window-altitude combination averaging the bird_density, the u_speed and
      * the v_speed. When the data is loaded, the handler function is called with
      * a JSON-object holding the data as sole argument.
-     * @param {Date}     from        The start time of the series of windows
-     * @param {Number}   winDuration The duration of a window in minutes.
-     * @param {Number}   winCount    The number of windows
-     * @param {Number}   altMin      The minimal altitude of the range.
-     * @param {Number}   altMax      The maximal altitude of the range.
-     * @param {Function} handler     The handler function.
+     * The given data object must have the following properties:
+     * - startTime: The start time of the series of windows
+     * - windowDuration: The duration of a window in minutes.
+     * - windowCount: The number of windows
+     * - altitudes: The ordered list of altitudes to include.
+     * @param {Number}   dob     The data object.
+     * @param {Function} handler The handler function.
      */
-    data.loadData_4 = function (from, winDuration, winCount, altMin, altMax, handler) {
-        var till = new Date(from.getTime() + winDuration * 60000 * winCount),
-            fromStr = data.cartoDB.toString(from),
-            tillStr = data.cartoDB.toString(till);
-        //console.log("winDuration: " + winDuration + " - winCount: " + winCount);
+    data.loadData_4 = function (dob, handler) {
+        var from = dob.startTime;
+        var till = new Date(from.getTime() + dob.windowDuration * 60000 *
+                            dob.windowCount);
+        var fromStr = data.cartoDB.toString(from);
+        var tillStr = data.cartoDB.toString(till);
+        //console.log("dob.winDuration: " + dob.winDuration);
+        //console.log("dob.winCount: " + dob.winCount);
         //console.log("from: " + from + " - till: " + till);
         var sql = "SELECT";
-        sql += " DIV(CAST(EXTRACT(EPOCH FROM start_time) - EXTRACT(EPOCH FROM TIMESTAMP '" + fromStr + "') AS NUMERIC), " + (winDuration * 60) + ") AS window_idx";
+        sql += " DIV(CAST(EXTRACT(EPOCH FROM start_time) - EXTRACT(EPOCH FROM TIMESTAMP '" + fromStr + "') AS NUMERIC), " + (dob.windowDuration * 60) + ") AS window_idx";
         sql += ", altitude, radar_id";
         sql += ", AVG(bird_density) AS bird_density";
         sql += ", AVG(u_speed) AS u_speed";
@@ -115,15 +119,83 @@ define(["jquery"], function ($) {
         // functionality:
         sql += ", SQRT(POWER(AVG(u_speed), 2) %2B POWER(AVG(v_speed), 2)) AS speed";
         sql += " FROM bird_migration_altitude_profiles";
-        sql += " WHERE altitude >= '" + altMin + "'";
-        sql += " AND altitude <= '" + altMax + "'";
+        sql += " WHERE altitude >= " + dob.altitudes[0];
+        sql += " AND altitude <= " + dob.altitudes[dob.altitudes.length - 1];
         sql += " AND radial_velocity_std >= 2";
         sql += " AND start_time >= '" + fromStr + "'";
         sql += " AND start_time < '" + tillStr + "'";
         sql += " GROUP BY window_idx, altitude, radar_id";
         sql += " ORDER BY window_idx, altitude, radar_id";
-        data.cartoDB.loadData(sql, handler);
+        //console.log(sql);
+        data.cartoDB.loadData(sql, function (json) {
+            processData(json, dob);
+            handler(dob);
+        });
     };
+    
+    /**
+     * Helper function of loadFromCartoDB().
+     * @param {Object} json The JSON-object with the loaded data.
+     * @param {Object} dob The data object in which to organise the data.
+     */
+    function processData(json, dob) {
+        //console.log(JSON.stringify(json));
+        var wini, winn = dob.windowCount,
+            alti, altn = dob.altitudes.length,
+            rowi, rown = json.total_rows,
+            row,
+            radi, radn = dob.radars.length,
+            radar,
+            densities,
+            uSpeeds,
+            vSpeeds,
+            speeds,
+            dsum, avds;
+        
+        // Prepare the data structure:
+        for (wini = 0; wini < winn; wini++) {
+            densities = [];
+            uSpeeds = [];
+            vSpeeds = [];
+            speeds = [];
+            for (alti = 0; alti < altn; alti++) {
+                densities.push(util.zeroArray(radn));
+                uSpeeds.push(util.zeroArray(radn));
+                vSpeeds.push(util.zeroArray(radn));
+                speeds.push(util.zeroArray(radn));
+            }
+            dob.densities.push(densities);
+            dob.uSpeeds.push(uSpeeds);
+            dob.vSpeeds.push(vSpeeds);
+            dob.speeds.push(speeds);
+        }
+        
+        // Fill the data structure with the given data:
+        for (rowi = 0; rowi < rown; rowi++) {
+            row = json.rows[rowi];
+            wini = row.window_idx;
+            alti = ((row.altitude * 10) - 3) / 2;
+            radi = dob.radarIndices[row.radar_id];
+            dob.densities[wini][alti][radi] = row.bird_density;
+            dob.uSpeeds[wini][alti][radi] = row.u_speed;
+            dob.vSpeeds[wini][alti][radi] = row.v_speed;
+            dob.speeds[wini][alti][radi] = row.speed;
+        }
+        
+        // Add average densities per radar-altitude combination:
+        dob.avDensities = [];
+        for (alti = 0; alti < altn; alti++) {
+            avds = [];
+            for (radi = 0; radi < radn; radi++) {
+                dsum = 0;
+                for (wini = 0; wini < winn; wini++) {
+                    dsum += dob.densities[wini][alti][radi];
+                }
+                avds[radi] = dsum / winn;
+            }
+            dob.avDensities.push(avds);
+        }
+    }
     
     // -----------------------------------------------------------------------------
     // Data Specifics:
