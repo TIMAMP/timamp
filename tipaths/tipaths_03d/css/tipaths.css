@@ -98,12 +98,24 @@ p.description {
 
 /*** SVG ***/
 
+.graticule {
+    fill: none;
+    stroke: #999;
+	stroke-width: 0.3px;
+}
+
+.radar circle {
+    fill: #ddd;
+}
+
 .land {
-    fill: #222;
+    fill: #F0F7F0;
 }
 
 .country-boundary {
     fill: none;
-    stroke: #fff;
+    stroke: #70a070;
     stroke-width: .5px;
+    stroke-dasharray: 2, 4;
+    stroke-linejoin: round;
 }

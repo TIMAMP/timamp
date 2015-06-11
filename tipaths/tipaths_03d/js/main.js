@@ -19,58 +19,12 @@ var map;
 var mapW = 720;
 var mapH = 940;
 var mapCenter = [5, 51.5];
-var mapScale = 1000; // ori: 600
+var mapScale = 6000; // ori: 600
 var r100, r50;
+var projection;
 var pathsSVGGroup;
 
 function init() {
-    $(document).foundation();
-    
-    if (!SVG.supported) {
-        alert('SVG not supported');
-        return;
-    }
-    
-    var projection = d3.geo.mercator()
-        .scale(mapScale)
-        .translate([mapW / 2, mapH / 2])
-        .center(mapCenter);
-    
-//    var projection = d3.geo.albersUsa()
-//        .scale(1000)
-//        .translate([mapW / 2, mapH / 2]);
-    
-    var path = d3.geo.path()
-        .projection(projection);
-
-    var svg = d3.select("#svg").append("svg")
-        .attr("width", mapW)
-        .attr("height", mapH);
-    
-    d3.json("data/eu.topo.json", function(error, eu) {
-        //console.log(topojson.feature(eu, eu.objects.europe));
-        
-        svg.insert("path", ".graticule")
-            .datum(topojson.feature(eu, eu.objects.europe))
-            .attr("class", "land")
-            .attr("d", path);
-
-        svg.insert("path", ".graticule")
-            .datum(topojson.mesh(eu, eu.objects.europe, function(a, b) { return true; }))
-            .attr("class", "country-boundary")
-            .attr("d", path);
-
-//      svg.insert("path", ".graticule")
-//          .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
-//          .attr("class", "state-boundary")
-//          .attr("d", path);
-    });
-
-    d3.select(self.frameElement).style("height", mapH + "px");
-}
-
-function init_2() {
-    //console.log("INIT");
     $(document).foundation();
     
     if (!SVG.supported) {
@@ -83,56 +37,72 @@ function init_2() {
 
     r100 = map.dmxToPxl(100000); // 100 km
     r50 = map.dmxToPxl(50000); // 50 km
+    
+    projection = d3.geo.mercator()
+        .scale(mapScale)
+        .translate([mapW / 2, mapH / 2])
+        .center(mapCenter);
+    
+    var path = d3.geo.path()
+        .projection(projection);
+    
+    var graticule = d3.geo.graticule()
+        .step([1, 1]);
 
-    var svgWidth = $("#svg").parent().width();
-    var svgHeight = svgWidth * mapH / mapW;
-    //console.log("svg size: " + svgWidth + " / " + svgHeight);
-    var viz = SVG('svg').size(svgWidth, svgHeight);
-    viz.viewbox(0, 0, mapW, mapH);
-    //viz.rect(mapW, mapH).fill("#ddeeff");
+    var svg = d3.select("#svg").append("svg")
+        .attr("width", mapW)
+        .attr("height", mapH);
+    
+    svg.append("path")
+        .datum(graticule)
+        .attr("class", "graticule")
+        .attr("d", path);
+    
+    d3.json("data/eu.topo.json", function(error, eu) {
+        //console.log(topojson.feature(eu, eu.objects.europe));
+        
+        svg.insert("path", ".graticule")
+            .datum(topojson.feature(eu, eu.objects.europe))
+            .attr("class", "land")
+            .attr("d", path);
 
-    $(window).on('resize', Foundation.utils.throttle(function(e) {
-        var svgWidth = $("#svg").parent().width();
-        var svgHeight = svgWidth * mapH / mapW;
-        //console.log("svg size: " + svgWidth + " / " + svgHeight);
-        viz.size(svgWidth, svgHeight);
-    }, 25));
-
-
-    $.get("images/basemap_03.svg", function (svgData) {
-        //console.log(svgData);
-        // add the map:
-        var store = viz.svg(svgData);
-        var mapSVGGroup = store.roots()[0];
-        //mapSVGGroup.scale(700 / 999);
-
+        svg.insert("path", ".graticule")
+            .datum(topojson.mesh(eu, eu.objects.europe, function(a, b) { return a !== b; }))
+            .attr("class", "country-boundary")
+            .attr("d", path);
+        
+        var legend = svg.append("g");
+        
         data.loadRadars(function() {
             data.radars.xPositions = [];
             data.radars.yPositions = [];
             var radi, radn = data.radars.length, radar, radp;
             for (radi = 0; radi < radn; radi++) {
                 radar = data.radars[radi];
-                radp = map.locToPxl(radar.coordinates[0], radar.coordinates[1]);
-                data.radars.xPositions[radi] = radp.x;
-                data.radars.yPositions[radi] = radp.y;
+                var radp = projection([radar.coordinates[0], radar.coordinates[1]]);
+//                console.log(radp[0], radp[1]);
+                data.radars.xPositions[radi] = radp[0];
+                data.radars.yPositions[radi] = radp[1];
             }
 
             // Draw radars:
-            var radarSVGG = mapSVGGroup.group();
-            radarSVGG.fill("#9090BF");
+            var radarSVGG = svg.append("g").attr("class", "radar");
             var rpx, rpy;
             for (radi = 0; radi < radn; radi++) {
                 rpx = data.radars.xPositions[radi];
                 rpy = data.radars.yPositions[radi];
-                radarSVGG.circle(5).translate(rpx, rpy);
+                radarSVGG.append('svg:circle')
+                    .attr('cx', rpx)
+                    .attr('cy', rpy)
+                    .attr('r', 3);
             }
 
-            // add the paths group:
-            pathsSVGGroup = viz.group();
+//            // add the paths group:
+            pathsSVGGroup = svg.append("g");
 
-            // draw legend:
-            var legendSVGGroup = viz.group();
-            drawLegend(legendSVGGroup);
+//            // draw legend:
+            var legendSVGGroup = svg.append("g");
+//            drawLegend(legendSVGGroup);
 
             $("#input_days").change(redraw);
             $("#input_hours").change(redraw);
@@ -141,8 +111,19 @@ function init_2() {
 
             redraw();
         });
-
-    }, 'text');
+    });
+    
+    // TODO: what does this?
+    d3.select(self.frameElement).style("height", mapH + "px");
+    
+    // TODO: fix
+    $(window).on('resize', Foundation.utils.throttle(function(e) {
+        var svgWidth = $("#svg").parent().width();
+        var svgHeight = svgWidth * mapH / mapW;
+        //console.log("svg size: " + svgWidth + " / " + svgHeight);
+        svg.size(svgWidth, svgHeight);
+    }, 25));
+    
 }
 
 function redraw() {
@@ -264,7 +245,7 @@ function drawPaths(dob) {
         densities, uSpeeds, vSpeeds,
         hue,
         radx, rady,
-        pa = 0, pd, px, py, px0, py0, dx, dy, nx, ny,
+        pa = 0, pd, px, py, px0, py0, dx, dy, nx, ny, pp, np,
         xps = data.radars.xPositions,
         yps = data.radars.yPositions,
         idw = util.idw,
@@ -273,12 +254,31 @@ function drawPaths(dob) {
         lalpha,
         lwidth = 1.5;
 
-    pathsSVGGroup.clear();
+    pathsSVGGroup.selectAll("*").remove();
 
     // pixels secs per meter, als volgt te gebruiken:
     // d[pxl] = speed[m/s] * (duration[s] * conv[pxl/m])
-    var pspm = map.dmxToPxl(1) * dob.windowDuration * 60;
-
+    //var pspm = map.dmxToPxl(1) * dob.windowDuration * 60;
+    
+    // quick and dirty estimate:
+    // - latitude: 111,111 meters (111.111 km) in the y direction is 1 degree
+    // - longitude: 111,111 * cos(latitude) meters in the x direction is 1 degree
+    // - latitude = mapCenter[1] / 180 * math.PI;
+    // source: http://gis.stackexchange.com/questions/2951/algorithm-for-offsetting-a-latitude-longitude-by-some-amount-of-meters
+    
+    // one degree longitude in meters:
+    var degToMetX = 111111 * Math.cos(mapCenter[1] / 180 * Math.PI);
+//    console.log("degToMetX: " + degToMetX);
+    var metToDegX = 1 / degToMetX;
+//    console.log("metToDegX: " + metToDegX);
+    var pspmX = metToDegX * dob.windowDuration * 60;
+    
+    // one degree latitude in meters:
+    var degToMetY = 111111;
+    var metToDegY = 1 / degToMetY;
+//    console.log("degToMetY: " + degToMetY);
+    var pspmY = metToDegY * dob.windowDuration * 60;
+    
     // the volume of the context in km3, i.e. area of circle with 100km
     // radius by 200m:
     var contextVolume = Math.PI * 100 * 100 / 5;
@@ -292,38 +292,41 @@ function drawPaths(dob) {
 
         // for each radar:
         for (radi = 0; radi < radn; radi++) {
-            radx = xps[radi];
-            rady = yps[radi];
-
+            var radar = data.radars[radi];
+            // var radp = projection([radar.coordinates[0], radar.coordinates[1]]);
+            radx = radar.coordinates[0];
+            rady = radar.coordinates[1];
+            
             // for each path:
-            var pathGr = pathsSVGGroup.group();
-            var lcolor = util.hsvToRgb(hue, asat, abri)
-            pathGr.stroke({
-                color: lcolor,
-                opacity: 0.9
-            });
+            var lcolor = util.hsvToHex(hue, asat, abri)
+            var pathGr = pathsSVGGroup.append("g");
 
             pathn = util.map(densities[radi], 0, maxDensity, 0, maxPathCnt);
             for (pathi = 0; pathi < pathn; pathi++) {
+                //console.log("> pathi: " + pathi + " - alti: " + alti);
                 pa = Math.random() * Math.PI * 2;
                 //pd = util.map(pathi, 0, pathn, 2, r100);
-                pd = Math.random() * r100;
+                pd = Math.random() * 50000 * metToDegX;
                 px0 = px = radx + Math.cos(pa) * pd;
                 py0 = py = rady + Math.sin(pa) * pd;
+                pp = projection([px, py]);
 
                 for (wini = half - 1; wini >= 0; wini--) {
-                    //console.log("wini: " + wini + " - alti: " + alti);
+                    //console.log("  > wini: " + wini + " - alti: " + alti);
                     if (dob.uSpeeds[wini] === undefined) { // DEBUG
                         console.error("dob.uSpeeds[wini] is undefined for"
                                       + " wini: " + wini + ", alti: " + alti);
                     }
                     uSpeeds = dob.uSpeeds[wini][alti];
                     vSpeeds = dob.vSpeeds[wini][alti];
-                    dx = idw(px, py, uSpeeds, xps, yps, 2) * pspm;
-                    dy = idw(px, py, vSpeeds, xps, yps, 2) * pspm;
-                    nx = px - dx;
+                    dx = idw(px, py, uSpeeds, xps, yps, 2) * pspmX;
+                    dy = idw(px, py, vSpeeds, xps, yps, 2) * pspmY;
+                    
+                    nx = px + dx;
                     ny = py + dy;
-
+                    
+                    np = projection([nx, ny]);
+                    //console.log("    nx: " + nx + ", ny: " + ny + ", dx: " + nx + ", dy: " + ny + ", np: " + np);
 
                     if (isNaN(px) || isNaN(dx)) {
                         console.log("wini: " + wini);
@@ -347,17 +350,21 @@ function drawPaths(dob) {
 
                     lalpha = util.map(wini, half - 1, 0, 0.9, 0.3);
                     lwidth = util.map(wini, half - 1, 0, 1.5, 1);
-                    pathGr.line(px, py, nx, ny).stroke({
-                        color: lcolor,
-                        opacity: lalpha,
-                        width: lwidth
-                    });
+                    pathGr.append("line")
+                        .attr("x1", pp[0]).attr("y1", pp[1])
+                        .attr("x2", np[0]).attr("y2", np[1])
+                        .attr("style", "stroke:" + lcolor +
+                              ";stroke-width:" + lwidth +
+                              ";opacity:" + lalpha);
                     px = nx;
                     py = ny;
+                    pp = np;
                 }
+                
                 px = px0;
                 py = py0;
-                var path = [[px, py]];
+                pp = projection([px, py]);
+                var points = "" + pp[0] + "," + pp[1];
                 for (wini = half; wini < wind; wini++) {
                     //console.log("wini: " + wini + " - alti: " + alti);
                     if (dob.uSpeeds[wini] === undefined) { // DEBUG
@@ -366,25 +373,24 @@ function drawPaths(dob) {
                     }
                     uSpeeds = dob.uSpeeds[wini][alti];
                     vSpeeds = dob.vSpeeds[wini][alti];
-                    dx = idw(px, py, uSpeeds, xps, yps, 2) * pspm;
-                    dy = idw(px, py, vSpeeds, xps, yps, 2) * pspm;
+                    dx = idw(px, py, uSpeeds, xps, yps, 2) * pspmX;
+                    dy = idw(px, py, vSpeeds, xps, yps, 2) * pspmY;
 
-                    px += dx;
+                    px -= dx;
                     py -= dy;
-                    path.push([px, py]);
+                    np = projection([px, py]);
+                    points += " " + np[0] + "," + np[1];
                 }
-                pathGr.polyline(path)
-                    .fill('none')
-                    .stroke({
-                        color: lcolor,
-                        opacity: 1,
-                        width: 1.5
-                    });
-
-                pathGr.circle(2).translate(px - 1, py - 1).fill({
-                    color: util.hsvToRgb(hue, 0.8, 0.6),
-                    opacity: 0.5
-                });
+                pathGr.append("polyline")
+                    .attr("points", points)
+                    .attr("style", "stroke:" + lcolor +
+                          ";fill:none;stroke-width:1.5;opacity:" + 1);
+                pathGr.append('svg:circle')
+                    .attr('cx', np[0])
+                    .attr('cy', np[1])
+                    .attr('r', 2)
+                    .attr("style", "fill:" + util.hsvToHex(hue, 0.8, 0.6)
+                         + ";opacity:0.5");
             }
         }
     }
