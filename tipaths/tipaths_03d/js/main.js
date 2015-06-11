@@ -19,7 +19,7 @@ var map;
 var mapW = 720;
 var mapH = 940;
 var mapCenter = [5, 51.5];
-var mapScale = 6000; // ori: 600
+var mapScale = 6000;
 var r100, r50;
 var projection;
 var pathsSVGGroup;
@@ -102,7 +102,7 @@ function init() {
 
 //            // draw legend:
             var legendSVGGroup = svg.append("g");
-//            drawLegend(legendSVGGroup);
+            drawLegend(legendSVGGroup);
 
             $("#input_days").change(redraw);
             $("#input_hours").change(redraw);
@@ -405,28 +405,44 @@ function drawLegend(legendSVGGroup) {
     var legendW = 200;
     var legendH = 16;
 
-    var markerG = legendSVGGroup.group();
+    var markerGr = legendSVGGroup.append("g");
     var tx0 = 20;
     var tx = tx0;
     var td = 6;
     var ty = mapH - 20 - legendH - 3 - td - 24
-    markerG.font({ family: 'Helvetica', size: 14 });
-    markerG.text("200m").translate(tx0, ty);
-    markerG.text("2000m")
-        .translate(tx0 + legendW / 2, ty)
-        .font({anchor: 'middle'});
-    markerG.text("4000m")
-        .translate(tx0 + legendW, ty)
-        .font({anchor: 'end'});
+//    markerGr.font({ family: 'Helvetica', size: 14 });
+//    markerGr.text("200m").translate(tx0, ty);
+//    markerGr.text("2000m")
+//        .translate(tx0 + legendW / 2, ty)
+//        .font({anchor: 'middle'});
+//    markerGr.text("4000m")
+//        .translate(tx0 + legendW, ty)
+//        .font({anchor: 'end'});
 
     ty = mapH - 20 - legendH - 3 - td;
-    markerG.fill("#555");
-    markerG.polygon([[tx, ty], [tx + td, ty], [tx, ty + td]]);
+    var points = tx + "," + ty;
+    points += " " + (tx + td)  + "," +  ty;
+    points += " " + tx + "," + (ty + td);
+    markerGr.append("polygon")
+        .attr("points", points)
+        .attr("style", "fill:#555;");
+    
     tx = tx0 + legendW;
-    markerG.polygon([[tx, ty], [tx - td, ty], [tx, ty + td]]);
+    points = tx + "," + ty;
+    points += " " + (tx - td)  + "," +  ty;
+    points += " " + tx + "," + (ty + td);
+    markerGr.append("polygon")
+        .attr("points", points)
+        .attr("style", "fill:#555;");
+    
     tx = tx0 + legendW / 2;
     td = 5
-    markerG.polygon([[tx - td, ty], [tx + td, ty], [tx, ty + td]]);
+    points = (tx - td) + "," + ty;
+    points += " " + (tx + td)  + "," +  ty;
+    points += " " + tx + "," + (ty + td);
+    markerGr.append("polygon")
+        .attr("points", points)
+        .attr("style", "fill:#555;");
 
     tx = 20;
     ty = mapH - 20 - legendH;
@@ -436,7 +452,12 @@ function drawLegend(legendSVGGroup) {
     for (alti = 0; alti < altn; alti++) {
         hue = util.map(alti, 0, altn, altiHueMin, altiHueMax);
         hex = util.hsvToHex(hue, altiSaturation, altiBrightness);
-        legendSVGGroup.rect(Math.ceil(dx), legendH).translate(tx, ty).fill(hex);
+        legendSVGGroup.append("rect")
+            .attr("x", tx)
+            .attr("y", ty)
+            .attr("width", Math.ceil(dx))
+            .attr("height", legendH)
+            .attr("style", "fill:" + hex + ";");
         tx += dx;
     }
 }

@@ -17,7 +17,7 @@
 var EUConfig = {};
 EUConfig.radarsPath = "data/eu.radars.geo.json";
 EUConfig.altitudes = [0.3, 0.5, 0.7, 0.9, 1.1, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1, 3.3, 3.5, 3.7, 3.9];
-EUConfig.mapCenter = [-73.02, 42.48];
+EUConfig.mapCenter = [5, 51.5];
 EUConfig.mapScale = 6000;
 EUConfig.dataFromYear = 2013;
 EUConfig.dataFromMonth = 3;
@@ -359,8 +359,8 @@ function drawPaths(dob) {
                     dx = idw(px, py, uSpeeds, xps, yps, 2) * pspmX;
                     dy = idw(px, py, vSpeeds, xps, yps, 2) * pspmY;
                     
-                    nx = px + dx;
-                    ny = py + dy;
+                    nx = px - dx;
+                    ny = py - dy;
                     
                     np = projection([nx, ny]);
                     //console.log("    nx: " + nx + ", ny: " + ny + ", dx: " + nx + ", dy: " + ny + ", np: " + np);
@@ -413,8 +413,8 @@ function drawPaths(dob) {
                     dx = idw(px, py, uSpeeds, xps, yps, 2) * pspmX;
                     dy = idw(px, py, vSpeeds, xps, yps, 2) * pspmY;
 
-                    px -= dx;
-                    py -= dy;
+                    px += dx;
+                    py += dy;
                     np = projection([px, py]);
                     points += " " + np[0] + "," + np[1];
                 }
@@ -454,8 +454,6 @@ function drawLegend(legendSVGGroup) {
 //        .font({anchor: 'end'});
 
     ty = mapH - 20 - legendH - 3 - td;
-//    markerGr.fill("#555");
-//    markerGr.polygon([[tx, ty], [tx + td, ty], [tx, ty + td]]);
     var points = tx + "," + ty;
     points += " " + (tx + td)  + "," +  ty;
     points += " " + tx + "," + (ty + td);
@@ -464,7 +462,6 @@ function drawLegend(legendSVGGroup) {
         .attr("style", "fill:#555;");
     
     tx = tx0 + legendW;
-//    markerGr.polygon([[tx, ty], [tx - td, ty], [tx, ty + td]]);
     points = tx + "," + ty;
     points += " " + (tx - td)  + "," +  ty;
     points += " " + tx + "," + (ty + td);
@@ -474,7 +471,6 @@ function drawLegend(legendSVGGroup) {
     
     tx = tx0 + legendW / 2;
     td = 5
-//    markerGr.polygon([[tx - td, ty], [tx + td, ty], [tx, ty + td]]);
     points = (tx - td) + "," + ty;
     points += " " + (tx + td)  + "," +  ty;
     points += " " + tx + "," + (ty + td);
@@ -490,7 +486,6 @@ function drawLegend(legendSVGGroup) {
     for (alti = 0; alti < altn; alti++) {
         hue = util.map(alti, 0, altn, altiHueMin, altiHueMax);
         hex = util.hsvToHex(hue, altiSaturation, altiBrightness);
-//        legendSVGGroup.rect(Math.ceil(dx), legendH).translate(tx, ty).fill(hex);
         legendSVGGroup.append("rect")
             .attr("x", tx)
             .attr("y", ty)
