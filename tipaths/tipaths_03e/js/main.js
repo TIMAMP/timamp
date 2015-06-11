@@ -17,9 +17,9 @@ var altiBrightness = 0.8;
 var maxPathCnt = maxDensity / altitudes.length;
 var map;
 var mapW = 720;
-var mapH = 940;
-var mapCenter = [5, 51.5];
-var mapScale = 6000; // ori: 600
+var mapH = 500;
+var mapCenter = [ -77.02, 38.88];
+var mapScale = 800; // ori: 600
 var r100, r50;
 var projection;
 var pathsSVGGroup;
@@ -58,16 +58,17 @@ function init() {
         .attr("class", "graticule")
         .attr("d", path);
     
-    d3.json("data/eu.topo.json", function(error, eu) {
-        //console.log(topojson.feature(eu, eu.objects.europe));
+    d3.json("data/us.topo.json", function(error, us) {
+        console.dir(us.objects);
+        console.log(topojson.feature(us, us.objects.land));
         
         svg.insert("path", ".graticule")
-            .datum(topojson.feature(eu, eu.objects.europe))
+            .datum(topojson.feature(us, us.objects.land))
             .attr("class", "land")
             .attr("d", path);
 
         svg.insert("path", ".graticule")
-            .datum(topojson.mesh(eu, eu.objects.europe, function(a, b) { return a !== b; }))
+            .datum(topojson.mesh(us, us.objects.land, function(a, b) { return a !== b; }))
             .attr("class", "country-boundary")
             .attr("d", path);
         

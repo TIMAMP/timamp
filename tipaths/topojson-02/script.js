@@ -14,7 +14,8 @@ var topo = {
     },
     us: {
         src: "us.topo.json",
-        object: "land" //"states"
+        object: "land", //"states",
+        center: [38.88, 77.02]
     }
 };
 var activeTopo = topo.us;
