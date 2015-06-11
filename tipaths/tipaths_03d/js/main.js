@@ -124,6 +124,9 @@ function init() {
         svg.size(svgWidth, svgHeight);
     }, 25));
     
+    printSpecifics_01();
+    printSpecifics_01b();
+    printSpecifics_01c();
 }
 
 function redraw() {
@@ -322,8 +325,8 @@ function drawPaths(dob) {
                     dx = idw(px, py, uSpeeds, xps, yps, 2) * pspmX;
                     dy = idw(px, py, vSpeeds, xps, yps, 2) * pspmY;
                     
-                    nx = px + dx;
-                    ny = py + dy;
+                    nx = px - dx;
+                    ny = py - dy;
                     
                     np = projection([nx, ny]);
                     //console.log("    nx: " + nx + ", ny: " + ny + ", dx: " + nx + ", dy: " + ny + ", np: " + np);
@@ -376,8 +379,8 @@ function drawPaths(dob) {
                     dx = idw(px, py, uSpeeds, xps, yps, 2) * pspmX;
                     dy = idw(px, py, vSpeeds, xps, yps, 2) * pspmY;
 
-                    px -= dx;
-                    py -= dy;
+                    px += dx;
+                    py += dy;
                     np = projection([px, py]);
                     points += " " + np[0] + "," + np[1];
                 }

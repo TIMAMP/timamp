@@ -262,7 +262,39 @@ function printSpecifics_01(handler) {
                     + ", radar: " + row.radar_name
                     + ", altitude: " + row.altitude
                     + ", start_time: " + row.start_time);
-        printSpecifics_02(handler);
+        //printSpecifics_01b(handler);
+    });
+}
+
+function printSpecifics_01b(handler) {
+    var sql = "SELECT DISTINCT altitude, radar_name, start_time, u_speed";
+    sql += " FROM bird_migration_altitude_profiles";
+    sql += " WHERE u_speed =";
+    sql += " (SELECT MAX(u_speed) FROM bird_migration_altitude_profiles)";
+    data.cartoDB.loadData(sql, function (json) {
+        //console.log("json: " + JSON.stringify(json));
+        var row = json.rows[0];
+        console.log("specifics: max u_speed: " + row.u_speed
+                    + ", radar: " + row.radar_name
+                    + ", altitude: " + row.altitude
+                    + ", start_time: " + row.start_time);
+        //printSpecifics_01c(handler);
+    });
+}
+
+function printSpecifics_01c(handler) {
+    var sql = "SELECT DISTINCT altitude, radar_name, start_time, v_speed";
+    sql += " FROM bird_migration_altitude_profiles";
+    sql += " WHERE v_speed =";
+    sql += " (SELECT MAX(v_speed) FROM bird_migration_altitude_profiles)";
+    data.cartoDB.loadData(sql, function (json) {
+        //console.log("json: " + JSON.stringify(json));
+        var row = json.rows[0];
+        console.log("specifics: max v_speed: " + row.v_speed
+                    + ", radar: " + row.radar_name
+                    + ", altitude: " + row.altitude
+                    + ", start_time: " + row.start_time);
+//        printSpecifics_01b(handler);
     });
 }
 
