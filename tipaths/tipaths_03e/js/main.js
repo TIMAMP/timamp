@@ -16,10 +16,10 @@ var altiSaturation = 0.8;
 var altiBrightness = 0.8;
 var maxPathCnt = maxDensity / altitudes.length;
 var map;
-var mapW = 720;
-var mapH = 500;
-var mapCenter = [ -75.02, 42.88];
-var mapScale = 1600; // ori: 600
+var mapW = 1000;
+var mapH = 800;
+var mapCenter = [ -73.02, 42.48];
+var mapScale = 2800; // ori: 600
 var r100, r50;
 var projection;
 var pathsSVGGroup;
