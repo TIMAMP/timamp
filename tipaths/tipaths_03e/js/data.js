@@ -39,7 +39,7 @@ data.loadRadars = function (completeHandler) {
  *                                     assynchronous operation is complete.
  */
 data.loadRadarsJSON = function (completeHandler) {
-    $.getJSON("data/radars.geojson", function (json) {
+    $.getJSON("data/us.radars.geo.json", function (json) {
         var radars = [], radar;
         $.each(json.features, function (i, feature) {
             radar = feature.properties;

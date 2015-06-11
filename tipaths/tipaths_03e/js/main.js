@@ -18,8 +18,8 @@ var maxPathCnt = maxDensity / altitudes.length;
 var map;
 var mapW = 720;
 var mapH = 500;
-var mapCenter = [ -77.02, 38.88];
-var mapScale = 800; // ori: 600
+var mapCenter = [ -75.02, 42.88];
+var mapScale = 1600; // ori: 600
 var r100, r50;
 var projection;
 var pathsSVGGroup;
