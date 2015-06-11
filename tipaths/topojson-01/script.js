@@ -14,10 +14,11 @@ var topo = {
     },
     us: {
         src: "us.topo.json",
-        object: "land" //"states"
+        object: "land",
+        center: [ -77.02, 38.88]
     }
 };
-var activeTopo = topo.eu;
+var activeTopo = topo.us;
 
 var map,
     svg,
