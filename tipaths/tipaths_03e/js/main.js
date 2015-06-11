@@ -7,25 +7,60 @@
 //    console.log("SVG.parse: " + SVG.parse);
 //    console.log("SVG.ImportStore: " + SVG.ImportStore);
 
+// TODO
+// - fix aggregation - see query in code of Peter en Bart
+// - improve integration of paths
+// - try other map projections
+// - UTC
+
 // Configuration settings that do not change:
-var altitudes = [0.3, 0.5, 0.7, 0.9, 1.1, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1, 3.3, 3.5, 3.7, 3.9];
+var EUConfig = {};
+EUConfig.radarsPath = "data/eu.radars.geo.json";
+EUConfig.altitudes = [0.3, 0.5, 0.7, 0.9, 1.1, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1, 3.3, 3.5, 3.7, 3.9];
+EUConfig.mapCenter = [-73.02, 42.48];
+EUConfig.mapScale = 6000;
+EUConfig.dataFromYear = 2013;
+EUConfig.dataFromMonth = 3;
+EUConfig.dataFromDay = 7;
+EUConfig.dataTillDay = 11;
+
+var USConfig = {};
+USConfig.radarsPath = "data/us.radars.geo.json";
+//USConfig.radarsPath = "data/eu.radars.geojson";
+USConfig.altitudes = [0.05, 0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85, 0.95, 1.05, 1.15, 1.25, 1.35, 1.45, 1.55, 1.65, 1.75, 1.85, 1.95, 2.05, 2.15, 2.25, 2.35, 2.45, 2.55, 2.65, 2.75, 2.85, 2.95];
+USConfig.mapCenter = [-73.02, 42.48];
+USConfig.mapScale = 6000;
+USConfig.dataFromYear = 2010;
+USConfig.dataFromMonth = 9;
+USConfig.dataFromDay = 2;
+USConfig.dataTillDay = 11;
+// 2010 sept 8-11
+
+// US max density: 3324
+
+var config;
+
+// Select the current configuration:
+//config = EUConfig;
+config = USConfig;
+
 var maxDensity = 3200;
 var altiHueMin = 0.5;
 var altiHueMax = 1;
 var altiSaturation = 0.8;
 var altiBrightness = 0.8;
-var maxPathCnt = maxDensity / altitudes.length;
+var maxPathCnt = maxDensity / config.altitudes.length;
 var map;
 var mapW = 1000;
 var mapH = 800;
-var mapCenter = [ -73.02, 42.48];
-var mapScale = 2800; // ori: 600
 var r100, r50;
 var projection;
 var pathsSVGGroup;
 
 function init() {
     $(document).foundation();
+    
+//    console.log("- config.altitudes.length: " + config.altitudes.length);
     
     if (!SVG.supported) {
         alert('SVG not supported');
@@ -39,9 +74,9 @@ function init() {
     r50 = map.dmxToPxl(50000); // 50 km
     
     projection = d3.geo.mercator()
-        .scale(mapScale)
+        .scale(config.mapScale)
         .translate([mapW / 2, mapH / 2])
-        .center(mapCenter);
+        .center(config.mapCenter);
     
     var path = d3.geo.path()
         .projection(projection);
@@ -59,8 +94,8 @@ function init() {
         .attr("d", path);
     
     d3.json("data/us.topo.json", function(error, us) {
-        console.dir(us.objects);
-        console.log(topojson.feature(us, us.objects.land));
+        //console.dir(us.objects);
+        //console.log(topojson.feature(us, us.objects.land));
         
         svg.insert("path", ".graticule")
             .datum(topojson.feature(us, us.objects.land))
@@ -74,7 +109,7 @@ function init() {
         
         var legend = svg.append("g");
         
-        data.loadRadars(function() {
+        data.loadRadars(config.radarsPath, function() {
             data.radars.xPositions = [];
             data.radars.yPositions = [];
             var radi, radn = data.radars.length, radar, radp;
@@ -103,7 +138,7 @@ function init() {
 
 //            // draw legend:
             var legendSVGGroup = svg.append("g");
-//            drawLegend(legendSVGGroup);
+            drawLegend(legendSVGGroup);
 
             $("#input_days").change(redraw);
             $("#input_hours").change(redraw);
@@ -125,6 +160,7 @@ function init() {
         svg.size(svgWidth, svgHeight);
     }, 25));
     
+    printSpecifics_01();
 }
 
 function redraw() {
@@ -173,7 +209,7 @@ function redraw() {
     $("#input_minutes").val(minutes);
 
     var windowCount = parseInt($("#input_duration").val()) * 3;
-    var from = new Date(2013, 3, days, hours, minutes);
+    var from = new Date(config.dataFromYear, config.dataFromMonth, days, hours, minutes);
 
     loadFromCartoDB(from, windowCount, function (dob) {
         drawPaths(dob);
@@ -189,7 +225,7 @@ function loadFromCartoDB(from, windowCount, handler) {
             windowDuration : 20 /* the duration of a window in minutes */,
             windowCount: windowCount,
             radars : [],
-            altitudes : altitudes,
+            altitudes : config.altitudes,
             densities : [],
             avDensities : undefined,
             uSpeeds : [],
@@ -206,7 +242,7 @@ function loadFromCartoDB(from, windowCount, handler) {
 
     console.log("Loading from " + from + " for " + dob.windowCount +
                 " windows of " + dob.windowDuration + " minutes each.");
-    data.loadData_4(dob, handler);
+    data.loadDataUS(dob, handler);
 }
 
 // -----------------------------------------------------------------------------
@@ -268,7 +304,7 @@ function drawPaths(dob) {
     // source: http://gis.stackexchange.com/questions/2951/algorithm-for-offsetting-a-latitude-longitude-by-some-amount-of-meters
     
     // one degree longitude in meters:
-    var degToMetX = 111111 * Math.cos(mapCenter[1] / 180 * Math.PI);
+    var degToMetX = 111111 * Math.cos(config.mapCenter[1] / 180 * Math.PI);
 //    console.log("degToMetX: " + degToMetX);
     var metToDegX = 1 / degToMetX;
 //    console.log("metToDegX: " + metToDegX);
@@ -307,7 +343,7 @@ function drawPaths(dob) {
                 //console.log("> pathi: " + pathi + " - alti: " + alti);
                 pa = Math.random() * Math.PI * 2;
                 //pd = util.map(pathi, 0, pathn, 2, r100);
-                pd = Math.random() * 50000 * metToDegX;
+                pd = Math.random() * 150000 * metToDegX;
                 px0 = px = radx + Math.cos(pa) * pd;
                 py0 = py = rady + Math.sin(pa) * pd;
                 pp = projection([px, py]);
@@ -403,38 +439,64 @@ function drawLegend(legendSVGGroup) {
     var legendW = 200;
     var legendH = 16;
 
-    var markerG = legendSVGGroup.group();
+    var markerGr = legendSVGGroup.append("g");
     var tx0 = 20;
     var tx = tx0;
     var td = 6;
     var ty = mapH - 20 - legendH - 3 - td - 24
-    markerG.font({ family: 'Helvetica', size: 14 });
-    markerG.text("200m").translate(tx0, ty);
-    markerG.text("2000m")
-        .translate(tx0 + legendW / 2, ty)
-        .font({anchor: 'middle'});
-    markerG.text("4000m")
-        .translate(tx0 + legendW, ty)
-        .font({anchor: 'end'});
+//    markerGr.font({ family: 'Helvetica', size: 14 });
+//    markerGr.text("200m").translate(tx0, ty);
+//    markerGr.text("2000m")
+//        .translate(tx0 + legendW / 2, ty)
+//        .font({anchor: 'middle'});
+//    markerGr.text("4000m")
+//        .translate(tx0 + legendW, ty)
+//        .font({anchor: 'end'});
 
     ty = mapH - 20 - legendH - 3 - td;
-    markerG.fill("#555");
-    markerG.polygon([[tx, ty], [tx + td, ty], [tx, ty + td]]);
+//    markerGr.fill("#555");
+//    markerGr.polygon([[tx, ty], [tx + td, ty], [tx, ty + td]]);
+    var points = tx + "," + ty;
+    points += " " + (tx + td)  + "," +  ty;
+    points += " " + tx + "," + (ty + td);
+    markerGr.append("polygon")
+        .attr("points", points)
+        .attr("style", "fill:#555;");
+    
     tx = tx0 + legendW;
-    markerG.polygon([[tx, ty], [tx - td, ty], [tx, ty + td]]);
+//    markerGr.polygon([[tx, ty], [tx - td, ty], [tx, ty + td]]);
+    points = tx + "," + ty;
+    points += " " + (tx - td)  + "," +  ty;
+    points += " " + tx + "," + (ty + td);
+    markerGr.append("polygon")
+        .attr("points", points)
+        .attr("style", "fill:#555;");
+    
     tx = tx0 + legendW / 2;
     td = 5
-    markerG.polygon([[tx - td, ty], [tx + td, ty], [tx, ty + td]]);
+//    markerGr.polygon([[tx - td, ty], [tx + td, ty], [tx, ty + td]]);
+    points = (tx - td) + "," + ty;
+    points += " " + (tx + td)  + "," +  ty;
+    points += " " + tx + "," + (ty + td);
+    markerGr.append("polygon")
+        .attr("points", points)
+        .attr("style", "fill:#555;");
 
     tx = 20;
     ty = mapH - 20 - legendH;
-    var alti, altn = altitudes.length;
+    var alti, altn = config.altitudes.length;
     var dx = legendW / altn;
     var hue, hex;
     for (alti = 0; alti < altn; alti++) {
         hue = util.map(alti, 0, altn, altiHueMin, altiHueMax);
         hex = util.hsvToHex(hue, altiSaturation, altiBrightness);
-        legendSVGGroup.rect(Math.ceil(dx), legendH).translate(tx, ty).fill(hex);
+//        legendSVGGroup.rect(Math.ceil(dx), legendH).translate(tx, ty).fill(hex);
+        legendSVGGroup.append("rect")
+            .attr("x", tx)
+            .attr("y", ty)
+            .attr("width", Math.ceil(dx))
+            .attr("height", legendH)
+            .attr("style", "fill:" + hex + ";");
         tx += dx;
     }
 }

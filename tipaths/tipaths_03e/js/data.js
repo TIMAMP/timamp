@@ -12,11 +12,12 @@ var data = {};
 
 /**
  * Load the radars data.
- * @param {Function} completeHandler - This handler is called when this
+ * @param {string}   path            The path to the geojson file.
+ * @param {Function} completeHandler This handler is called when this
  *                                   assynchronous operation is complete.
  */
-data.loadRadars = function (completeHandler) {
-    this.loadRadarsJSON(function (radars) {
+data.loadRadars = function (path, completeHandler) {
+    this.loadRadarsJSON(path, function (radars) {
         data.radars = radars;
         completeHandler();
     });
@@ -33,13 +34,14 @@ data.loadRadars = function (completeHandler) {
  *   "country": {String},
  *   "type": {String},
  *   "coordinates": [ {Number}, {Number} ]
- * } 
+ * }
  * The coordinates are the longitude and latitude.
- * @param   {Function} completeHandler This handler is called when this
- *                                     assynchronous operation is complete.
+ * @param {string}   path            The path to the geojson file.
+ * @param {Function} completeHandler This handler is called when this
+ *                                   assynchronous operation is complete.
  */
-data.loadRadarsJSON = function (completeHandler) {
-    $.getJSON("data/us.radars.geo.json", function (json) {
+data.loadRadarsJSON = function (path, completeHandler) {
+    $.getJSON(path, function (json) {
         var radars = [], radar;
         $.each(json.features, function (i, feature) {
             radar = feature.properties;
@@ -117,7 +119,7 @@ data.loadData_4 = function (dob, handler) {
     // %2B, because this plus-sign does not seem to be encoded by the AJAX-
     // functionality:
     sql += ", SQRT(POWER(AVG(u_speed), 2) %2B POWER(AVG(v_speed), 2)) AS speed";
-    sql += " FROM bird_migration_altitude_profiles";
+    sql += " FROM enram_case_study";
     sql += " WHERE altitude >= " + dob.altitudes[0];
     sql += " AND altitude <= " + dob.altitudes[dob.altitudes.length - 1];
     sql += " AND radial_velocity_std >= 2";
@@ -132,12 +134,48 @@ data.loadData_4 = function (dob, handler) {
     });
 };
 
+data.loadDataUS = function (dob, handler) {
+    var urlBase = "https://gbernstein.cartodb.com/api/v2/sql?q=";
+    var from = dob.startTime;
+    var till = new Date(from.getTime() + dob.windowDuration * 60000 *
+                        dob.windowCount);
+    var fromStr = data.cartoDB.toString(from);
+    var tillStr = data.cartoDB.toString(till);
+    //console.log("dob.winDuration: " + dob.winDuration);
+    //console.log("dob.winCount: " + dob.winCount);
+    //console.log("from: " + from + " - till: " + till);
+    var sql = "SELECT";
+    sql += " DIV(CAST(EXTRACT(EPOCH FROM start_time) - EXTRACT(EPOCH FROM TIMESTAMP '" + fromStr + "') AS NUMERIC), " + (dob.windowDuration * 60) + ") AS window_idx";
+    sql += ", altitude, radar_id";
+    sql += ", AVG(bird_density) AS bird_density";
+    sql += ", AVG(u_speed) AS u_speed";
+    sql += ", AVG(v_speed) AS v_speed";
+    // In the following line, a plus-sign is written in its url-encoded form
+    // %2B, because this plus-sign does not seem to be encoded by the AJAX-
+    // functionality:
+    sql += ", SQRT(POWER(AVG(u_speed), 2) %2B POWER(AVG(v_speed), 2)) AS speed";
+    sql += " FROM enram_case_study";
+    sql += " WHERE altitude >= " + dob.altitudes[0];
+    sql += " AND altitude <= " + dob.altitudes[dob.altitudes.length - 1];
+    sql += " AND radial_velocity_std >= 2";
+    sql += " AND start_time >= '" + fromStr + "'";
+    sql += " AND start_time < '" + tillStr + "'";
+    sql += " GROUP BY window_idx, altitude, radar_id";
+    sql += " ORDER BY window_idx, altitude, radar_id";
+//    console.log(sql);
+    $.getJSON(urlBase + sql, function (json) {
+        processData(json, dob);
+        handler(dob);
+    });
+};
+
 /**
  * Helper function of loadFromCartoDB().
  * @param {Object} json The JSON-object with the loaded data.
  * @param {Object} dob The data object in which to organise the data.
  */
 function processData(json, dob) {
+    //console.log(dob);
     //console.log(JSON.stringify(json));
     var wini, winn = dob.windowCount,
         alti, altn = dob.altitudes.length,
@@ -150,6 +188,9 @@ function processData(json, dob) {
         vSpeeds,
         speeds,
         dsum, avds;
+    
+//    console.log("- rows: " + rown);
+//    console.log("- altn: " + altn);
 
     // Prepare the data structure:
     for (wini = 0; wini < winn; wini++) {
@@ -172,9 +213,17 @@ function processData(json, dob) {
     // Fill the data structure with the given data:
     for (rowi = 0; rowi < rown; rowi++) {
         row = json.rows[rowi];
+//        console.log("- row.altitude: " + row.altitude);
         wini = row.window_idx;
-        alti = ((row.altitude * 10) - 3) / 2;
+        alti = (row.altitude * 10) - .5;
+//        console.log("- alti: " + alti);
         radi = dob.radarIndices[row.radar_id];
+        
+//        console.log("- dob.densities[wini]: " + dob.densities[wini]);
+//        console.log("- dob.densities[wini].length: " + dob.densities[wini].length);
+//        console.log("- dob.densities[wini][alti]: " + dob.densities[wini][alti]);
+//        console.log(wini, alti, radi); // DEBUG
+        
         dob.densities[wini][alti][radi] = row.bird_density;
         dob.uSpeeds[wini][alti][radi] = row.u_speed;
         dob.vSpeeds[wini][alti][radi] = row.v_speed;
@@ -202,7 +251,7 @@ function processData(json, dob) {
 
 /**
  * Retrieves some specific characteristics of the data in the
- * bird_migration_altitude_profiles table. When the data is loaded, the given
+ * enram_case_study table. When the data is loaded, the given
  * handler is called with an object as sole argument. This object contains the
  * following properties:
  * - max_bird_density: {Number} The row with largest bird_density value in the
@@ -215,22 +264,24 @@ data.getSpecifics = function (handler) {
 //        var sql = "MAX(bird_density) AS max_density";
 //        sql += ", MAX(u_speed) AS max_u_speed";
 //        sql += ", MAX(v_speed) AS max_v_speed";
-//        sql += " FROM bird_migration_altitude_profiles";
+//        sql += " FROM enram_case_study";
 
+    var urlBase = "https://gbernstein.cartodb.com/api/v2/sql?q=";
+    
     function sqlSelect(valueId, column, operator) {
         var sql = "SELECT DISTINCT altitude, radar_id, start_time";
         sql += ", end_time, bird_density, u_speed, v_speed";
         sql += ", '" + valueId + "' AS value_id";
-        sql += " FROM bird_migration_altitude_profiles";
+        sql += " FROM enram_case_study";
         sql += " WHERE " + column + " = (SELECT " + operator + "(" + column;
-        sql += ") FROM bird_migration_altitude_profiles)";
+        sql += ") FROM enram_case_study)";
         return sql;
     }
 //        
     var sql = "SELECT DISTINCT altitude, radar_id, start_time, bird_density";
     sql += ", 'bird_density' AS value_id";
-    sql += " FROM bird_migration_altitude_profiles";
-    sql += " WHERE bird_density = (SELECT MAX(bird_density) FROM bird_migration_altitude_profiles)";
+    sql += " FROM enram_case_study";
+    sql += " WHERE bird_density = (SELECT MAX(bird_density) FROM enram_case_study)";
 
     var sql = "";
     sql += sqlSelect("max_bird_density", "bird_density", "MAX");
@@ -238,7 +289,7 @@ data.getSpecifics = function (handler) {
     sql += sqlSelect("min_start_time", "start_time", "MIN");
 
 
-    data.cartoDB.loadData(sql, function (json) {
+    $.getJSON(urlBase + sql, function (json) {
         console.log("json: " + JSON.stringify(json));
         var specifics = {},
             rowi, rown = json.total_rows, row;
@@ -251,27 +302,63 @@ data.getSpecifics = function (handler) {
 };
 
 function printSpecifics_01(handler) {
-    var sql = "SELECT DISTINCT altitude, radar_name, start_time, bird_density";
-    sql += " FROM bird_migration_altitude_profiles";
+    var urlBase = "https://gbernstein.cartodb.com/api/v2/sql?q=";
+    var sql = "SELECT DISTINCT altitude, radar_id, start_time, bird_density";
+    sql += " FROM enram_case_study";
     sql += " WHERE bird_density =";
-    sql += " (SELECT MAX(bird_density) FROM bird_migration_altitude_profiles)";
-    data.cartoDB.loadData(sql, function (json) {
+    sql += " (SELECT MAX(bird_density) FROM enram_case_study)";
+    $.getJSON(urlBase + sql, function (json) {
         //console.log("json: " + JSON.stringify(json));
         var row = json.rows[0];
         console.log("specifics: max bird_density: " + row.bird_density
-                    + ", radar: " + row.radar_name
+                    + ", radar: " + row.radar_id
                     + ", altitude: " + row.altitude
                     + ", start_time: " + row.start_time);
-        printSpecifics_02(handler);
+        printSpecifics_01b(handler);
+    });
+}
+
+function printSpecifics_01b(handler) {
+    var urlBase = "https://gbernstein.cartodb.com/api/v2/sql?q=";
+    var sql = "SELECT DISTINCT altitude, radar_id, start_time, u_speed";
+    sql += " FROM enram_case_study";
+    sql += " WHERE u_speed =";
+    sql += " (SELECT MAX(u_speed) FROM enram_case_study)";
+    $.getJSON(urlBase + sql, function (json) {
+        //console.log("json: " + JSON.stringify(json));
+        var row = json.rows[0];
+        console.log("specifics: max u_speed: " + row.u_speed
+                    + ", radar: " + row.radar_id
+                    + ", altitude: " + row.altitude
+                    + ", start_time: " + row.start_time);
+        printSpecifics_01c(handler);
+    });
+}
+
+function printSpecifics_01c(handler) {
+    var urlBase = "https://gbernstein.cartodb.com/api/v2/sql?q=";
+    var sql = "SELECT DISTINCT altitude, radar_id, start_time, v_speed";
+    sql += " FROM enram_case_study";
+    sql += " WHERE v_speed =";
+    sql += " (SELECT MAX(v_speed) FROM enram_case_study)";
+    $.getJSON(urlBase + sql, function (json) {
+        //console.log("json: " + JSON.stringify(json));
+        var row = json.rows[0];
+        console.log("specifics: max v_speed: " + row.v_speed
+                    + ", radar: " + row.radar_id
+                    + ", altitude: " + row.altitude
+                    + ", start_time: " + row.start_time);
+        //printSpecifics_02(handler);
     });
 }
 
 function printSpecifics_02(handler) {
+    var urlBase = "https://gbernstein.cartodb.com/api/v2/sql?q=";
     var sql = "SELECT DISTINCT start_time";
-    sql += " FROM bird_migration_altitude_profiles";
+    sql += " FROM enram_case_study";
     sql += " WHERE start_time =";
-    sql += " (SELECT MIN(start_time) FROM bird_migration_altitude_profiles)";
-    data.cartoDB.loadData(sql, function (json) {
+    sql += " (SELECT MIN(start_time) FROM enram_case_study)";
+    $.getJSON(urlBase + sql, function (json) {
         //console.log("json: " + JSON.stringify(json));
         var row = json.rows[0];
         console.log("specifics: min start_time: " + row.start_time);
@@ -280,11 +367,12 @@ function printSpecifics_02(handler) {
 }
 
 function printSpecifics_03(handler) {
+    var urlBase = "https://gbernstein.cartodb.com/api/v2/sql?q=";
     var sql = "SELECT DISTINCT start_time";
-    sql += " FROM bird_migration_altitude_profiles";
+    sql += " FROM enram_case_study";
     sql += " WHERE start_time =";
-    sql += " (SELECT MAX(start_time) FROM bird_migration_altitude_profiles)";
-    data.cartoDB.loadData(sql, function (json) {
+    sql += " (SELECT MAX(start_time) FROM enram_case_study)";
+    $.getJSON(urlBase + sql, function (json) {
         //console.log("json: " + JSON.stringify(json));
         var row = json.rows[0];
         console.log("specifics: max start_time: " + row.start_time);
@@ -320,7 +408,7 @@ data.altIndex = function (altitude) {
 };
 
 // An array with a continuous set of altitudes for which all radars provide data
-// in the bird_migration_altitude_profiles dataset.
+// in the enram_case_study dataset.
 data.altitudes = [];
 var i, j;
 for (i = 0.3; i <= 3.9; i += 0.2) {
