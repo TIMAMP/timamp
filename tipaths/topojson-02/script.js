@@ -14,8 +14,8 @@ var topo = {
     },
     us: {
         src: "us.topo.json",
-        object: "land", //"states",
-        center: [38.88, 77.02]
+        object: "land",
+        center: [ -73.02, 42.48]
     }
 };
 var activeTopo = topo.us;
@@ -38,12 +38,12 @@ function init(){
 
     //redraw on scroll (+ adjust scale)
     $(window).bind('mousewheel', function(event) {
-        scale *= (event.originalEvent.wheelDelta >= 0)? 1.1 : 0.9;
+        scale *= (event.originalEvent.wheelDelta >= 0)? 1.2 : 0.8;
         redrawMap();
     });
     
     /* creating the SVG */
-    svg = d3.select("body").append("svg")
+    svg = d3.select("#svg").append("svg")
         .attr("width", mapW)
         .attr("height", mapH)
         .style("border", "1px solid black");
@@ -85,7 +85,7 @@ function redrawMap() {
     path = d3.geo.path().projection(projection);
     svg.remove();
     
-    svg = d3.select("body").append("svg")
+    svg = d3.select("#svg").append("svg")
         .attr("width", mapW)
         .attr("height", mapH)
         .style("border", "1px solid black");
@@ -98,13 +98,22 @@ function redrawMap() {
             .attr("d", path);
 }
 
-
-//var dragData = {};
-$("svg").mousedown(function(e){
-        $(this).on("mousemove",function(){
+$("#svg")
+    .mousedown(function(e){
+        $(this).data("p0",{ x: e.pageX, y: e.pageY });
+        $(this).on("mousemove",function(e){
+            var p1 = { x: e.pageX, y: e.pageY },
+                p0 = $(this).data("p0") || p1,
+                deltaX = p1.x-p0.x,
+                deltaY = p1.y-p0.y;
+            offset[0] += deltaX;
+            offset[1] += deltaY;
+            //console.log("dragging from x:" + p0.x + " y:" + p0.y + "to x:" + p1.x + " y:" + p1.y);
+            redrawMap();
+            
+            $(this).data("p0", p1);
         });
-        $(this).data("origX" = e.pageX);
-        $(this).data("origY" = e.pageY);
-    }).mouseup(function(){
-        $(this).off("mousemove");
-});
+    })
+    .mouseup(function(){$(this).off("mousemove");})
+    .mouseleave(function(){$(this).off("mousemove");})
+    .mouseout(function(){$(this).off("mousemove");});
