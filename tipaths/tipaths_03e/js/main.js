@@ -25,11 +25,10 @@ EUConfig.dataFromDay = 7;
 EUConfig.dataTillDay = 11;
 
 var USConfig = {};
-USConfig.radarsPath = "data/us.radars.geo.json";
-//USConfig.radarsPath = "data/eu.radars.geojson";
+USConfig.radarsPath = "data/us.radars.json";
 USConfig.altitudes = [0.05, 0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85, 0.95, 1.05, 1.15, 1.25, 1.35, 1.45, 1.55, 1.65, 1.75, 1.85, 1.95, 2.05, 2.15, 2.25, 2.35, 2.45, 2.55, 2.65, 2.75, 2.85, 2.95];
 USConfig.mapCenter = [-73.02, 42.48];
-USConfig.mapScale = 6000;
+USConfig.mapScale = 3000;
 USConfig.dataFromYear = 2010;
 USConfig.dataFromMonth = 9;
 USConfig.dataFromDay = 2;
@@ -109,28 +108,29 @@ function init() {
         
         var legend = svg.append("g");
         
-        data.loadRadars(config.radarsPath, function() {
-            data.radars.xPositions = [];
-            data.radars.yPositions = [];
+        data.loadRadarsUS(config.radarsPath, function() {
+            //console.log(data.radars);
+            data.radarXs = [];
+            data.radarYs = [];
             var radi, radn = data.radars.length, radar, radp;
             for (radi = 0; radi < radn; radi++) {
                 radar = data.radars[radi];
-                var radp = projection([radar.coordinates[0], radar.coordinates[1]]);
+                var radp = projection([radar.lon, radar.lat]);
 //                console.log(radp[0], radp[1]);
-                data.radars.xPositions[radi] = radp[0];
-                data.radars.yPositions[radi] = radp[1];
+                data.radarXs[radi] = radp[0];
+                data.radarYs[radi] = radp[1];
             }
 
             // Draw radars:
             var radarSVGG = svg.append("g").attr("class", "radar");
             var rpx, rpy;
             for (radi = 0; radi < radn; radi++) {
-                rpx = data.radars.xPositions[radi];
-                rpy = data.radars.yPositions[radi];
+                rpx = data.radarXs[radi];
+                rpy = data.radarYs[radi];
                 radarSVGG.append('svg:circle')
                     .attr('cx', rpx)
                     .attr('cy', rpy)
-                    .attr('r', 3);
+                    .attr('r', 2);
             }
 
 //            // add the paths group:
@@ -283,8 +283,8 @@ function drawPaths(dob) {
         hue,
         radx, rady,
         pa = 0, pd, px, py, px0, py0, dx, dy, nx, ny, pp, np,
-        xps = data.radars.xPositions,
-        yps = data.radars.yPositions,
+        xps = data.radarXs,
+        yps = data.radarYs,
         idw = util.idw,
         asat = altiSaturation,
         abri = altiBrightness,
@@ -330,9 +330,9 @@ function drawPaths(dob) {
         // for each radar:
         for (radi = 0; radi < radn; radi++) {
             var radar = data.radars[radi];
-            // var radp = projection([radar.coordinates[0], radar.coordinates[1]]);
-            radx = radar.coordinates[0];
-            rady = radar.coordinates[1];
+            // var radp = projection([radar.lon, radar.lat]);
+            radx = radar.lon;
+            rady = radar.lat;
             
             // for each path:
             var lcolor = util.hsvToHex(hue, asat, abri)

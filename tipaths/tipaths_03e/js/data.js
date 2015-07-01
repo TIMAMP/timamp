@@ -10,45 +10,51 @@ var data = {};
 // -----------------------------------------------------------------------------
 // Radars:
 
-/**
- * Load the radars data.
- * @param {string}   path            The path to the geojson file.
- * @param {Function} completeHandler This handler is called when this
- *                                   assynchronous operation is complete.
- */
-data.loadRadars = function (path, completeHandler) {
-    this.loadRadarsJSON(path, function (radars) {
-        data.radars = radars;
-        completeHandler();
-    });
-};
+function Radar(id, lon, lat) {
+    this.id = id;
+    this.lon = lon;
+    this.lat = lat;
+}
 
 /**
- * Retrieve the radars dataset and return an object that holds the data. The
- * given handler is called when this assynchronous operation is complete. An
- * array with objects that contain the radars data is passed to this handler.
- * There is one object for each radar in this array. Each object has the
- * following format: {
- *   "radar_id": {Number},
- *   "name": {String},
- *   "country": {String},
- *   "type": {String},
- *   "coordinates": [ {Number}, {Number} ]
- * }
- * The coordinates are the longitude and latitude.
+ * Retrieve the US radars dataset from a json file and populate the radars
+ * array in the data object with the resulting set of Radar objects. The
+ * given handler is called when this assynchronous operation is complete.
+ * @param {string}   path            The path to the json file.
+ * @param {Function} completeHandler This handler is called when this
+ *                                   assynchronous operation is complete.
+ */
+data.loadRadarsUS = function (path, completeHandler) {
+    $.getJSON(path, function (json) {
+        data.radars = [];
+        var radar;
+        $.each(json.radars, function (i, obj) {
+            radar = new Radar(obj.id, obj.coordinates[0], obj.coordinates[1]);
+            data.radars.push(radar);
+        });
+        completeHandler();
+    });
+}
+
+/**
+ * Retrieve the EU radars dataset from a geojson file and populate the radars
+ * array in the data object with the resulting set of Radar objects. The
+ * given handler is called when this assynchronous operation is complete.
  * @param {string}   path            The path to the geojson file.
  * @param {Function} completeHandler This handler is called when this
  *                                   assynchronous operation is complete.
  */
-data.loadRadarsJSON = function (path, completeHandler) {
+data.loadRadarsEU = function (path, completeHandler) {
     $.getJSON(path, function (json) {
-        var radars = [], radar;
-        $.each(json.features, function (i, feature) {
-            radar = feature.properties;
-            radar.coordinates = feature.geometry.coordinates;
-            radars.push(radar);
+        data.radars = [];
+        var radar;
+        $.each(json.features, function (i, obj) {
+            radar = new Radar(obj.properties.radar_id,
+                              obj.geometry.coordinates[0],
+                              obj.geometry.coordinates[1]);
+            data.radars.push(radar);
         });
-        completeHandler(radars);
+        completeHandler();
     });
 };
 
