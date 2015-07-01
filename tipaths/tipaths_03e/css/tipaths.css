@@ -119,3 +119,8 @@ p.description {
     stroke-dasharray: 2, 4;
     stroke-linejoin: round;
 }
+
+.legend-labels {
+    font-family: Helvetica, Sans-serif;
+    font-size: 11px;
+}

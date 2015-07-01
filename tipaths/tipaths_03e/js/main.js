@@ -109,19 +109,17 @@ function init() {
         var legend = svg.append("g");
         
         data.loadRadarsUS(config.radarsPath, function() {
-            //console.log(data.radars);
             data.radarXs = [];
             data.radarYs = [];
             var radi, radn = data.radars.length, radar, radp;
             for (radi = 0; radi < radn; radi++) {
                 radar = data.radars[radi];
                 var radp = projection([radar.lon, radar.lat]);
-//                console.log(radp[0], radp[1]);
                 data.radarXs[radi] = radp[0];
                 data.radarYs[radi] = radp[1];
             }
 
-            // Draw radars:
+            // draw radars:
             var radarSVGG = svg.append("g").attr("class", "radar");
             var rpx, rpy;
             for (radi = 0; radi < radn; radi++) {
@@ -133,10 +131,10 @@ function init() {
                     .attr('r', 2);
             }
 
-//            // add the paths group:
+            // add the paths group:
             pathsSVGGroup = svg.append("g");
 
-//            // draw legend:
+            // draw legend:
             var legendSVGGroup = svg.append("g");
             drawLegend(legendSVGGroup);
 
@@ -443,15 +441,24 @@ function drawLegend(legendSVGGroup) {
     var tx0 = 20;
     var tx = tx0;
     var td = 6;
-    var ty = mapH - 20 - legendH - 3 - td - 24
-//    markerGr.font({ family: 'Helvetica', size: 14 });
-//    markerGr.text("200m").translate(tx0, ty);
-//    markerGr.text("2000m")
-//        .translate(tx0 + legendW / 2, ty)
-//        .font({anchor: 'middle'});
-//    markerGr.text("4000m")
-//        .translate(tx0 + legendW, ty)
-//        .font({anchor: 'end'});
+    var ty = mapH - 20 - legendH - 3 - td - 4
+    markerGr.append("text")
+        .attr("class", "legend-labels")
+        .attr("x", tx0)
+        .attr("y", ty)
+        .text("0m");
+    markerGr.append("text")
+        .attr("class", "legend-labels")
+        .attr("x", tx0 + legendW / 2)
+        .attr("y", ty)
+        .attr("text-anchor", "middle")
+        .text("2000m");
+    markerGr.append("text")
+        .attr("class", "legend-labels")
+        .attr("x", tx0 + legendW)
+        .attr("y", ty)
+        .attr("text-anchor", "end")
+        .text("4000m");
 
     ty = mapH - 20 - legendH - 3 - td;
     var points = tx + "," + ty;
