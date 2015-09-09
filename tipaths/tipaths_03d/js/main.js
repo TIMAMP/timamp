@@ -331,7 +331,7 @@ function drawPaths(dob) {
                 //console.log("> pathi: " + pathi + " - alti: " + alti);
                 pa = Math.random() * Math.PI * 2;
                 //pd = util.map(pathi, 0, pathn, 2, r100);
-                pd = Math.random() * 50000 * metToDegX;
+                pd = Math.random() * 100000 * metToDegX;
                 px0 = px = radx + Math.cos(pa) * pd;
                 py0 = py = rady + Math.sin(pa) * pd;
                 pp = projection([px, py]);
