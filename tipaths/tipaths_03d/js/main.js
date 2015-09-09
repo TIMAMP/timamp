@@ -31,7 +31,8 @@ var euTopoJson;
 var days;
 var hours;
 var minutes;
-var r100, r50;
+var currDob;
+//var r100, r50;
 
 function init() {
     $(document).foundation();
@@ -44,8 +45,8 @@ function init() {
     map = new Map(mapH);
     //console.log("- map.width: " + map.width);
 
-    r100 = map.dmxToPxl(100000); // 100 km
-    r50 = map.dmxToPxl(50000); // 50 km
+    //r100 = map.dmxToPxl(100000); // 100 km
+    //r50 = map.dmxToPxl(50000); // 50 km
     
     d3.json("data/eu.topo.json", function(error, json) {
         euTopoJson = json;
@@ -76,11 +77,96 @@ function init() {
     printSpecifics_01c();
 }
 
+function loadFromCartoDB(from, windowCount, handler) {
+    var dob = {
+            startTime: from,
+            windowDuration : 20 /* the duration of a window in minutes */,
+            windowCount: windowCount,
+            radars : [],
+            altitudes : altitudes,
+            densities : [],
+            avDensities : undefined,
+            uSpeeds : [],
+            vSpeeds : [],
+            speeds : []
+        },
+        radi, radn = data.radars.length;
+
+    for (radi = 0; radi < radn; radi++) {
+        dob.radars.push(data.radars[radi].radar_id);
+    }
+    dob.radars.sort();
+    initRadarMapData(dob);
+
+    console.log("Loading from " + from + " for " + dob.windowCount +
+        " windows of " + dob.windowDuration + " minutes each.");
+    data.loadData_4(dob, handler);
+}
+
+/**
+ * Add mapping from radar_ids to indices in data arrays.
+ * @param {Object} dob The radar-data object.
+ */
+function initRadarMapData(dob) {
+    var radi,
+        radn = data.radars.length;
+
+    // Create mapping from radar_ids to indices:
+    dob.radarIndices = {};
+    for (radi = 0; radi < radn; radi++) {
+        dob.radarIndices[dob.radars[radi]] = radi;
+    }
+}
+
 function inputChanged() {
     updateMap(true);
 }
 
-var currDob;
+function updateInput() {
+    days = parseInt($("#input_days").val());
+    var daysMin = parseInt($("#input_days").attr("min"));
+    var daysMax = parseInt($("#input_days").attr("max"));
+
+    hours = parseInt($("#input_hours").val());
+    var hoursMin = parseInt($("#input_hours").attr("min"));
+    var hoursMax = parseInt($("#input_hours").attr("max"));
+
+    minutes = parseInt($("#input_minutes").val());
+    var minutesStep = parseInt($("#input_minutes").attr("step"));
+
+    if (minutes >= 60) {
+        if (hours === 23 && days === daysMax) { minutes = 50; }
+        else {
+            hours++;
+            minutes -= 60;
+        }
+    }
+    else if (minutes < 0) {
+        if (hours === 0 && days === daysMin) { minutes = 0; }
+        else {
+            hours--;
+            minutes += 60;
+        }
+    }
+    if (hours >= 24) {
+        if (days === daysMax) { hours = 23; }
+        else {
+            days++;
+            hours = 0;
+        }
+    }
+    else if (hours < 0) {
+        if (days === daysMin) { hours = 0; }
+        else {
+            days--;
+            hours = 23;
+        }
+    }
+
+    $("#input_days").val(days);
+    $("#input_hours").val(hours);
+    $("#input_minutes").val(minutes);
+}
 
 function updateMap(inputDirty) {
     drawMap();
@@ -170,100 +256,6 @@ function drawMap() {
     drawLegend(legendSVGGroup);
 
 }
-
-function updateInput() {
-    days = parseInt($("#input_days").val());
-    var daysMin = parseInt($("#input_days").attr("min"));
-    var daysMax = parseInt($("#input_days").attr("max"));
-
-    hours = parseInt($("#input_hours").val());
-    var hoursMin = parseInt($("#input_hours").attr("min"));
-    var hoursMax = parseInt($("#input_hours").attr("max"));
-
-    minutes = parseInt($("#input_minutes").val());
-    var minutesStep = parseInt($("#input_minutes").attr("step"));
-
-    if (minutes >= 60) {
-        if (hours === 23 && days === daysMax) { minutes = 50; }
-        else {
-            hours++;
-            minutes -= 60;
-        }
-    }
-    else if (minutes < 0) {
-        if (hours === 0 && days === daysMin) { minutes = 0; }
-        else {
-            hours--;
-            minutes += 60;
-        }
-    }
-    if (hours >= 24) {
-        if (days === daysMax) { hours = 23; }
-        else {
-            days++;
-            hours = 0;
-        }
-    }
-    else if (hours < 0) {
-        if (days === daysMin) { hours = 0; }
-        else {
-            days--;
-            hours = 23;
-        }
-    }
-
-    $("#input_days").val(days);
-    $("#input_hours").val(hours);
-    $("#input_minutes").val(minutes);
-}
-
-function loadFromCartoDB(from, windowCount, handler) {
-    var dob = {
-            startTime: from,
-            windowDuration : 20 /* the duration of a window in minutes */,
-            windowCount: windowCount,
-            radars : [],
-            altitudes : altitudes,
-            densities : [],
-            avDensities : undefined,
-            uSpeeds : [],
-            vSpeeds : [],
-            speeds : []
-        },
-        radi, radn = data.radars.length;
-
-    for (radi = 0; radi < radn; radi++) {
-        dob.radars.push(data.radars[radi].radar_id);
-    }
-    dob.radars.sort();
-    initRadarMapData(dob);
-
-    console.log("Loading from " + from + " for " + dob.windowCount +
-                " windows of " + dob.windowDuration + " minutes each.");
-    data.loadData_4(dob, handler);
-}
-
-/**
- * Add mapping from radar_ids to indices in data arrays.
- * @param {Object} dob The radar-data object.
- */
-function initRadarMapData(dob) {
-    var radi,
-        radn = data.radars.length,
-        radar,
-        ri,
-        rp;
-
-    dob.radarIndices = {};
-
-    // Create mapping from radar_ids to indices:
-    dob.radarIndices = {};
-    for (radi = 0; radi < radn; radi++) {
-        dob.radarIndices[dob.radars[radi]] = radi;
-    }
-}
-
-// -----------------------------------------------------------------------------
 
 /**
  * Draw the paths.
@@ -429,8 +421,6 @@ function drawPaths(dob) {
     }
 }
 
-// -----------------------------------------------------------------------------
-
 function drawLegend(legendSVGGroup) {
     var legendH = 16;
 
@@ -499,6 +489,3 @@ function drawLegend(legendSVGGroup) {
         tx += dx;
     }
 }
-
-// -----------------------------------------------------------------------------
-
