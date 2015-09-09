@@ -9,8 +9,12 @@ body {
     padding: 0 1em;
 }
 
-div#svg {
-    float: left;
+div#map-container {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
 }
 
 /*
@@ -96,7 +100,9 @@ p.description {
     color: #666;
 }
 
-/*** SVG ***/
+
+
+/*** SVG styles ***/
 
 .graticule {
     fill: none;
@@ -105,7 +111,7 @@ p.description {
 }
 
 .radar circle {
-    fill: #ddd;
+    fill: #000;
 }
 
 .land {
@@ -118,4 +124,9 @@ p.description {
     stroke-width: .5px;
     stroke-dasharray: 2, 4;
     stroke-linejoin: round;
+}
+
+.legend-labels {
+    font-family: Helvetica, Sans-serif;
+    font-size: 11px;
 }

@@ -16,13 +16,22 @@ var altiSaturation = 0.8;
 var altiBrightness = 0.8;
 var maxPathCnt = maxDensity / altitudes.length;
 var map;
-var mapW = 720;
-var mapH = 940;
+var mapHeightFactor = 940 / 720;
+var mapScaleFactor = 6000 / 720;
+var legendWidthFactor = 200 / 720;
+var mapW = 100;
+var mapH = 100;
 var mapCenter = [5, 51.5];
-var mapScale = 6000;
-var r100, r50;
-var projection;
+var mapScale;
+var legendW;
+var svg;
 var pathsSVGGroup;
+var projection;
+var euTopoJson;
+var days;
+var hours;
+var minutes;
+var r100, r50;
 
 function init() {
     $(document).foundation();
@@ -38,90 +47,28 @@ function init() {
     r100 = map.dmxToPxl(100000); // 100 km
     r50 = map.dmxToPxl(50000); // 50 km
     
-    projection = d3.geo.mercator()
-        .scale(mapScale)
-        .translate([mapW / 2, mapH / 2])
-        .center(mapCenter);
-    
-    var path = d3.geo.path()
-        .projection(projection);
-    
-    var graticule = d3.geo.graticule()
-        .step([1, 1]);
-
-    var svg = d3.select("#svg").append("svg")
-        .attr("width", mapW)
-        .attr("height", mapH);
-    
-    svg.append("path")
-        .datum(graticule)
-        .attr("class", "graticule")
-        .attr("d", path);
-    
-    d3.json("data/eu.topo.json", function(error, eu) {
+    d3.json("data/eu.topo.json", function(error, json) {
+        euTopoJson = json;
         //console.log(topojson.feature(eu, eu.objects.europe));
-        
-        svg.insert("path", ".graticule")
-            .datum(topojson.feature(eu, eu.objects.europe))
-            .attr("class", "land")
-            .attr("d", path);
 
-        svg.insert("path", ".graticule")
-            .datum(topojson.mesh(eu, eu.objects.europe, function(a, b) { return a !== b; }))
-            .attr("class", "country-boundary")
-            .attr("d", path);
-        
-        var legend = svg.append("g");
-        
         data.loadRadars(function() {
-            data.radars.xPositions = [];
-            data.radars.yPositions = [];
-            var radi, radn = data.radars.length, radar, radp;
-            for (radi = 0; radi < radn; radi++) {
-                radar = data.radars[radi];
-                var radp = projection([radar.coordinates[0], radar.coordinates[1]]);
-//                console.log(radp[0], radp[1]);
-                data.radars.xPositions[radi] = radp[0];
-                data.radars.yPositions[radi] = radp[1];
-            }
+            $("#input_days").change(inputChanged);
+            $("#input_hours").change(inputChanged);
+            $("#input_minutes").change(inputChanged);
+            $("#input_duration").change(inputChanged);
 
-            // Draw radars:
-            var radarSVGG = svg.append("g").attr("class", "radar");
-            var rpx, rpy;
-            for (radi = 0; radi < radn; radi++) {
-                rpx = data.radars.xPositions[radi];
-                rpy = data.radars.yPositions[radi];
-                radarSVGG.append('svg:circle')
-                    .attr('cx', rpx)
-                    .attr('cy', rpy)
-                    .attr('r', 3);
-            }
-
-//            // add the paths group:
-            pathsSVGGroup = svg.append("g");
-
-//            // draw legend:
-            var legendSVGGroup = svg.append("g");
-            drawLegend(legendSVGGroup);
-
-            $("#input_days").change(redraw);
-            $("#input_hours").change(redraw);
-            $("#input_minutes").change(redraw);
-            $("#input_duration").change(redraw);
-
-            redraw();
+            updateMap(true);
         });
     });
-    
+
     // TODO: what does this?
-    d3.select(self.frameElement).style("height", mapH + "px");
+    //d3.select(self.frameElement).style("height", mapH + "px");
     
     // TODO: fix
-    $(window).on('resize', Foundation.utils.throttle(function(e) {
-        var svgWidth = $("#svg").parent().width();
-        var svgHeight = svgWidth * mapH / mapW;
-        //console.log("svg size: " + svgWidth + " / " + svgHeight);
-        svg.size(svgWidth, svgHeight);
+    d3.select(window).on('resize', Foundation.utils.throttle(function(e) {
+        if (d3.select("#map-container").node().getBoundingClientRect().width != mapW) {
+            updateMap(false);
+        }
     }, 25));
     
     printSpecifics_01();
@@ -129,16 +76,111 @@ function init() {
     printSpecifics_01c();
 }
 
-function redraw() {
-    var days = parseInt($("#input_days").val());
+function inputChanged() {
+    updateMap(true);
+}
+
+var currDob;
+
+function updateMap(inputDirty) {
+    drawMap();
+    if (inputDirty) {
+        updateInput();
+        var from = new Date(2013, 3, days, hours, minutes);
+        var windowCount = parseInt($("#input_duration").val()) * 3;
+
+        loadFromCartoDB(from, windowCount, function (dob) {
+            currDob = dob;
+            drawPaths(dob);
+            //console.log("Done");
+        });
+    }
+    else {
+        drawPaths(currDob);
+    }
+}
+
+function drawMap() {
+    var svgRect = d3.select("#map-container").node().getBoundingClientRect();
+    mapW = svgRect.width;
+    mapH = mapW * mapHeightFactor;
+    mapScale = mapW * mapScaleFactor;
+    legendW = mapW * legendWidthFactor;
+
+    if (svg) { svg.remove(); }
+    svg = d3.select("#map-container").append("svg")
+        .style("width", mapW)
+        .style("height", mapH);
+
+    // specify the projection based of the size of the map:
+    projection = d3.geo.mercator()
+        .scale(mapScale)
+        .translate([mapW / 2, mapH / 2])
+        .center(mapCenter);
+
+    var path = d3.geo.path()
+        .projection(projection);
+
+    var graticule = d3.geo.graticule()
+        .step([1, 1]);
+    svg.append("path")
+        .datum(graticule)
+        .classed("graticule", true)
+        .attr("d", path);
+
+    svg.insert("path", ".graticule")
+        .datum(topojson.feature(euTopoJson, euTopoJson.objects.europe))
+        .classed("land", true)
+        .attr("d", path);
+    svg.insert("path", ".graticule")
+        .datum(topojson.mesh(euTopoJson, euTopoJson.objects.europe, function(a, b) { return a !== b; }))
+        .classed("country-boundary", true)
+        .attr("d", path);
+
+    // update radar positions:
+    data.radars.xPositions = [];
+    data.radars.yPositions = [];
+    var radi, radn = data.radars.length, radar, radp;
+    for (radi = 0; radi < radn; radi++) {
+        radar = data.radars[radi];
+        var radp = projection([radar.coordinates[0], radar.coordinates[1]]);
+//                console.log(radp[0], radp[1]);
+        data.radars.xPositions[radi] = radp[0];
+        data.radars.yPositions[radi] = radp[1];
+    }
+
+    // draw radars:
+    var radarSVGG = svg.append("g").attr("class", "radar");
+    var rpx, rpy;
+    for (radi = 0; radi < radn; radi++) {
+        rpx = data.radars.xPositions[radi];
+        rpy = data.radars.yPositions[radi];
+        radarSVGG.append('svg:circle')
+            .attr('cx', rpx)
+            .attr('cy', rpy)
+            .attr('r', 3);
+    }
+
+    // add the paths group:
+    pathsSVGGroup = svg.append("g");
+
+    // draw legend:
+    var legend = svg.append("g");
+    var legendSVGGroup = svg.append("g");
+    drawLegend(legendSVGGroup);
+
+}
+
+function updateInput() {
+    days = parseInt($("#input_days").val());
     var daysMin = parseInt($("#input_days").attr("min"));
     var daysMax = parseInt($("#input_days").attr("max"));
 
-    var hours = parseInt($("#input_hours").val());
+    hours = parseInt($("#input_hours").val());
     var hoursMin = parseInt($("#input_hours").attr("min"));
     var hoursMax = parseInt($("#input_hours").attr("max"));
 
-    var minutes = parseInt($("#input_minutes").val());
+    minutes = parseInt($("#input_minutes").val());
     var minutesStep = parseInt($("#input_minutes").attr("step"));
 
     if (minutes >= 60) {
@@ -173,17 +215,7 @@ function redraw() {
     $("#input_days").val(days);
     $("#input_hours").val(hours);
     $("#input_minutes").val(minutes);
-
-    var windowCount = parseInt($("#input_duration").val()) * 3;
-    var from = new Date(2013, 3, days, hours, minutes);
-
-    loadFromCartoDB(from, windowCount, function (dob) {
-        drawPaths(dob);
-        //console.log("Done");
-    });
 }
-
-// -----------------------------------------------------------------------------
 
 function loadFromCartoDB(from, windowCount, handler) {
     var dob = {
@@ -210,8 +242,6 @@ function loadFromCartoDB(from, windowCount, handler) {
                 " windows of " + dob.windowDuration + " minutes each.");
     data.loadData_4(dob, handler);
 }
-
-// -----------------------------------------------------------------------------
 
 /**
  * Add mapping from radar_ids to indices in data arrays.
@@ -402,22 +432,30 @@ function drawPaths(dob) {
 // -----------------------------------------------------------------------------
 
 function drawLegend(legendSVGGroup) {
-    var legendW = 200;
     var legendH = 16;
 
     var markerGr = legendSVGGroup.append("g");
     var tx0 = 20;
     var tx = tx0;
     var td = 6;
-    var ty = mapH - 20 - legendH - 3 - td - 24
-//    markerGr.font({ family: 'Helvetica', size: 14 });
-//    markerGr.text("200m").translate(tx0, ty);
-//    markerGr.text("2000m")
-//        .translate(tx0 + legendW / 2, ty)
-//        .font({anchor: 'middle'});
-//    markerGr.text("4000m")
-//        .translate(tx0 + legendW, ty)
-//        .font({anchor: 'end'});
+    var ty = mapH - 20 - legendH - 3 - td - 4
+    markerGr.append("text")
+        .attr("class", "legend-labels")
+        .attr("x", tx0)
+        .attr("y", ty)
+        .text("200m");
+    markerGr.append("text")
+        .attr("class", "legend-labels")
+        .attr("x", tx0 + legendW / 2)
+        .attr("y", ty)
+        .attr("text-anchor", "middle")
+        .text("2000m");
+    markerGr.append("text")
+        .attr("class", "legend-labels")
+        .attr("x", tx0 + legendW)
+        .attr("y", ty)
+        .attr("text-anchor", "end")
+        .text("4000m");
 
     ty = mapH - 20 - legendH - 3 - td;
     var points = tx + "," + ty;
