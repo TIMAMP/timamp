@@ -4,6 +4,50 @@
 var util = {};
 
 // #############################################################################
+// Geometric functions
+// -----------------------------------------------------------------------------
+
+
+
+/** @const */
+util._GEO_DIST_FACTOR = 360 / (6371 * 2 * Math.PI);
+
+/**
+ * Returns the angle (in degrees) corresponding with the given displacement in km.
+ * The angle (in degrees) of a displacement of 1 km horizontally along the equator:
+ * 1 km = 1 / (2 * 6371 * pi) * 360 degrees = 0.008993216059 degrees.
+ * Inversely: 1 degree ~= 111.19492664 km
+ *
+ * @param {Number} dist The distance in km.
+ * @returns {number}
+ */
+util.geoDistAngle = function (dist) {
+    return dist * util._GEO_DIST_FACTOR;
+}
+
+/**
+ * Returns the destination location, given a start location, a bearing and a distance.
+ * Based on http://www.movable-type.co.uk/scripts/latlong.html
+ * @param  {Array<number>} start a [lon, lat] coordinate in degrees
+ * @param  {number}        bearing in degrees clockwise from north
+ * @param  {number}        distance in km
+ * @return {Array<number>} a [lon, lat] coordinate in degrees
+ */
+util.destinationPoint = function (start, bearing, distance) {
+    var dR = distance / 6371;  // angular distance = distance / earth’s radius
+    var lat1 = util.radians(start[1]);
+    var lon1 = util.radians(start[0]);
+    var bearing = util.radians(bearing);
+    var lat2 = Math.asin(Math.sin(lat1) * Math.cos(dR) +
+        Math.cos(lat1) * Math.sin(dR) * Math.cos(bearing));
+    var lon2 = lon1 + Math.atan2(Math.sin(bearing) * Math.sin(dR) * Math.cos(lat1),
+            Math.cos(dR) - Math.sin(lat1) * Math.sin(lat2));
+    lon2 = (lon2 + 3 * Math.PI) % (2 * Math.PI) - Math.PI; // normalise to -180..+180°
+    //console.log(start, [Math.degrees(lon2), Math.degrees(lat2)]);
+    return [util.degrees(lon2), util.degrees(lat2)];
+}
+
+// #############################################################################
 // Interpolation
 // -----------------------------------------------------------------------------
 
@@ -187,31 +231,39 @@ util.averageDisplacement = function (angles, speeds, undefAv) {
 };
 
 // #############################################################################
-// Support functions
+// Math utilities
 // -----------------------------------------------------------------------------
 
 /**
- * Maps the value v from the source range [a, b] to the target range [c, d].
- * @param   {Number} v The value to map.
- * @param   {Number} a The first bound of the source range.
- * @param   {Number} b The second bound of the source range.
- * @param   {Number} c The first bound of the target range.
- * @param   {Number} d The second bound of the target range.
- * @returns {Number} The mapped value. 
+ * Returns the given angle in degrees expressed as radians.
+ * @param   {Number} degrees The given angle in degrees.
+ * @returns {Number} The given angle in radians.
  */
-util.map = function (v, a, b, c, d) {
-    return (v - a) / (b - a) * (d - c) + c;
-}
+util.radians = function (degrees) {
+    return degrees * Math.PI / 180;
+};
 
 /**
- * Calculates the length of the vector (dx, dy).
- * @param   {[[Type]]} dx [[Description]]
- * @param   {[[Type]]} dy [[Description]]
- * @returns {[[Type]]} [[Description]]
+ * Returns the given angle in radians expressed as degrees.
+ * @param   {Number} radians The given angle in radians.
+ * @returns {Number} The given angle in degrees.
  */
-util.vectorLength = function (dx, dy) {
-    return Math.sqrt(dx * dx + dy * dy);
-}
+util.degrees = function (radians) {
+    return radians / Math.PI * 180;
+};
+
+/**
+ * Maps the value v from the source range [a, b] to the target range [c, d].
+ * @param   {Number} value The value to map.
+ * @param   {Number} low1 The first bound of the source range.
+ * @param   {Number} high1 The second bound of the source range.
+ * @param   {Number} low2 The first bound of the target range.
+ * @param   {Number} high2 The second bound of the target range.
+ * @returns {Number} The mapped value.
+ */
+util.mapRange = function (value, low1, high1, low2, high2) {
+    return low2 + (high2 - low2) * (value - low1) / (high1 - low1);
+};
 
 /**
  * Constrains the given value v to the range [min, max]
@@ -221,10 +273,24 @@ util.vectorLength = function (dx, dy) {
  * @returns {Number} The constrained value.
  */
 util.constrain = function (v, min, max) {
-    if (v < min) { return min; }
-    else if (v > max) { return max; }
+    if (v < min) return min;
+    else if (v > max) return max;
     else return v;
-}
+};
+
+/**
+ * Calculates the length of the vector (dx, dy).
+ * @param   {Number} dx [[Description]]
+ * @param   {Number} dy [[Description]]
+ * @returns {Number} [[Description]]
+ */
+util.vectorLength = function (dx, dy) {
+    return Math.sqrt(dx * dx + dy * dy);
+};
+
+// #############################################################################
+// Support functions
+// -----------------------------------------------------------------------------
 
 /**
  * Return the size of one em in pixels.
@@ -260,3 +326,11 @@ util.debug = function (name, value) {
 }
 
 // -----------------------------------------------------------------------------
+
+/** Polyfill String.trim for old browsers
+ *  (q.v. blog.stevenlevithan.com/archives/faster-trim-javascript) */
+if (String.prototype.trim === undefined) {
+    String.prototype.trim = function() {
+        return String(this).replace(/^\s\s*/, '').replace(/\s\s*$/, '');
+    };
+}

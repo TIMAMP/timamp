@@ -31,6 +31,10 @@ var euTopoJson;
 var days;
 var hours;
 var minutes;
+
+/**
+ * @type {Object}
+ */
 var currDob;
 //var r100, r50;
 
@@ -236,7 +240,7 @@ function drawMap() {
     }
 
     // draw radars:
-    var radarSVGG = svg.append("g").attr("class", "radar");
+    var radarSVGG = svg.append("g");
     var rpx, rpy;
     for (radi = 0; radi < radn; radi++) {
         rpx = data.radars.xPositions[radi];
@@ -244,17 +248,39 @@ function drawMap() {
         radarSVGG.append('svg:circle')
             .attr('cx', rpx)
             .attr('cy', rpy)
-            .attr('r', 3);
+            .attr('r', 3)
+            .classed("radar-center", true);
+
+        radar = data.radars[radi];
+        var circle = d3.geo.circle()
+            .origin(radar.coordinates)
+            .angle(util.geoDistAngle(100));
+        svg.append("path")
+            .datum(circle)
+            .attr("d", path)
+            .classed("radar-radius", true);
+
+        //var n = 36;
+        //for (var i = 0; i < n; i++) {
+        //    var bearing = util.mapRange(i, 0, n, 0, 360);
+        //    var dest = util.destinationPoint(radar.coordinates, bearing, 100);
+        //    var circle = d3.geo.circle()
+        //        .origin(dest)
+        //        .angle(.01);
+        //    svg.append("path")
+        //        .datum(circle)
+        //        .attr("d", path)
+        //        .classed("highlight", true);
+        //}
     }
 
     // add the paths group:
     pathsSVGGroup = svg.append("g");
 
     // draw legend:
-    var legend = svg.append("g");
+    //var legend = svg.append("g");
     var legendSVGGroup = svg.append("g");
     drawLegend(legendSVGGroup);
-
 }
 
 /**
@@ -279,41 +305,25 @@ function drawPaths(dob) {
         lalpha,
         lwidth = 1.5;
 
-    pathsSVGGroup.selectAll("*").remove();
+    // The angle (in degrees) of the radius around the radars in which to anchor flows:
+    var radarRadiusAngle = util.geoDistAngle(75);
+
+    //pathsSVGGroup.selectAll("*").remove();
 
     // pixels secs per meter, als volgt te gebruiken:
     // d[pxl] = speed[m/s] * (duration[s] * conv[pxl/m])
-    //var pspm = map.dmxToPxl(1) * dob.windowDuration * 60;
-    
-    // quick and dirty estimate:
-    // - latitude: 111,111 meters (111.111 km) in the y direction is 1 degree
-    // - longitude: 111,111 * cos(latitude) meters in the x direction is 1 degree
-    // - latitude = mapCenter[1] / 180 * math.PI;
-    // source: http://gis.stackexchange.com/questions/2951/algorithm-for-offsetting-a-latitude-longitude-by-some-amount-of-meters
-    
-    // one degree longitude in meters:
-    var degToMetX = 111111 * Math.cos(mapCenter[1] / 180 * Math.PI);
-//    console.log("degToMetX: " + degToMetX);
-    var metToDegX = 1 / degToMetX;
-//    console.log("metToDegX: " + metToDegX);
-    var pspmX = metToDegX * dob.windowDuration * 60;
-    
-    // one degree latitude in meters:
-    var degToMetY = 111111;
-    var metToDegY = 1 / degToMetY;
-//    console.log("degToMetY: " + degToMetY);
-    var pspmY = metToDegY * dob.windowDuration * 60;
-    
+    var pspm =  util.geoDistAngle(1) / 1000 * dob.windowDuration * 60;
+
     // the volume of the context in km3, i.e. area of circle with 100km
     // radius by 200m:
-    var contextVolume = Math.PI * 100 * 100 / 5;
+    //var contextVolume = Math.PI * 100 * 100 / 5;
 
     var half = Math.ceil(wind / 2);
 
     // for each altitude:
     for (alti = 0; alti < altn; alti++) {
         densities = dob.avDensities[alti];
-        hue = util.map(alti, 0, altn, altiHueMin, altiHueMax);
+        hue = util.mapRange(alti, 0, altn, altiHueMin, altiHueMax);
 
         // for each radar:
         for (radi = 0; radi < radn; radi++) {
@@ -326,12 +336,12 @@ function drawPaths(dob) {
             var lcolor = util.hsvToHex(hue, asat, abri)
             var pathGr = pathsSVGGroup.append("g");
 
-            pathn = util.map(densities[radi], 0, maxDensity, 0, maxPathCnt);
+            pathn = util.mapRange(densities[radi], 0, maxDensity, 0, maxPathCnt);
             for (pathi = 0; pathi < pathn; pathi++) {
                 //console.log("> pathi: " + pathi + " - alti: " + alti);
                 pa = Math.random() * Math.PI * 2;
                 //pd = util.map(pathi, 0, pathn, 2, r100);
-                pd = Math.random() * 100000 * metToDegX;
+                pd = Math.random() * radarRadiusAngle;
                 px0 = px = radx + Math.cos(pa) * pd;
                 py0 = py = rady + Math.sin(pa) * pd;
                 pp = projection([px, py]);
@@ -344,8 +354,8 @@ function drawPaths(dob) {
                     }
                     uSpeeds = dob.uSpeeds[wini][alti];
                     vSpeeds = dob.vSpeeds[wini][alti];
-                    dx = idw(px, py, uSpeeds, xps, yps, 2) * pspmX;
-                    dy = idw(px, py, vSpeeds, xps, yps, 2) * pspmY;
+                    dx = idw(px, py, uSpeeds, xps, yps, 2) * pspm;
+                    dy = idw(px, py, vSpeeds, xps, yps, 2) * pspm;
                     
                     nx = px - dx;
                     ny = py - dy;
@@ -373,8 +383,8 @@ function drawPaths(dob) {
                         return;
                     }
 
-                    lalpha = util.map(wini, half - 1, 0, 0.9, 0.3);
-                    lwidth = util.map(wini, half - 1, 0, 1.5, 1);
+                    lalpha = util.mapRange(wini, half - 1, 0, 0.9, 0.3);
+                    lwidth = util.mapRange(wini, half - 1, 0, 1.5, 1);
                     pathGr.append("line")
                         .attr("x1", pp[0]).attr("y1", pp[1])
                         .attr("x2", np[0]).attr("y2", np[1])
@@ -398,8 +408,8 @@ function drawPaths(dob) {
                     }
                     uSpeeds = dob.uSpeeds[wini][alti];
                     vSpeeds = dob.vSpeeds[wini][alti];
-                    dx = idw(px, py, uSpeeds, xps, yps, 2) * pspmX;
-                    dy = idw(px, py, vSpeeds, xps, yps, 2) * pspmY;
+                    dx = idw(px, py, uSpeeds, xps, yps, 2) * pspm;
+                    dy = idw(px, py, vSpeeds, xps, yps, 2) * pspm;
 
                     px += dx;
                     py += dy;
@@ -478,7 +488,7 @@ function drawLegend(legendSVGGroup) {
     var dx = legendW / altn;
     var hue, hex;
     for (alti = 0; alti < altn; alti++) {
-        hue = util.map(alti, 0, altn, altiHueMin, altiHueMax);
+        hue = util.mapRange(alti, 0, altn, altiHueMin, altiHueMax);
         hex = util.hsvToHex(hue, altiSaturation, altiBrightness);
         legendSVGGroup.append("rect")
             .attr("x", tx)

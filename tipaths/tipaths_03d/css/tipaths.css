@@ -110,8 +110,18 @@ p.description {
 	stroke-width: 0.3px;
 }
 
-.radar circle {
-    fill: #000;
+.radar-center {
+    fill: #253;
+    fill-opacity: 0.5;
+}
+
+.radar-radius {
+    fill: #ddf;
+    fill-opacity: 0.2;
+    stroke: #fff;
+    stroke-width: 1px;
+    stroke-opacity: 1;
+    stroke-dasharray: 4, 8;
 }
 
 .land {
@@ -120,7 +130,7 @@ p.description {
 
 .country-boundary {
     fill: none;
-    stroke: #70a070;
+    stroke: #005000;
     stroke-width: .5px;
     stroke-dasharray: 2, 4;
     stroke-linejoin: round;
@@ -129,4 +139,9 @@ p.description {
 .legend-labels {
     font-family: Helvetica, Sans-serif;
     font-size: 11px;
+}
+
+.highlight {
+    fill: #f00;
+    fill-opacity: .5;
 }
