@@ -47,38 +47,45 @@ function init() {
     }
     
     map = new Map(mapH);
-    //console.log("- map.width: " + map.width);
+
+    var loading = 3;
+    
+    d3.json("data/eu.topo.json", function (error, json) {
+        if (error) {
+            console.error(error);
+            return;
+        }
+        euTopoJson = json;
+        if (--loading == 0) initDone();
+    });
+    data.loadRadars(function () {
+        if (--loading == 0) initDone();
+    });
+    data.loadQueryTemplate(function () {
+        if (--loading == 0) initDone();
+    });
+}
+
+function initDone() {
+    printSpecifics_01();
+    printSpecifics_01b();
+    printSpecifics_01c();
 
     //r100 = map.dmxToPxl(100000); // 100 km
     //r50 = map.dmxToPxl(50000); // 50 km
-    
-    d3.json("data/eu.topo.json", function(error, json) {
-        euTopoJson = json;
-        //console.log(topojson.feature(eu, eu.objects.europe));
 
-        data.loadRadars(function() {
-            $("#input_days").change(inputChanged);
-            $("#input_hours").change(inputChanged);
-            $("#input_minutes").change(inputChanged);
-            $("#input_duration").change(inputChanged);
+    $("#input_days").change(inputChanged);
+    $("#input_hours").change(inputChanged);
+    $("#input_minutes").change(inputChanged);
+    $("#input_duration").change(inputChanged);
 
-            updateMap(true);
-        });
-    });
-
-    // TODO: what does this?
-    //d3.select(self.frameElement).style("height", mapH + "px");
-    
-    // TODO: fix
     d3.select(window).on('resize', Foundation.utils.throttle(function(e) {
         if (d3.select("#map-container").node().getBoundingClientRect().width != mapW) {
             updateMap(false);
         }
     }, 25));
-    
-    printSpecifics_01();
-    printSpecifics_01b();
-    printSpecifics_01c();
+
+    updateMap(true);
 }
 
 function loadFromCartoDB(from, windowCount, handler) {
@@ -431,6 +438,10 @@ function drawPaths(dob) {
     }
 }
 
+/**
+ * Draws the legend.
+ * @param legendSVGGroup
+ */
 function drawLegend(legendSVGGroup) {
     var legendH = 16;
 

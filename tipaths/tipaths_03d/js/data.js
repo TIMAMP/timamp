@@ -85,6 +85,42 @@ data.forEachRadar = function (handler) {
 
 // -----------------------------------------------------------------------------
 
+data.queryTemplate;
+
+data.loadQueryTemplate = function (handler) {
+    d3.xhr("data/data_4.sql", function (error, XMLHttpRequest) {
+        if (error) {
+            console.error(error);
+            return;
+        }
+
+        //console.log(XMLHttpRequest);
+        data.queryTemplate = XMLHttpRequest.response;
+        data.queryTemplate = data.queryTemplate.replace(/#.*\n/g, '\n');
+        data.queryTemplate = data.queryTemplate.replace(/\n/g, ' ').trim();
+
+        var proceed = true;
+        while (proceed) {
+            proceed = false;
+            data.queryTemplate = data.queryTemplate.replace(/  /g, function(match, key) {
+                proceed = true;
+                return ' ';
+            });
+        }
+
+        handler();
+    });
+};
+
+data.formatTemplate = function (template, params) {
+    return template.replace(/{{(\w+)}}/g, function(match, key) {
+        key = key.trim();
+        //console.log(match, key, params[key]);
+        var val = params[key];
+        return typeof val != 'undefined' ? val : match;
+    });
+}
+
 /**
  * Loads data for a range of altitudes, over a series of windows, for each
  * radar-window-altitude combination averaging the bird_density, the u_speed and
@@ -104,29 +140,20 @@ data.loadData_4 = function (dob, handler) {
                         dob.windowCount);
     var fromStr = data.cartoDB.toString(from);
     var tillStr = data.cartoDB.toString(till);
-    //console.log("dob.winDuration: " + dob.winDuration);
-    //console.log("dob.winCount: " + dob.winCount);
-    //console.log("from: " + from + " - till: " + till);
-    var sql = "SELECT";
-    sql += " DIV(CAST(EXTRACT(EPOCH FROM start_time) - EXTRACT(EPOCH FROM TIMESTAMP '" + fromStr + "') AS NUMERIC), " + (dob.windowDuration * 60) + ") AS window_idx";
-    sql += ", altitude, radar_id";
-    sql += ", AVG(bird_density) AS bird_density";
-    sql += ", AVG(u_speed) AS u_speed";
-    sql += ", AVG(v_speed) AS v_speed";
-    // In the following line, a plus-sign is written in its url-encoded form
-    // %2B, because this plus-sign does not seem to be encoded by the AJAX-
-    // functionality:
-    sql += ", SQRT(POWER(AVG(u_speed), 2) %2B POWER(AVG(v_speed), 2)) AS speed";
-    sql += " FROM bird_migration_altitude_profiles";
-    sql += " WHERE altitude >= " + dob.altitudes[0];
-    sql += " AND altitude <= " + dob.altitudes[dob.altitudes.length - 1];
-    sql += " AND radial_velocity_std >= 2";
-    sql += " AND start_time >= '" + fromStr + "'";
-    sql += " AND start_time < '" + tillStr + "'";
-    sql += " GROUP BY window_idx, altitude, radar_id";
-    sql += " ORDER BY window_idx, altitude, radar_id";
+
+    var sql = data.formatTemplate(data.queryTemplate,
+        {
+            from: fromStr,
+            till: tillStr,
+            winDur: dob.windowDuration * 60,
+            minAlt: dob.altitudes[0],
+            maxAlt: dob.altitudes[dob.altitudes.length - 1]
+        }
+    );
     //console.log(sql);
+
     data.cartoDB.loadData(sql, function (json) {
+        //console.log(JSON.stringify(json));
         processData(json, dob);
         handler(dob);
     });
