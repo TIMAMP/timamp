@@ -4,23 +4,11 @@
 
 "use strict";
 
-// Root data object.
-var data = {};
+// Root dataService object.
+var dataService = {};
 
 // -----------------------------------------------------------------------------
 // Radars:
-
-/**
- * Load the radars data.
- * @param {Function} completeHandler - This handler is called when this
- *                                   assynchronous operation is complete.
- */
-data.loadRadars = function (completeHandler) {
-    this.loadRadarsJSON(function (radars) {
-        data.radars = radars;
-        completeHandler();
-    });
-};
 
 /**
  * Retrieve the radars dataset and return an object that holds the data. The
@@ -38,7 +26,7 @@ data.loadRadars = function (completeHandler) {
  * @param   {Function} completeHandler This handler is called when this
  *                                     assynchronous operation is complete.
  */
-data.loadRadarsJSON = function (completeHandler) {
+dataService.loadRadarsJSON = function (completeHandler) {
     $.getJSON("data/radars.geojson", function (json) {
         var radars = [], radar;
         $.each(json.features, function (i, feature) {
@@ -46,6 +34,7 @@ data.loadRadarsJSON = function (completeHandler) {
             radar.coordinates = feature.geometry.coordinates;
             radars.push(radar);
         });
+        dataService._sortRadars(radars);
         completeHandler(radars);
     });
 };
@@ -60,59 +49,58 @@ data.loadRadarsJSON = function (completeHandler) {
  * @param {Function} completeHandler - This handler is called when this
  *                                   assynchronous operation is complete.
  */
-data.loadRadarsCartoDB = function (completeHandler) {
+dataService.loadRadarsCartoDB = function (completeHandler) {
     var sql = "SELECT * FROM radars";
-    $.getJSON(data.cartodbUrl(sql), function (json) {
+    $.getJSON(dataService.cartodbUrl(sql), function (json) {
         var radars = [];
         $.each(json.rows, function (i, row) {
             // TODO:
         });
+        dataService._sortRadars(radars);
         completeHandler(radars);
     });
 };
 
-/**
- * Calls the handler once for each radar, passing the radar as argument. Note
- * that data.loadRadars() needs to be called before calling this function.
- * @param {Function} handler A function with one parameter: the radar object
- *                           as composed in data.loadRadarsJSON().
- */
-data.forEachRadar = function (handler) {
-    $.each(data.radars, function (i, radar) {
-        handler(radar);
+dataService._sortRadars = function (radars) {
+    radars.sort(function (r1, r2) {
+        // TODO: this code assumes that all ids are either number or string
+        if ($.isNumeric(r1.radar_id)) return r1.radar_id - r2.radar_id;
+        else return r1.radar_id.localeCompare(r2.radar_id);
     });
 };
 
 // -----------------------------------------------------------------------------
 
-data.queryTemplate;
+dataService._queryTemplate;
 
-data.loadQueryTemplate = function (handler) {
-    d3.xhr("data/data_4.sql", function (error, XMLHttpRequest) {
+dataService.loadQueryTemplate = function (handler) {
+    d3.xhr("data/data_5.sql", function (error, XMLHttpRequest) {
         if (error) {
             console.error(error);
             return;
         }
 
         //console.log(XMLHttpRequest);
-        data.queryTemplate = XMLHttpRequest.response;
-        data.queryTemplate = data.queryTemplate.replace(/#.*\n/g, '\n');
-        data.queryTemplate = data.queryTemplate.replace(/\n/g, ' ').trim();
+        dataService._queryTemplate = XMLHttpRequest.response;
+        dataService._queryTemplate = dataService._queryTemplate.replace(/#.*\n/g, '\n');
+        dataService._queryTemplate = dataService._queryTemplate.replace(/\n/g, ' ').trim();
 
         var proceed = true;
         while (proceed) {
             proceed = false;
-            data.queryTemplate = data.queryTemplate.replace(/  /g, function(match, key) {
-                proceed = true;
-                return ' ';
-            });
+            dataService._queryTemplate = dataService._queryTemplate.replace(/  /g,
+                function(match, key) {
+                    proceed = true;
+                    return ' ';
+                }
+            );
         }
 
         handler();
     });
 };
 
-data.formatTemplate = function (template, params) {
+dataService.formatTemplate = function (template, params) {
     return template.replace(/{{(\w+)}}/g, function(match, key) {
         key = key.trim();
         //console.log(match, key, params[key]);
@@ -126,52 +114,59 @@ data.formatTemplate = function (template, params) {
  * radar-window-altitude combination averaging the bird_density, the u_speed and
  * the v_speed. When the data is loaded, the handler function is called with
  * a JSON-object holding the data as sole argument.
+ *
  * The given data object must have the following properties:
  * - startTime: The start time of the series of windows
  * - windowDuration: The duration of a window in minutes.
  * - windowCount: The number of windows
  * - altitudes: The ordered list of altitudes to include.
- * @param {Number}   dob     The data object.
- * @param {Function} handler The handler function.
+ *
+ * @param {Object}   data      The data object.
+ * @param {Object}   radarData The radar-data object.
+ * @param {function(Object)} handler   The handler function.
  */
-data.loadData_4 = function (dob, handler) {
-    var from = dob.startTime;
-    var till = new Date(from.getTime() + dob.windowDuration * 60000 *
-                        dob.windowCount);
-    var fromStr = data.cartoDB.toString(from);
-    var tillStr = data.cartoDB.toString(till);
+dataService.loadData = function (data, radarData, handler) {
+    var from = data.startTime;
+    var till = new Date(from.getTime() + data.windowDuration * 60000 *
+                        data.windowCount);
+    var fromStr = dataService.cartoDB.toString(from);
+    var tillStr = dataService.cartoDB.toString(till);
 
-    var sql = data.formatTemplate(data.queryTemplate,
+    var sql = dataService.formatTemplate(dataService._queryTemplate,
         {
             from: fromStr,
             till: tillStr,
-            winDur: dob.windowDuration * 60,
-            minAlt: dob.altitudes[0],
-            maxAlt: dob.altitudes[dob.altitudes.length - 1]
+            winDur: data.windowDuration * 60,
+            minAlt: data.altitudes[0],
+            maxAlt: data.altitudes[data.altitudes.length - 1]
         }
     );
     //console.log(sql);
 
-    data.cartoDB.loadData(sql, function (json) {
+    dataService.cartoDB.loadData(sql, function (json) {
         //console.log(JSON.stringify(json));
-        processData(json, dob);
-        handler(dob);
+        dataService._processData(json, data, radarData);
+        handler(data);
     });
 };
 
 /**
  * Helper function of loadFromCartoDB().
- * @param {Object} json The JSON-object with the loaded data.
- * @param {Object} dob The data object in which to organise the data.
+ * The order of the radars in the radarData object is used the order in
+ * which the data is stored in the third dimension of the teh densities,
+ * uSpeeds, vSpeeds and speeds matrices in the data object.
+ *
+ * @param {Object} json      The JSON-object with the loaded data.
+ * @param {Object} data      The data object in which to organise the data.
+ * @param {Object} radarData The radar-data object.
  */
-function processData(json, dob) {
+dataService._processData = function (json, data, radarData) {
     //console.log(JSON.stringify(json));
-    var wini, winn = dob.windowCount,
-        alti, altn = dob.altitudes.length,
+    var wini, winn = data.windowCount,
+        alti, altn = data.altitudes.length,
         rowi, rown = json.total_rows,
         row,
-        radi, radn = dob.radars.length,
-        radar,
+        radi, radn = radarData.count,
         densities,
         uSpeeds,
         vSpeeds,
@@ -190,36 +185,36 @@ function processData(json, dob) {
             vSpeeds.push(util.zeroArray(radn));
             speeds.push(util.zeroArray(radn));
         }
-        dob.densities.push(densities);
-        dob.uSpeeds.push(uSpeeds);
-        dob.vSpeeds.push(vSpeeds);
-        dob.speeds.push(speeds);
+        data.densities.push(densities);
+        data.uSpeeds.push(uSpeeds);
+        data.vSpeeds.push(vSpeeds);
+        data.speeds.push(speeds);
     }
 
     // Fill the data structure with the given data:
     for (rowi = 0; rowi < rown; rowi++) {
         row = json.rows[rowi];
-        wini = row.window_idx;
+        wini = row.interval_idx;
         alti = ((row.altitude * 10) - 3) / 2;
-        radi = dob.radarIndices[row.radar_id];
-        dob.densities[wini][alti][radi] = row.bird_density;
-        dob.uSpeeds[wini][alti][radi] = row.u_speed;
-        dob.vSpeeds[wini][alti][radi] = row.v_speed;
-        dob.speeds[wini][alti][radi] = row.speed;
+        radi = radarData.radarIndices[row.radar_id];
+        data.densities[wini][alti][radi] = row.avg_bird_density;
+        data.uSpeeds[wini][alti][radi] = row.avg_u_speed;
+        data.vSpeeds[wini][alti][radi] = row.avg_v_speed;
+        data.speeds[wini][alti][radi] = row.avg_speed;
     }
 
     // Add average densities per radar-altitude combination:
-    dob.avDensities = [];
+    data.avDensities = [];
     for (alti = 0; alti < altn; alti++) {
         avds = [];
         for (radi = 0; radi < radn; radi++) {
             dsum = 0;
             for (wini = 0; wini < winn; wini++) {
-                dsum += dob.densities[wini][alti][radi];
+                dsum += data.densities[wini][alti][radi];
             }
             avds[radi] = dsum / winn;
         }
-        dob.avDensities.push(avds);
+        data.avDensities.push(avds);
     }
 }
 
@@ -238,7 +233,7 @@ function processData(json, dob) {
  * - max_v_speed: {Number} The largest v_speed value in the table.
  * @param {Function} handler The handler.
  */
-data.getSpecifics = function (handler) {
+dataService.getSpecifics = function (handler) {
 //        var sql = "MAX(bird_density) AS max_density";
 //        sql += ", MAX(u_speed) AS max_u_speed";
 //        sql += ", MAX(v_speed) AS max_v_speed";
@@ -265,7 +260,7 @@ data.getSpecifics = function (handler) {
     sql += sqlSelect("min_start_time", "start_time", "MIN");
 
 
-    data.cartoDB.loadData(sql, function (json) {
+    dataService.cartoDB.loadData(sql, function (json) {
         console.log("json: " + JSON.stringify(json));
         var specifics = {},
             rowi, rown = json.total_rows, row;
@@ -277,12 +272,12 @@ data.getSpecifics = function (handler) {
     });
 };
 
-function printSpecifics_01(handler) {
+dataService.printSpecifics_01 = function (handler) {
     var sql = "SELECT DISTINCT altitude, radar_name, start_time, bird_density";
     sql += " FROM bird_migration_altitude_profiles";
     sql += " WHERE bird_density =";
     sql += " (SELECT MAX(bird_density) FROM bird_migration_altitude_profiles)";
-    data.cartoDB.loadData(sql, function (json) {
+    dataService.cartoDB.loadData(sql, function (json) {
         //console.log("json: " + JSON.stringify(json));
         var row = json.rows[0];
         console.log("specifics: max bird_density: " + row.bird_density
@@ -291,14 +286,14 @@ function printSpecifics_01(handler) {
                     + ", start_time: " + row.start_time);
         //printSpecifics_01b(handler);
     });
-}
+};
 
-function printSpecifics_01b(handler) {
+dataService.printSpecifics_01b = function (handler) {
     var sql = "SELECT DISTINCT altitude, radar_name, start_time, u_speed";
     sql += " FROM bird_migration_altitude_profiles";
     sql += " WHERE u_speed =";
     sql += " (SELECT MAX(u_speed) FROM bird_migration_altitude_profiles)";
-    data.cartoDB.loadData(sql, function (json) {
+    dataService.cartoDB.loadData(sql, function (json) {
         //console.log("json: " + JSON.stringify(json));
         var row = json.rows[0];
         console.log("specifics: max u_speed: " + row.u_speed
@@ -307,14 +302,14 @@ function printSpecifics_01b(handler) {
                     + ", start_time: " + row.start_time);
         //printSpecifics_01c(handler);
     });
-}
+};
 
-function printSpecifics_01c(handler) {
+dataService.printSpecifics_01c = function (handler) {
     var sql = "SELECT DISTINCT altitude, radar_name, start_time, v_speed";
     sql += " FROM bird_migration_altitude_profiles";
     sql += " WHERE v_speed =";
     sql += " (SELECT MAX(v_speed) FROM bird_migration_altitude_profiles)";
-    data.cartoDB.loadData(sql, function (json) {
+    dataService.cartoDB.loadData(sql, function (json) {
         //console.log("json: " + JSON.stringify(json));
         var row = json.rows[0];
         console.log("specifics: max v_speed: " + row.v_speed
@@ -323,27 +318,27 @@ function printSpecifics_01c(handler) {
                     + ", start_time: " + row.start_time);
 //        printSpecifics_01b(handler);
     });
-}
+};
 
-function printSpecifics_02(handler) {
+dataService.printSpecifics_02 = function (handler) {
     var sql = "SELECT DISTINCT start_time";
     sql += " FROM bird_migration_altitude_profiles";
     sql += " WHERE start_time =";
     sql += " (SELECT MIN(start_time) FROM bird_migration_altitude_profiles)";
-    data.cartoDB.loadData(sql, function (json) {
+    dataService.cartoDB.loadData(sql, function (json) {
         //console.log("json: " + JSON.stringify(json));
         var row = json.rows[0];
         console.log("specifics: min start_time: " + row.start_time);
         printSpecifics_03(handler);
     });
-}
+};
 
-function printSpecifics_03(handler) {
+dataService.printSpecifics_03 = function (handler) {
     var sql = "SELECT DISTINCT start_time";
     sql += " FROM bird_migration_altitude_profiles";
     sql += " WHERE start_time =";
     sql += " (SELECT MAX(start_time) FROM bird_migration_altitude_profiles)";
-    data.cartoDB.loadData(sql, function (json) {
+    dataService.cartoDB.loadData(sql, function (json) {
         //console.log("json: " + JSON.stringify(json));
         var row = json.rows[0];
         console.log("specifics: max start_time: " + row.start_time);
@@ -352,7 +347,7 @@ function printSpecifics_03(handler) {
     });
 };
 
-data.printSpecifics = function(handler) {
+dataService.printSpecifics = function(handler) {
     printSpecifics_01(handler);
 //        console.log("- specifics.max_bird_density: " + specifics.max_bird_density);
 //        console.log("- specifics.max_u_speed: " + specifics.max_u_speed);
@@ -368,7 +363,7 @@ data.printSpecifics = function(handler) {
  * @param   {[[Type]]} altitude [[Description]]
  * @returns {[[Type]]} [[Description]]
  */
-data.altIndex = function (altitude) {
+dataService.altIndex = function (altitude) {
     // 0.3 -> 0
     // 0.5 -> 1
     // 0.7 -> 2
@@ -380,54 +375,50 @@ data.altIndex = function (altitude) {
 
 // An array with a continuous set of altitudes for which all radars provide data
 // in the bird_migration_altitude_profiles dataset.
-data.altitudes = [];
+dataService.altitudes = [];
 var i, j;
 for (i = 0.3; i <= 3.9; i += 0.2) {
-    data.altitudes.push(i);
+    dataService.altitudes.push(i);
 }
-data.altitudeStrings = [];
+dataService.altitudeStrings = [];
 for (i = 0; i <= 3; i++) {
     for (j = 1; j <= 9; j += 2) {
         if (i === 0 && j === 1) { continue; }
-        data.altitudeStrings.push(i + "." + j);
+        dataService.altitudeStrings.push(i + "." + j);
     }
 }
 
 // -----------------------------------------------------------------------------
-// data.cartoDB
+// dataService.cartoDB
 
-data.cartoDB = {};
+dataService.cartoDB = {};
 
 /**
  * Load data from the CartoDB server.
- * The 'Bird migration altitude profiles' data is contained in the XXX table.
- * - start_time: {String} A string that can be passed to the Date constructor.
- * - end_time: {String} A string that can be passed to the Date constructor.
- * - radar_name: {String}
- * - radar_id: {String}
- * - altitude: {Number} in km
- * - bird_density: {Numnber} In birds/km3. Is set to 0 when the
- *   radial_velocity_std is below 2.0.
- * - w_speed: {Number} vertical speed
- * - u_speed: {Number} Horizontal speed towards East.
- * - v_speed: {Number} Horizontal speed towards North.
- * - ground_speed: {Number} Horizontal speed at ground level.
- * - direction: {Number} Horizontal direction at ground level.
- * - radial_velocity_std: {Number}
  * @param {String}   sql     The SQL to execute on the CartoDB server.
  * @param {Function} handler A handler function with one parameter, the json
  *                           object received from the server.
  */
-data.cartoDB.loadData = function (sql, handler) {
-    $.getJSON("http://lifewatch.cartodb.com/api/v2/sql?q=" + sql, handler);
+dataService.cartoDB.loadData = function (sql, handler) {
+    d3.json("http://lifewatch.cartodb.com/api/v2/sql?q=" + sql,
+        function (error, json) {
+            if (error) {
+                throw new Error("Error in dataService.cartoDB.loadData. "
+                    + JSON.parse(error.responseText).error.join("; "));
+            }
+            else {
+                handler(json);
+            }
+        }
+    );
 };
 
 /**
  * Return the given date as a string in the format used in CartoDB.
- * @param   {Date}   date The data to format.
+ * @param   {Date}   date The date to format.
  * @returns {String} The formatted date.
  */
-data.cartoDB.toString = function (date) {
+dataService.cartoDB.toString = function (date) {
     function pad(number) {
         var r = String(number);
         if (r.length === 1) {

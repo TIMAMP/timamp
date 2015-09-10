@@ -27,15 +27,18 @@ var legendW;
 var svg;
 var pathsSVGGroup;
 var projection;
+var projectionPath;
 var euTopoJson;
 var days;
 var hours;
 var minutes;
+var radarData = {};
 
 /**
  * @type {Object}
  */
-var currDob;
+var currData;
+
 //var r100, r50;
 
 function init() {
@@ -58,18 +61,27 @@ function init() {
         euTopoJson = json;
         if (--loading == 0) initDone();
     });
-    data.loadRadars(function () {
+    dataService.loadRadarsJSON(function (radars) {
+        radarData.radars = radars;
+        radarData.count = radars.length;
+
+        // Create mapping from radar_ids to indices:
+        radarData.radarIndices = {};
+        radars.forEach(function (radar, i) {
+            radarData.radarIndices[radar.radar_id] = i;
+        });
+
         if (--loading == 0) initDone();
     });
-    data.loadQueryTemplate(function () {
+    dataService.loadQueryTemplate(function () {
         if (--loading == 0) initDone();
     });
 }
 
 function initDone() {
-    printSpecifics_01();
-    printSpecifics_01b();
-    printSpecifics_01c();
+    //dataService.printSpecifics_01();
+    //dataService.printSpecifics_01b();
+    //dataService.printSpecifics_01c();
 
     //r100 = map.dmxToPxl(100000); // 100 km
     //r50 = map.dmxToPxl(50000); // 50 km
@@ -81,56 +93,71 @@ function initDone() {
 
     d3.select(window).on('resize', Foundation.utils.throttle(function(e) {
         if (d3.select("#map-container").node().getBoundingClientRect().width != mapW) {
-            updateMap(false);
+            updateMap(false, true);
         }
     }, 25));
 
-    updateMap(true);
+    updateMap(true, true);
 }
 
-function loadFromCartoDB(from, windowCount, handler) {
-    var dob = {
-            startTime: from,
+function inputChanged() {
+    updateMap(true, false);
+}
+
+function updateMap(dataDirty, mapDirty) {
+    if (mapDirty) {
+        var svgRect = d3.select("#map-container").node().getBoundingClientRect();
+        mapW = svgRect.width;
+        mapH = mapW * mapHeightFactor;
+        mapScale = mapW * mapScaleFactor;
+        legendW = mapW * legendWidthFactor;
+
+        // specify the projection based of the size of the map:
+        projection = d3.geo.mercator()
+            .scale(mapScale)
+            .translate([mapW / 2, mapH / 2])
+            .center(mapCenter);
+
+        // initialize the d3 path with which to draw the geography:
+        projectionPath = d3.geo.path().projection(projection);
+
+        // update radar positions:
+        radarData.xPositions = [];
+        radarData.yPositions = [];
+        radarData.radars.forEach(function (radar, i) {
+            var radp = projection([radar.coordinates[0], radar.coordinates[1]]);
+//                console.log(radp[0], radp[1]);
+            radarData.xPositions[i] = radp[0];
+            radarData.yPositions[i] = radp[1];
+        });
+    }
+
+    drawMap();
+
+    if (dataDirty) {
+        updateInput();
+        var data = {
+            startTime: new Date(2013, 3, days, hours, minutes),
             windowDuration : 20 /* the duration of a window in minutes */,
-            windowCount: windowCount,
-            radars : [],
+            windowCount: parseInt($("#input_duration").val()) * 3,
             altitudes : altitudes,
             densities : [],
             avDensities : undefined,
             uSpeeds : [],
             vSpeeds : [],
             speeds : []
-        },
-        radi, radn = data.radars.length;
-
-    for (radi = 0; radi < radn; radi++) {
-        dob.radars.push(data.radars[radi].radar_id);
+        };
+        console.log("Loading from " + data.startTime + " for " + data.windowCount +
+            " windows of " + data.windowDuration + " minutes each.");
+        dataService.loadData(data, radarData, function () {
+            currData = data;
+            drawPaths(currData);
+            //console.log("Done");
+        });
     }
-    dob.radars.sort();
-    initRadarMapData(dob);
-
-    console.log("Loading from " + from + " for " + dob.windowCount +
-        " windows of " + dob.windowDuration + " minutes each.");
-    data.loadData_4(dob, handler);
-}
-
-/**
- * Add mapping from radar_ids to indices in data arrays.
- * @param {Object} dob The radar-data object.
- */
-function initRadarMapData(dob) {
-    var radi,
-        radn = data.radars.length;
-
-    // Create mapping from radar_ids to indices:
-    dob.radarIndices = {};
-    for (radi = 0; radi < radn; radi++) {
-        dob.radarIndices[dob.radars[radi]] = radi;
+    else {
+        drawPaths(currData);
     }
-}
-
-function inputChanged() {
-    updateMap(true);
 }
 
 function updateInput() {
@@ -179,92 +206,46 @@ function updateInput() {
     $("#input_minutes").val(minutes);
 }
 
-function updateMap(inputDirty) {
-    drawMap();
-    if (inputDirty) {
-        updateInput();
-        var from = new Date(2013, 3, days, hours, minutes);
-        var windowCount = parseInt($("#input_duration").val()) * 3;
-
-        loadFromCartoDB(from, windowCount, function (dob) {
-            currDob = dob;
-            drawPaths(dob);
-            //console.log("Done");
-        });
-    }
-    else {
-        drawPaths(currDob);
-    }
-}
-
 function drawMap() {
-    var svgRect = d3.select("#map-container").node().getBoundingClientRect();
-    mapW = svgRect.width;
-    mapH = mapW * mapHeightFactor;
-    mapScale = mapW * mapScaleFactor;
-    legendW = mapW * legendWidthFactor;
-
     if (svg) { svg.remove(); }
     svg = d3.select("#map-container").append("svg")
         .style("width", mapW)
         .style("height", mapH);
-
-    // specify the projection based of the size of the map:
-    projection = d3.geo.mercator()
-        .scale(mapScale)
-        .translate([mapW / 2, mapH / 2])
-        .center(mapCenter);
-
-    var path = d3.geo.path()
-        .projection(projection);
 
     var graticule = d3.geo.graticule()
         .step([1, 1]);
     svg.append("path")
         .datum(graticule)
         .classed("graticule", true)
-        .attr("d", path);
+        .attr("d", projectionPath);
 
     svg.insert("path", ".graticule")
         .datum(topojson.feature(euTopoJson, euTopoJson.objects.europe))
         .classed("land", true)
-        .attr("d", path);
+        .attr("d", projectionPath);
     svg.insert("path", ".graticule")
         .datum(topojson.mesh(euTopoJson, euTopoJson.objects.europe, function(a, b) { return a !== b; }))
         .classed("country-boundary", true)
-        .attr("d", path);
-
-    // update radar positions:
-    data.radars.xPositions = [];
-    data.radars.yPositions = [];
-    var radi, radn = data.radars.length, radar, radp;
-    for (radi = 0; radi < radn; radi++) {
-        radar = data.radars[radi];
-        var radp = projection([radar.coordinates[0], radar.coordinates[1]]);
-//                console.log(radp[0], radp[1]);
-        data.radars.xPositions[radi] = radp[0];
-        data.radars.yPositions[radi] = radp[1];
-    }
+        .attr("d", projectionPath);
 
     // draw radars:
     var radarSVGG = svg.append("g");
     var rpx, rpy;
-    for (radi = 0; radi < radn; radi++) {
-        rpx = data.radars.xPositions[radi];
-        rpy = data.radars.yPositions[radi];
+    radarData.radars.forEach(function (radar, radi) {
+        rpx = radarData.xPositions[radi];
+        rpy = radarData.yPositions[radi];
         radarSVGG.append('svg:circle')
             .attr('cx', rpx)
             .attr('cy', rpy)
             .attr('r', 3)
             .classed("radar-center", true);
 
-        radar = data.radars[radi];
         var circle = d3.geo.circle()
             .origin(radar.coordinates)
             .angle(util.geoDistAngle(100));
         svg.append("path")
             .datum(circle)
-            .attr("d", path)
+            .attr("d", projectionPath)
             .classed("radar-radius", true);
 
         //var n = 36;
@@ -279,7 +260,7 @@ function drawMap() {
         //        .attr("d", path)
         //        .classed("highlight", true);
         //}
-    }
+    });
 
     // add the paths group:
     pathsSVGGroup = svg.append("g");
@@ -292,25 +273,15 @@ function drawMap() {
 
 /**
  * Draw the paths.
- * @param {Object} dob The data object.
+ * @param {Object} data The dataService object.
  */
-function drawPaths(dob) {
+function drawPaths(data) {
     //console.log(">> drawPaths - wind: " + wind);
-    var wini, winn, wind = dob.windowCount,
-        alti, altn = dob.altitudes.length,
-        radi, radn = dob.radars.length,
-        pathi, pathn,
-        densities, uSpeeds, vSpeeds,
-        hue,
-        radx, rady,
-        pa = 0, pd, px, py, px0, py0, dx, dy, nx, ny, pp, np,
-        xps = data.radars.xPositions,
-        yps = data.radars.yPositions,
-        idw = util.idw,
-        asat = altiSaturation,
-        abri = altiBrightness,
-        lalpha,
-        lwidth = 1.5;
+    var wind = data.windowCount;
+    var half = Math.ceil(data.windowCount / 2);
+    var xps = radarData.xPositions;
+    var yps = radarData.yPositions;
+    var idw = util.idw;
 
     // The angle (in degrees) of the radius around the radars in which to anchor flows:
     var radarRadiusAngle = util.geoDistAngle(75);
@@ -319,48 +290,46 @@ function drawPaths(dob) {
 
     // pixels secs per meter, als volgt te gebruiken:
     // d[pxl] = speed[m/s] * (duration[s] * conv[pxl/m])
-    var pspm =  util.geoDistAngle(1) / 1000 * dob.windowDuration * 60;
+    var pspm =  util.geoDistAngle(1) / 1000 * data.windowDuration * 60;
 
     // the volume of the context in km3, i.e. area of circle with 100km
     // radius by 200m:
     //var contextVolume = Math.PI * 100 * 100 / 5;
 
-    var half = Math.ceil(wind / 2);
-
     // for each altitude:
-    for (alti = 0; alti < altn; alti++) {
-        densities = dob.avDensities[alti];
-        hue = util.mapRange(alti, 0, altn, altiHueMin, altiHueMax);
+    var altn = data.altitudes.length;
+    for (var alti = 0; alti < altn; alti++) {
+        var densities = data.avDensities[alti];
+        var hue = util.mapRange(alti, 0, altn, altiHueMin, altiHueMax);
+        var lcolor = util.hsvToHex(hue, altiSaturation, altiBrightness);
 
         // for each radar:
-        for (radi = 0; radi < radn; radi++) {
-            var radar = data.radars[radi];
-            // var radp = projection([radar.coordinates[0], radar.coordinates[1]]);
-            radx = radar.coordinates[0];
-            rady = radar.coordinates[1];
-            
-            // for each path:
-            var lcolor = util.hsvToHex(hue, asat, abri)
+        radarData.radars.forEach(function (radar, radi) {
+            var radx = radar.coordinates[0];
+            var rady = radar.coordinates[1];
             var pathGr = pathsSVGGroup.append("g");
+            var pathn = util.mapRange(densities[radi], 0, maxDensity, 0, maxPathCnt);
 
-            pathn = util.mapRange(densities[radi], 0, maxDensity, 0, maxPathCnt);
-            for (pathi = 0; pathi < pathn; pathi++) {
+            // for each path:
+            for (var pathi = 0; pathi < pathn; pathi++) {
                 //console.log("> pathi: " + pathi + " - alti: " + alti);
-                pa = Math.random() * Math.PI * 2;
+                var pa = Math.random() * Math.PI * 2;  // path anchor angle
                 //pd = util.map(pathi, 0, pathn, 2, r100);
-                pd = Math.random() * radarRadiusAngle;
-                px0 = px = radx + Math.cos(pa) * pd;
-                py0 = py = rady + Math.sin(pa) * pd;
-                pp = projection([px, py]);
-
+                var pd = Math.random() * radarRadiusAngle;  // path anchor distance
+                var px0 = radx + Math.cos(pa) * pd;  // path anchor longitude
+                var px = px0;
+                var py0 = rady + Math.sin(pa) * pd;  // path anchor latitude
+                var py = py0;
+                var pp = projection([px, py]);  // projected point
+                var wini, uSpeeds, vSpeeds, dx, dy, nx, ny, np;
                 for (wini = half - 1; wini >= 0; wini--) {
                     //console.log("  > wini: " + wini + " - alti: " + alti);
-                    if (dob.uSpeeds[wini] === undefined) { // DEBUG
-                        console.error("dob.uSpeeds[wini] is undefined for"
+                    if (data.uSpeeds[wini] === undefined) { // DEBUG
+                        console.error("data.uSpeeds[wini] is undefined for"
                                       + " wini: " + wini + ", alti: " + alti);
                     }
-                    uSpeeds = dob.uSpeeds[wini][alti];
-                    vSpeeds = dob.vSpeeds[wini][alti];
+                    uSpeeds = data.uSpeeds[wini][alti];
+                    vSpeeds = data.vSpeeds[wini][alti];
                     dx = idw(px, py, uSpeeds, xps, yps, 2) * pspm;
                     dy = idw(px, py, vSpeeds, xps, yps, 2) * pspm;
                     
@@ -390,8 +359,8 @@ function drawPaths(dob) {
                         return;
                     }
 
-                    lalpha = util.mapRange(wini, half - 1, 0, 0.9, 0.3);
-                    lwidth = util.mapRange(wini, half - 1, 0, 1.5, 1);
+                    var lalpha = util.mapRange(wini, half - 1, 0, 0.9, 0.3);
+                    var lwidth = util.mapRange(wini, half - 1, 0, 1.5, 1);
                     pathGr.append("line")
                         .attr("x1", pp[0]).attr("y1", pp[1])
                         .attr("x2", np[0]).attr("y2", np[1])
@@ -409,12 +378,12 @@ function drawPaths(dob) {
                 var points = "" + pp[0] + "," + pp[1];
                 for (wini = half; wini < wind; wini++) {
                     //console.log("wini: " + wini + " - alti: " + alti);
-                    if (dob.uSpeeds[wini] === undefined) { // DEBUG
-                        console.error("dob.uSpeeds[wini] is undefined for"
+                    if (data.uSpeeds[wini] === undefined) { // DEBUG
+                        console.error("data.uSpeeds[wini] is undefined for"
                                       + " wini: " + wini + ", alti: " + alti);
                     }
-                    uSpeeds = dob.uSpeeds[wini][alti];
-                    vSpeeds = dob.vSpeeds[wini][alti];
+                    uSpeeds = data.uSpeeds[wini][alti];
+                    vSpeeds = data.vSpeeds[wini][alti];
                     dx = idw(px, py, uSpeeds, xps, yps, 2) * pspm;
                     dy = idw(px, py, vSpeeds, xps, yps, 2) * pspm;
 
@@ -434,7 +403,7 @@ function drawPaths(dob) {
                     .attr("style", "fill:" + util.hsvToHex(hue, 0.8, 0.6)
                          + ";opacity:0.5");
             }
-        }
+        });
     }
 }
 
