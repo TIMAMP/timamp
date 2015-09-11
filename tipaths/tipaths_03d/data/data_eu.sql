@@ -1,14 +1,16 @@
 
 # This query is a variation of the query proposed on https://github.com/enram/case-study/tree/master/data/bird-migration-altitude-profiles#aggregation
-# This variation does not aggregate altitudes and adds the avg_speed values.
+# This variation does not aggregate altitudes and adds the avg_speed, altitude_idx and
+# interval_idx values.
 
 WITH conditional_data AS (
     SELECT
         DIV(CAST((EXTRACT(EPOCH FROM start_time) -
                   EXTRACT(EPOCH FROM TIMESTAMP '{{from}}')) AS NUMERIC),
-            {{winDur}})
+            {{interval}})
             AS interval_idx,
         altitude,
+        ((altitude * 10) - 3) / 2 AS altitude_idx,
         radar_id,
         u_speed,
         CASE
@@ -36,7 +38,7 @@ WITH conditional_data AS (
 
 SELECT
     interval_idx,
-    altitude,
+    altitude_idx,
     radar_id,
     ROUND(AVG(bird_density)::NUMERIC, 5) AS avg_bird_density,
     CASE
@@ -69,10 +71,10 @@ FROM conditional_data
 
 GROUP BY
     interval_idx,
-    altitude,
+    altitude_idx,
     radar_id
 
 ORDER BY
     interval_idx,
-    altitude,
+    altitude_idx,
     radar_id

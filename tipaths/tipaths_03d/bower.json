@@ -1,0 +1,24 @@
+{
+  "name": "tipaths_03d",
+  "version": "0.0.2",
+  "homepage": "http://timamp.github.io/",
+  "authors": [
+    "Wouter Van den Broeck <wouter@addith.be>"
+  ],
+  "description": "Time Integrated Multi-Altitude Migration Paths",
+  "keywords": [
+    "visualisation"
+  ],
+  "license": "CC-BY-NC-SA-4.0",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "docReady": "https://github.com/jfriend00/docReady",
+    "moment": "~2.10.6"
+  }
+}
