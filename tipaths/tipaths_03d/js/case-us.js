@@ -8,7 +8,7 @@ function init() {
 
   var caseService = {
     // the coordinate (in degrees) on which to center the map:
-    mapCenter: [-73.2, 42.48],
+    mapCenter: [-73.2, 42],
     // the factor with which the map-width needs to be multiplied to get the map scaling:
     mapScaleFactor: 4.25,
     // the url of the case study data:

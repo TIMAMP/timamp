@@ -61,7 +61,7 @@ function initApp(theCaseService) {
     maxPathCnt = maxDensity / altn;
 
     // the angle (in degrees) of the radius around the radars in which to anchor flows:
-    var radarRadiusAngle = util.geoDistAngle(75);
+    var radarRadiusAngle = util.geoDistAngle(150);
 
     // prepare the fixed lists of random anchors:
     for (var alti = 0; alti < altn; alti++) {
@@ -293,7 +293,7 @@ function drawMap() {
     topography,
     topography.objects.countries
   );
-  svg.append("path")
+  svg.append("svg:path")
     .datum(datum)
     .classed("map-land", true)
     .attr("d", projectionPath);
@@ -303,20 +303,20 @@ function drawMap() {
     topography.objects.countries,
     function(a, b) { return a !== b; }
   );
-  svg.append("path")
+  svg.append("svg:path")
     .datum(datum)
     .classed("country-boundary", true)
     .attr("d", projectionPath);
 
   var graticule = d3.geo.graticule()
     .step([1, 1]);
-  svg.append("path")
+  svg.append("svg:path")
     .datum(graticule)
     .classed("graticule", true)
     .attr("d", projectionPath);
 
   // draw radars:
-  var radarSVGG = svg.append("g");
+  var radarSVGG = svg.append("svg:g");
   var rpx, rpy;
   caseStudy.radars.forEach(function (radar, radi) {
     rpx = caseStudy.xPositions[radi];
@@ -330,7 +330,7 @@ function drawMap() {
     var circle = d3.geo.circle()
       .origin(radar.coordinate)
       .angle(util.geoDistAngle(100));
-    svg.append("path")
+    svg.append("svg:path")
       .datum(circle)
       .attr("d", projectionPath)
       .classed("radar-radius", true);
@@ -342,7 +342,7 @@ function drawMap() {
     //    var circle = d3.geo.circle()
     //        .origin(dest)
     //        .angle(.01);
-    //    svg.append("path")
+    //    svg.append("svg:path")
     //        .datum(circle)
     //        .attr("d", projectionPath)
     //        .classed("highlight", true);
@@ -350,11 +350,11 @@ function drawMap() {
   });
 
   // add the paths group:
-  pathsSVGGroup = svg.append("g");
+  pathsSVGGroup = svg.append("svg:g");
 
   // draw legends:
-  drawColorLegend(svg.append("g"));
-  drawSizeLegend(svg.append("g"), caseService.scaleLegendMarkers);
+  drawColorLegend(svg.append("svg:g"));
+  drawSizeLegend(svg.append("svg:g"), caseService.scaleLegendMarkers);
 }
 
 /**
@@ -369,9 +369,12 @@ function drawPaths(data) {
   var yps = caseStudy.yPositions;
   var idw = util.idw;
 
-  // pixels secs per meter, als volgt te gebruiken:
-  // d[pxl] = speed[m/s] * (duration[s] * conv[pxl/m])
-  var pspm =  util.geoDistAngle(1) / 1000 * data.interval * 60;
+  // angle secs per meter, obtained by multiplying the angle that corresponds
+  // to a displacement of 1 meter on the earth's surface multiplied by the duration
+  // of one interval in seconds. Multiplying this asm value with a speed in
+  // meters per second yields the angle of the displacement at that speed during
+  // one interval.
+  var asm =  util.geoDistAngle(1) / 1000 * data.interval * 60;
 
   // the volume of the context in km3, i.e. area of circle with 100km
   // radius by 200m:
@@ -388,7 +391,7 @@ function drawPaths(data) {
     caseStudy.radars.forEach(function (radar, radi) {
       var radx = radar.longitude;
       var rady = radar.latitude;
-      var pathGr = pathsSVGGroup.append("g");
+      var pathGr = pathsSVGGroup.append("svg:g");
       var pathn = util.mapRange(densities[radi], 0, maxDensity, 0, maxPathCnt);
 
       // for each path:
@@ -401,47 +404,44 @@ function drawPaths(data) {
         var py0 = rady + Math.sin(pa) * pd;  // path anchor latitude
         var py = py0;
         var pp = projection([px, py]);  // projected point
-        var wini, uSpeeds, vSpeeds, dx, dy, nx, ny, np;
+        var wini, dx, dy, nx, ny, np;
         for (wini = half - 1; wini >= 0; wini--) {
           //console.log("  > wini: " + wini + " - alti: " + alti);
           if (data.uSpeeds[wini] === undefined) { // DEBUG
             console.error("data.uSpeeds[wini] is undefined for"
               + " wini: " + wini + ", alti: " + alti);
           }
-          uSpeeds = data.uSpeeds[wini][alti];
-          vSpeeds = data.vSpeeds[wini][alti];
-          dx = idw(px, py, uSpeeds, xps, yps, 2) * pspm;
-          dy = idw(px, py, vSpeeds, xps, yps, 2) * pspm;
-
+          dx = idw(px, py, data.uSpeeds[wini][alti], xps, yps, 2) * asm;
+          dy = idw(px, py, data.vSpeeds[wini][alti], xps, yps, 2) * asm;
           nx = px - dx;
           ny = py - dy;
 
           np = projection([nx, ny]);
           //console.log("    nx: " + nx + ", ny: " + ny + ", dx: " + nx + ", dy: " + ny + ", np: " + np);
 
-          if (isNaN(px) || isNaN(dx)) {
-            console.log("wini: " + wini);
-            console.log("alti: " + alti);
-            console.log("pathi: " + pathi);
-            console.log("px: " + px);
-            console.log("py: " + py);
-            console.log("dx: " + dx);
-            console.log("dy: " + dx);
-            console.log("uSpeeds: " + uSpeeds);
-            console.log("xps: " + xps);
-            console.log("yps: " + yps);
-            console.log("pspm: " + pspm);
-            console.log("half: " + half);
-            console.log("pspm: " + pspm);
-            console.log("px0: " + px0 + ", pa: " + pa + ", pd: " + pd);
-            console.log("radx: " + radx + ", rady: " + rady);
-            //console.log("idw(px, py, uSpeeds, xps, yps, 2): " + idw(px, py, uSpeeds, xps, yps, 2));
-            return;
-          }
+          //if (isNaN(px) || isNaN(dx)) {
+          //  console.log("wini: " + wini);
+          //  console.log("alti: " + alti);
+          //  console.log("pathi: " + pathi);
+          //  console.log("px: " + px);
+          //  console.log("py: " + py);
+          //  console.log("dx: " + dx);
+          //  console.log("dy: " + dx);
+          //  console.log("uSpeeds: " + data.uSpeeds[wini][alti]);
+          //  console.log("xps: " + xps);
+          //  console.log("yps: " + yps);
+          //  console.log("pspm: " + pspm);
+          //  console.log("half: " + half);
+          //  console.log("pspm: " + pspm);
+          //  console.log("px0: " + px0 + ", pa: " + pa + ", pd: " + pd);
+          //  console.log("radx: " + radx + ", rady: " + rady);
+          //  //console.log("idw(px, py, uSpeeds, xps, yps, 2): " + idw(px, py, uSpeeds, xps, yps, 2));
+          //  return;
+          //}
 
           var lalpha = util.mapRange(wini, half - 1, 0, 0.9, 0.3);
           var lwidth = util.mapRange(wini, half - 1, 0, 1.5, 1);
-          pathGr.append("line")
+          pathGr.append("svg:line")
             .attr("x1", pp[0]).attr("y1", pp[1])
             .attr("x2", np[0]).attr("y2", np[1])
             .attr("style", "stroke:" + lcolor +
@@ -462,17 +462,14 @@ function drawPaths(data) {
             console.error("data.uSpeeds[wini] is undefined for"
               + " wini: " + wini + ", alti: " + alti);
           }
-          uSpeeds = data.uSpeeds[wini][alti];
-          vSpeeds = data.vSpeeds[wini][alti];
-          dx = idw(px, py, uSpeeds, xps, yps, 2) * pspm;
-          dy = idw(px, py, vSpeeds, xps, yps, 2) * pspm;
-
+          dx = idw(px, py, data.uSpeeds[wini][alti], xps, yps, 2) * asm;
+          dy = idw(px, py, data.vSpeeds[wini][alti], xps, yps, 2) * asm;
           px += dx;
           py += dy;
           np = projection([px, py]);
           points += " " + np[0] + "," + np[1];
         }
-        pathGr.append("polyline")
+        pathGr.append("svg:polyline")
           .attr("points", points)
           .attr("style", "stroke:" + lcolor +
           ";fill:none;stroke-width:1.5;opacity:" + 1);
@@ -494,23 +491,23 @@ function drawPaths(data) {
 function drawColorLegend(svgGroup) {
   var legendH = 16;
 
-  var markerGr = svgGroup.append("g");
+  var markerGr = svgGroup.append("svg:g");
   var tx0 = 20;
   var tx = tx0;
   var td = 6;
   var ty = mapH - 20 - legendH - 3 - td - 4;
-  markerGr.append("text")
+  markerGr.append("svg:text")
     .classed("legend-label", true)
     .attr("x", tx0)
     .attr("y", ty)
     .text("200m");
-  markerGr.append("text")
+  markerGr.append("svg:text")
     .classed("legend-label", true)
     .attr("x", tx0 + legendW / 2)
     .attr("y", ty)
     .attr("text-anchor", "middle")
     .text("2000m");
-  markerGr.append("text")
+  markerGr.append("svg:text")
     .classed("legend-label", true)
     .attr("x", tx0 + legendW)
     .attr("y", ty)
@@ -521,7 +518,7 @@ function drawColorLegend(svgGroup) {
   var points = tx + "," + ty;
   points += " " + (tx + td) + "," + ty;
   points += " " + tx + "," + (ty + td);
-  markerGr.append("polygon")
+  markerGr.append("svg:polygon")
     .attr("points", points)
     .classed("color-legend-label-anchor", true);
 
@@ -529,7 +526,7 @@ function drawColorLegend(svgGroup) {
   points = tx + "," + ty;
   points += " " + (tx - td) + "," + ty;
   points += " " + tx + "," + (ty + td);
-  markerGr.append("polygon")
+  markerGr.append("svg:polygon")
     .attr("points", points)
     .classed("color-legend-label-anchor", true);
 
@@ -538,7 +535,7 @@ function drawColorLegend(svgGroup) {
   points = (tx - td) + "," + ty;
   points += " " + (tx + td) + "," + ty;
   points += " " + tx + "," + (ty + td);
-  markerGr.append("polygon")
+  markerGr.append("svg:polygon")
     .attr("points", points)
     .classed("color-legend-label-anchor", true);
 
@@ -550,7 +547,7 @@ function drawColorLegend(svgGroup) {
   for (alti = 0; alti < altn; alti++) {
     hue = util.mapRange(alti, 0, altn, altiHueMin, altiHueMax);
     hex = util.hsvToHex(hue, altiSaturation, altiBrightness);
-    svgGroup.append("rect")
+    svgGroup.append("svg:rect")
       .attr("x", tx)
       .attr("y", ty)
       .attr("width", Math.ceil(dx))
@@ -574,45 +571,45 @@ function drawSizeLegend(svgGroup, markers) {
   var lineH = 7;
   var ty = mapH - 20 - lineH - 4;
 
-  var markerGr = svgGroup.append("g");
-  markerGr.append("text")
+  var markerGr = svgGroup.append("svg:g");
+  markerGr.append("svg:text")
     .classed("legend-label", true)
     .attr("x", legendL)
     .attr("y", ty)
     .attr("text-anchor", "middle")
     .text("0");
-  markerGr.append("text")
+  markerGr.append("svg:text")
     .classed("legend-label", true)
     .attr("x", (legendL + legendR) / 2)
     .attr("y", ty)
     .attr("text-anchor", "middle")
     .text(markers[1]);
-  markerGr.append("text")
+  markerGr.append("svg:text")
     .classed("legend-label", true)
     .attr("x", legendR + 8)
     .attr("y", ty)
     .attr("text-anchor", "middle")
     .text(markers[2] + " km");
 
-  svgGroup.append("line")
+  svgGroup.append("svg:line")
     .classed("scale-legend-line", true)
     .attr("x1", legendL)
     .attr("y1", mapH - 20)
     .attr("x2", legendR)
     .attr("y2", mapH - 20);
-  svgGroup.append("line")
+  svgGroup.append("svg:line")
     .classed("scale-legend-line", true)
     .attr("x1", legendL)
     .attr("y1", mapH - 20 - lineH)
     .attr("x2", legendL)
     .attr("y2", mapH - 20);
-  svgGroup.append("line")
+  svgGroup.append("svg:line")
     .classed("scale-legend-line", true)
     .attr("x1", (legendL + legendR) / 2)
     .attr("y1", mapH - 20 - lineH)
     .attr("x2", (legendL + legendR) / 2)
     .attr("y2", mapH - 20);
-  svgGroup.append("line")
+  svgGroup.append("svg:line")
     .classed("scale-legend-line", true)
     .attr("x1", legendR)
     .attr("y1", mapH - 20 - lineH)
