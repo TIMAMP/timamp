@@ -116,29 +116,42 @@ p.description {
 }
 
 .radar-radius {
-    fill: #ddf;
-    fill-opacity: 0.2;
-    stroke: #fff;
-    stroke-width: 1px;
-    stroke-opacity: 1;
-    stroke-dasharray: 4, 8;
+    fill: #fff;
+    fill-opacity: 0.25;
+    /*stroke: #fff;*/
+    /*stroke-width: 1px;*/
+    /*stroke-opacity: 1;*/
+    /*stroke-dasharray: 4, 8;*/
 }
 
-.land {
-    fill: #D0E7D0;
+svg.map {
+    background-color: #aaa;
+}
+
+.map-land {
+    fill: #e2e2e2;
 }
 
 .country-boundary {
     fill: none;
-    stroke: #005000;
-    stroke-width: .5px;
+    stroke: #555;
+    stroke-width: 1px;
     stroke-dasharray: 2, 4;
     stroke-linejoin: round;
 }
 
-.legend-labels {
-    font-family: Helvetica, Sans-serif;
+.legend-label {
+    font-family: Helvetica, sans-serif;
     font-size: 11px;
+}
+
+.color-legend-label-anchor {
+    fill: #444;
+}
+
+.scale-legend-line {
+    stroke: #444;
+    stroke-width: 1px;
 }
 
 .highlight {

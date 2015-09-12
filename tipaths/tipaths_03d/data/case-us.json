@@ -2,7 +2,7 @@
   "label": "USA north-east",
   "dateMin": { "year": 2010, "month": 8, "date": 8 },
   "dateMax": { "year": 2010, "month": 8, "date": 11 },
-  "dateFocus": { "year": 2010, "month": 8, "date": 8, "hour": 4, "minute": 0 },
+  "dateFocus": { "year": 2010, "month": 8, "date": 11, "hour": 0, "minute": 0 },
   "radars": [
 	{
 	  "id": "KBGM",

@@ -27,6 +27,7 @@ var projection;
 var projectionPath;
 var caseService;
 var caseStudy;
+var topography;
 
 /** @type {Object} */
 var currData;
@@ -43,7 +44,12 @@ function initApp(theCaseService) {
 
   var loading = 3;
 
-  caseService.init(dataService, function () {
+  d3.json(caseService.topoJsonUrl, function (error, json) {
+    if (error) {
+      console.error(error);
+      return;
+    }
+    topography = json;
     if (--loading == 0) initDone();
   });
   dataService.loadCaseStudy(caseService.caseStudyUrl, function (json) {
@@ -198,34 +204,19 @@ function initDone() {
       }
     }, 25));
 
+  // First update the map data and add the svg element to avoid miscalculation
+  // of the actual size of the svg content (on Chrome).
+  updateMapData();
+  svg = d3.select("#map-container").append("svg")
+    .style("width", mapW)
+    .style("height", mapH);
+
+  // Now update the map for real:
   updateMap(true, true);
 }
 
 function updateMap(dataDirty, mapDirty) {
-  if (mapDirty) {
-    var svgRect = d3.select("#map-container").node().getBoundingClientRect();
-    mapW = svgRect.width;
-    mapH = mapW * mapHeightFactor;
-    legendW = mapW * legendWidthFactor;
-
-    // specify the projection based of the size of the map:
-    projection = d3.geo.mercator()
-      .scale(caseService.getMapScale(mapW))
-      .translate([mapW / 2, mapH / 2])
-      .center(caseService.mapCenter);
-
-    // initialize the d3 path with which to draw the geography:
-    projectionPath = d3.geo.path().projection(projection);
-
-    // update radar positions:
-    caseStudy.xPositions = [];
-    caseStudy.yPositions = [];
-    caseStudy.radars.forEach(function (radar, i) {
-      var radp = projection([radar.longitude, radar.latitude]);
-      caseStudy.xPositions[i] = radp[0];
-      caseStudy.yPositions[i] = radp[1];
-    });
-  }
+  if (mapDirty) updateMapData();
 
   drawMap();
 
@@ -233,26 +224,70 @@ function updateMap(dataDirty, mapDirty) {
     var data = {
       focusMoment: moment.utc(caseStudy.focusMoment),
       interval : 20 /* the duration of a window in minutes */,
-      intervalCount: parseInt($("#input_duration").val()) * 3,
+      intervalCount: parseInt($("#input_duration").val()) * 3
     };
-    caseService.loadDate(dataService, data, caseStudy, function () {
+    dataService.loadData(caseService.queryBaseUrl, data, caseStudy, function () {
       currData = data;
       drawPaths(currData);
-      //console.log("Done");
     });
   }
   else {
+    console.log(currData);
     drawPaths(currData);
   }
 }
+
+function updateMapData() {
+  var svgRect = d3.select("#map-container").node().getBoundingClientRect();
+  mapW = svgRect.width;
+  //console.log("- mapW:", mapW);
+  mapH = mapW * mapHeightFactor;
+  legendW = mapW * legendWidthFactor;
+
+  // specify the projection based of the size of the map:
+  projection = d3.geo.mercator()
+    .scale(caseService.mapScaleFactor * mapW)
+    .translate([mapW / 2, mapH / 2])
+    .center(caseService.mapCenter);
+
+  // initialize the d3 path with which to draw the geography:
+  projectionPath = d3.geo.path().projection(projection);
+
+  // update radar positions:
+  caseStudy.xPositions = [];
+  caseStudy.yPositions = [];
+  caseStudy.radars.forEach(function (radar, i) {
+    var radp = projection([radar.longitude, radar.latitude]);
+    caseStudy.xPositions[i] = radp[0];
+    caseStudy.yPositions[i] = radp[1];
+  });
+};
 
 function drawMap() {
   if (svg) { svg.remove(); }
   svg = d3.select("#map-container").append("svg")
     .style("width", mapW)
-    .style("height", mapH);
+    .style("height", mapH)
+    .classed("map", true);
 
-  caseService.drawTopography(svg);
+  var datum = topojson.feature(
+    topography,
+    topography.objects.countries
+  );
+  svg.append("path")
+    .datum(datum)
+    .classed("map-land", true)
+    .attr("d", projectionPath);
+
+  datum = topojson.mesh(
+    topography,
+    topography.objects.countries,
+    function(a, b) { return a !== b; }
+  );
+  svg.append("path")
+    .datum(datum)
+    .classed("country-boundary", true)
+    .attr("d", projectionPath);
 
   var graticule = d3.geo.graticule()
     .step([1, 1]);
@@ -267,11 +302,11 @@ function drawMap() {
   caseStudy.radars.forEach(function (radar, radi) {
     rpx = caseStudy.xPositions[radi];
     rpy = caseStudy.yPositions[radi];
-    radarSVGG.append('svg:circle')
-      .attr('cx', rpx)
-      .attr('cy', rpy)
-      .attr('r', 3)
-      .classed("radar-center", true);
+    //radarSVGG.append('svg:circle')
+    //  .attr('cx', rpx)
+    //  .attr('cy', rpy)
+    //  .attr('r', 3)
+    //  .classed("radar-center", true);
 
     var circle = d3.geo.circle()
       .origin(radar.coordinate)
@@ -290,7 +325,7 @@ function drawMap() {
     //        .angle(.01);
     //    svg.append("path")
     //        .datum(circle)
-    //        .attr("d", path)
+    //        .attr("d", projectionPath)
     //        .classed("highlight", true);
     //}
   });
@@ -298,10 +333,9 @@ function drawMap() {
   // add the paths group:
   pathsSVGGroup = svg.append("g");
 
-  // draw legend:
-  //var legend = svg.append("g");
-  var legendSVGGroup = svg.append("g");
-  drawLegend(legendSVGGroup);
+  // draw legends:
+  drawColorLegend(svg.append("g"));
+  drawSizeLegend(svg.append("g"), caseService.scaleLegendMarkers);
 }
 
 /**
@@ -440,29 +474,29 @@ function drawPaths(data) {
 
 /**
  * Draws the legend.
- * @param legendSVGGroup
+ * @param svgGroup
  */
-function drawLegend(legendSVGGroup) {
+function drawColorLegend(svgGroup) {
   var legendH = 16;
 
-  var markerGr = legendSVGGroup.append("g");
+  var markerGr = svgGroup.append("g");
   var tx0 = 20;
   var tx = tx0;
   var td = 6;
-  var ty = mapH - 20 - legendH - 3 - td - 4
+  var ty = mapH - 20 - legendH - 3 - td - 4;
   markerGr.append("text")
-    .attr("class", "legend-labels")
+    .classed("legend-label", true)
     .attr("x", tx0)
     .attr("y", ty)
     .text("200m");
   markerGr.append("text")
-    .attr("class", "legend-labels")
+    .classed("legend-label", true)
     .attr("x", tx0 + legendW / 2)
     .attr("y", ty)
     .attr("text-anchor", "middle")
     .text("2000m");
   markerGr.append("text")
-    .attr("class", "legend-labels")
+    .classed("legend-label", true)
     .attr("x", tx0 + legendW)
     .attr("y", ty)
     .attr("text-anchor", "end")
@@ -474,7 +508,7 @@ function drawLegend(legendSVGGroup) {
   points += " " + tx + "," + (ty + td);
   markerGr.append("polygon")
     .attr("points", points)
-    .attr("style", "fill:#555;");
+    .classed("color-legend-label-anchor", true);
 
   tx = tx0 + legendW;
   points = tx + "," + ty;
@@ -482,7 +516,7 @@ function drawLegend(legendSVGGroup) {
   points += " " + tx + "," + (ty + td);
   markerGr.append("polygon")
     .attr("points", points)
-    .attr("style", "fill:#555;");
+    .classed("color-legend-label-anchor", true);
 
   tx = tx0 + legendW / 2;
   td = 5
@@ -491,7 +525,7 @@ function drawLegend(legendSVGGroup) {
   points += " " + tx + "," + (ty + td);
   markerGr.append("polygon")
     .attr("points", points)
-    .attr("style", "fill:#555;");
+    .classed("color-legend-label-anchor", true);
 
   tx = 20;
   ty = mapH - 20 - legendH;
@@ -501,7 +535,7 @@ function drawLegend(legendSVGGroup) {
   for (alti = 0; alti < altn; alti++) {
     hue = util.mapRange(alti, 0, altn, altiHueMin, altiHueMax);
     hex = util.hsvToHex(hue, altiSaturation, altiBrightness);
-    legendSVGGroup.append("rect")
+    svgGroup.append("rect")
       .attr("x", tx)
       .attr("y", ty)
       .attr("width", Math.ceil(dx))
@@ -509,4 +543,64 @@ function drawLegend(legendSVGGroup) {
       .attr("style", "fill:" + hex + ";");
     tx += dx;
   }
+}
+
+function drawSizeLegend(svgGroup, markers) {
+  var totalKm = markers[2];
+  var radar = caseStudy.radars[0];
+  var destCoord = util.destinationPoint(radar.coordinate, 90, totalKm);
+  var destProj = projection(destCoord);
+  //console.log(totalKm, radar.coordinate, destCoord);
+  //console.log(destProj, destProj[0], caseStudy.xPositions[0], legendW);
+  var legendW = destProj[0] - caseStudy.xPositions[0];
+  var marginR = 45;
+  var legendL = mapW - marginR - legendW;
+  var legendR = mapW - marginR;
+  var lineH = 7;
+  var ty = mapH - 20 - lineH - 4;
+
+  var markerGr = svgGroup.append("g");
+  markerGr.append("text")
+    .classed("legend-label", true)
+    .attr("x", legendL)
+    .attr("y", ty)
+    .attr("text-anchor", "middle")
+    .text("0");
+  markerGr.append("text")
+    .classed("legend-label", true)
+    .attr("x", (legendL + legendR) / 2)
+    .attr("y", ty)
+    .attr("text-anchor", "middle")
+    .text(markers[1]);
+  markerGr.append("text")
+    .classed("legend-label", true)
+    .attr("x", legendR + 8)
+    .attr("y", ty)
+    .attr("text-anchor", "middle")
+    .text(markers[2] + " km");
+
+  svgGroup.append("line")
+    .classed("scale-legend-line", true)
+    .attr("x1", legendL)
+    .attr("y1", mapH - 20)
+    .attr("x2", legendR)
+    .attr("y2", mapH - 20);
+  svgGroup.append("line")
+    .classed("scale-legend-line", true)
+    .attr("x1", legendL)
+    .attr("y1", mapH - 20 - lineH)
+    .attr("x2", legendL)
+    .attr("y2", mapH - 20);
+  svgGroup.append("line")
+    .classed("scale-legend-line", true)
+    .attr("x1", (legendL + legendR) / 2)
+    .attr("y1", mapH - 20 - lineH)
+    .attr("x2", (legendL + legendR) / 2)
+    .attr("y2", mapH - 20);
+  svgGroup.append("line")
+    .classed("scale-legend-line", true)
+    .attr("x1", legendR)
+    .attr("y1", mapH - 20 - lineH)
+    .attr("x2", legendR)
+    .attr("y2", mapH - 20);
 }

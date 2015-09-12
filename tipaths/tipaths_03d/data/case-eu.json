@@ -2,7 +2,7 @@
   "label": "EU north-west",
   "dateMin": { "year": 2013, "month": 3, "day": 5 },
   "dateMax": { "year": 2013, "month": 3, "day": 11 },
-  "dateFocus": { "year": 2013, "month": 3, "date": 7, "hour": 21, "minute": 0 },
+  "dateFocus": { "year": 2013, "month": 3, "date": 7, "hour": 18, "minute": 0 },
   "radars": [
 	{
 	  "id": 6477,
