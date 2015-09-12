@@ -16,6 +16,8 @@ var altiHueMax = 1;
 var altiSaturation = 0.8;
 var altiBrightness = 0.8;
 var maxPathCnt;
+var ras = [];   // random angles for path anchors
+var rds = [];   // random distances for path anchors
 var mapHeightFactor = 940 / 720;
 var mapW = 100;
 var mapH = 100;
@@ -42,7 +44,7 @@ function initApp(theCaseService) {
     return;
   }
 
-  var loading = 3;
+  var busy = 3;
 
   d3.json(caseService.topoJsonUrl, function (error, json) {
     if (error) {
@@ -50,16 +52,33 @@ function initApp(theCaseService) {
       return;
     }
     topography = json;
-    if (--loading == 0) initDone();
+    if (--busy == 0) initDone();
   });
   dataService.loadCaseStudy(caseService.caseStudyUrl, function (json) {
     //console.log(json);
     caseStudy = json;
-    maxPathCnt = maxDensity / caseStudy.altitudes.length;
-    if (--loading == 0) initDone();
+    var altn = caseStudy.altitudes.length;
+    maxPathCnt = maxDensity / altn;
+
+    // the angle (in degrees) of the radius around the radars in which to anchor flows:
+    var radarRadiusAngle = util.geoDistAngle(75);
+
+    // prepare the fixed lists of random anchors:
+    for (var alti = 0; alti < altn; alti++) {
+      var raset = [];
+      var rdset = [];
+      for (var i = 0; i < 100; i++) {
+        raset.push(Math.random() * Math.PI * 2);
+        rdset.push(Math.random() * radarRadiusAngle);
+      }
+      ras.push(raset);
+      rds.push(rdset);
+    }
+
+    if (--busy == 0) initDone();
   });
   dataService.loadQueryTemplate(caseService.queryTemplateUrl, function () {
-    if (--loading == 0) initDone();
+    if (--busy == 0) initDone();
   });
 }
 
@@ -350,9 +369,6 @@ function drawPaths(data) {
   var yps = caseStudy.yPositions;
   var idw = util.idw;
 
-  // The angle (in degrees) of the radius around the radars in which to anchor flows:
-  var radarRadiusAngle = util.geoDistAngle(75);
-
   // pixels secs per meter, als volgt te gebruiken:
   // d[pxl] = speed[m/s] * (duration[s] * conv[pxl/m])
   var pspm =  util.geoDistAngle(1) / 1000 * data.interval * 60;
@@ -378,9 +394,8 @@ function drawPaths(data) {
       // for each path:
       for (var pathi = 0; pathi < pathn; pathi++) {
         //console.log("> pathi: " + pathi + " - alti: " + alti);
-        var pa = Math.random() * Math.PI * 2;  // path anchor angle
-        //pd = util.map(pathi, 0, pathn, 2, r100);
-        var pd = Math.random() * radarRadiusAngle;  // path anchor distance
+        var pa = ras[alti][pathi];  // path anchor angle
+        var pd = rds[alti][pathi];  // path anchor distance
         var px0 = radx + Math.cos(pa) * pd;  // path anchor longitude
         var px = px0;
         var py0 = rady + Math.sin(pa) * pd;  // path anchor latitude
