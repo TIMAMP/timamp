@@ -1,5 +1,7 @@
 
-# This query is a variation of the query proposed on https://github.com/enram/case-study/tree/master/data/bird-migration-altitude-profiles#aggregation
+# This query is a variation of the query proposed on
+# https://github.com/enram/case-study/tree/master/data/bird-migration-altitude-profiles#aggregation
+#
 # This variation does not aggregate altitudes and adds the avg_speed, altitude_idx and
 # interval_idx values.
 
@@ -9,8 +11,7 @@ WITH conditional_data AS (
                   EXTRACT(EPOCH FROM TIMESTAMP '{{from}}')) AS NUMERIC),
             {{interval}})
             AS interval_idx,
-        altitude,
-        ((altitude * 10) - 3) / 2 AS altitude_idx,
+        DIV(altitude::NUMERIC * 10, {{altBandSize}}) AS altitude_idx,
         radar_id,
         u_speed,
         CASE
@@ -30,8 +31,8 @@ WITH conditional_data AS (
 
   FROM lifewatch.bird_migration_altitude_profiles
 
-  WHERE altitude >= 0.2
-    AND altitude <= 4.0
+  WHERE altitude <= 4.0
+    AND altitude >= 0.2
     AND start_time >= '{{from}}'
     AND start_time < '{{till}}'
 )

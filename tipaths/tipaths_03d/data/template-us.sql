@@ -1,9 +1,11 @@
 
-# This query is a variation of the query proposed on https://github.com/enram/case-study/tree/master/data/bird-migration-altitude-profiles#aggregation
+# This query is a variation of the query proposed on
+# https://github.com/enram/case-study/tree/master/data/bird-migration-altitude-profiles#aggregation
+#
 # This variation does not aggregate altitudes and adds the avg_speed, altitude_idx and
-# interval_idx values, and is intended to load data from
-# https://gbernstein.cartodb.com/api/v2/.
-
+# interval_idx values.
+# This is intended to load data from https://gbernstein.cartodb.com/api/v2/.
+#
 # Information about the data:
 # - for scans in which we have identified rain, we have set the velocity to 0 so that
 #   no lines/particles are created there. This is a temporary fix until the viz setups
@@ -16,8 +18,7 @@ WITH conditional_data AS (
                   EXTRACT(EPOCH FROM TIMESTAMP '{{from}}')) AS NUMERIC),
             {{interval}})
             AS interval_idx,
-        altitude,
-        ((altitude * 10) - 0.5) AS altitude_idx,
+        DIV(altitude::NUMERIC * 10, {{altBandSize}}) AS altitude_idx,
         radar_id,
         u_speed,
         CASE
@@ -38,6 +39,7 @@ WITH conditional_data AS (
   FROM enram_case_study
 
   WHERE altitude <= 4.0
+    AND altitude >= 0
     AND start_time >= '{{from}}'
     AND start_time < '{{till}}'
 )

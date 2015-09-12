@@ -3,6 +3,7 @@
   "dateMin": { "year": 2013, "month": 3, "day": 5 },
   "dateMax": { "year": 2013, "month": 3, "day": 11 },
   "dateFocus": { "year": 2013, "month": 3, "date": 7, "hour": 18, "minute": 0 },
+  "altitudes": 20,
   "mapCenter": [4.5, 51.55],
   "mapScaleFactor": 8.5,
   "topoJsonUrl": "data/topo-eu.json",
@@ -50,103 +51,6 @@
 	  "type": "weather",
 	  "longitude": 4.7899,
 	  "latitude": 52.9533
-	}
-  ],
-  "altitudes": [
-	{
-	  "min": 0.2,
-	  "max": 0.4,
-	  "idx": 0
-	},
-	{
-	  "min": 0.4,
-	  "max": 0.6,
-	  "idx": 1
-	},
-	{
-	  "min": 0.6,
-	  "max": 0.8,
-	  "idx": 2
-	},
-	{
-	  "min": 0.8,
-	  "max": 1.0,
-	  "idx": 3
-	},
-	{
-	  "min": 1.0,
-	  "max": 1.2,
-	  "idx": 4
-	},
-	{
-	  "min": 1.2,
-	  "max": 1.4,
-	  "idx": 5
-	},
-	{
-	  "min": 1.4,
-	  "max": 1.6,
-	  "idx": 6
-	},
-	{
-	  "min": 1.6,
-	  "max": 1.8,
-	  "idx": 7
-	},
-	{
-	  "min": 1.8,
-	  "max": 2.0,
-	  "idx": 8
-	},
-	{
-	  "min": 2.0,
-	  "max": 2.2,
-	  "idx": 9
-	},
-	{
-	  "min": 2.2,
-	  "max": 2.4,
-	  "idx": 10
-	},
-	{
-	  "min": 2.4,
-	  "max": 2.6,
-	  "idx": 11
-	},
-	{
-	  "min": 2.6,
-	  "max": 2.8,
-	  "idx": 12
-	},
-	{
-	  "min": 2.8,
-	  "max": 3.0,
-	  "idx": 13
-	},
-	{
-	  "min": 3.0,
-	  "max": 3.2,
-	  "idx": 14
-	},
-	{
-	  "min": 3.2,
-	  "max": 3.4,
-	  "idx": 15
-	},
-	{
-	  "min": 3.4,
-	  "max": 3.6,
-	  "idx": 16
-	},
-	{
-	  "min": 3.6,
-	  "max": 3.8,
-	  "idx": 17
-	},
-	{
-	  "min": 3.8,
-	  "max": 4.0,
-	  "idx": 18
 	}
   ]
 }

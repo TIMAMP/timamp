@@ -8,18 +8,20 @@
 //    console.log("SVG.ImportStore: " + SVG.ImportStore);
 
 // Configuration settings that do not change:
+var mapHeightFactor = 940 / 720;
+var legendWidthFactor = 200 / 720;
 var maxDensity = 3200;
 var altiHueMin = 0.5;
 var altiHueMax = 1;
 var altiSaturation = 0.8;
 var altiBrightness = 0.8;
+
+// System variables:
 var maxPathCnt;
 var ras = [];   // random angles for path anchors
 var rds = [];   // random distances for path anchors
-var mapHeightFactor = 940 / 720;
 var mapW = 100;
 var mapH = 100;
-var legendWidthFactor = 200 / 720;
 var legendW;
 var svg;
 var pathsSVGGroup;
@@ -30,7 +32,14 @@ var caseStudy;
 /** @type {Object} */
 var currData;
 
-function initApp(caseStudyUrl) {
+/**
+ * Start the app. Call this function from a script element at the end of the html-doc.
+ * @param {string} caseStudyUrl The url of the case study metadata json file.
+ * @param {number} altBands     The number of altitude bands to aggregate the data in.
+ *                              This number should be a whole divisor of the number of
+ *                              altitudes given in the case study metadata.
+ */
+function startApp(caseStudyUrl, altBands) {
 
   // assert that SVG is supported by the browser:
   if (!document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#Image", "1.1")) {
@@ -42,6 +51,28 @@ function initApp(caseStudyUrl) {
   dataService.loadCaseStudy(caseStudyUrl, function (json) {
     //console.log(json);
     caseStudy = json;
+
+    // parse the url query:
+    var urlQuery = {};
+    location.search.replace('\?','').split('&').map(function (nvPair) {
+      nvPair = nvPair.split('=');
+      urlQuery[nvPair[0]] = nvPair[1];
+    });
+    //console.log(urlQuery);
+    if (urlQuery.altBands) { altBands = urlQuery.altBands; }
+    
+    // Assert that the given number of altitude bands is a whole divisor of the number
+    // of altitudes in the data.
+    // Note: This code currently assumes that the altitudes range from 0 to 4 km and that
+    // the number of altitudes in the data is a whole divisor of 40.
+    if (caseStudy.altitudes % altBands != 0) {
+      console.error("The given number of altitude bands (" + altBands
+        + ") should be a whole divisor of the number of altitudes in the data ("
+        + caseStudy.altitudes + ").");
+      return;
+    }
+    caseStudy.altBands = altBands;
+    caseStudy.altBandSize = 40 / altBands;
 
     var busy = 3;
 
@@ -60,24 +91,39 @@ function initApp(caseStudyUrl) {
       if (--busy == 0) initDone();
     });
 
-    var altn = caseStudy.altitudes.length;
+    var altn = caseStudy.altBands, alti;
     maxPathCnt = maxDensity / altn;
 
     // the angle (in degrees) of the radius around the radars in which to anchor flows:
     var radarRadiusAngle = util.geoDistAngle(150);
 
     // prepare the fixed lists of random anchors:
-    for (var alti = 0; alti < altn; alti++) {
-      var raset = [];
-      var rdset = [];
-      for (var i = 0; i < 100; i++) {
-        raset.push(Math.random() * Math.PI * 2);
-        rdset.push(Math.random() * radarRadiusAngle);
+    var radn = caseStudy.radarCount;
+    for (var radi = 0; radi < radn; radi++) {
+      var raraset = [];
+      var rardset = [];
+      for (alti = 0; alti < altn; alti++) {
+        var raset = [];
+        var rdset = [];
+        for (var i = 0; i < 50; i++) {
+          raset.push(Math.random() * Math.PI * 2);
+          rdset.push(Math.random() * radarRadiusAngle);
+        }
+        raraset.push(raset);
+        rardset.push(rdset);
       }
-      ras.push(raset);
-      rds.push(rdset);
+      ras.push(raraset);
+      rds.push(rardset);
     }
 
+    // prepare the hues (one for each altitude band):
+    caseStudy.hues = [];
+    caseStudy.altHexColors = [];
+    for (alti = 0; alti < altn; alti++) {
+      var hue = util.mapRange(alti, 0, altn - 1, altiHueMin, altiHueMax);
+      caseStudy.hues.push(hue);
+      caseStudy.altHexColors.push(util.hsvToHex(hue, altiSaturation, altiBrightness));
+    }
     if (--busy == 0) initDone();
   });
 }
@@ -393,11 +439,11 @@ function drawPaths(data) {
   //var contextVolume = Math.PI * 100 * 100 / 5;
 
   // for each altitude:
-  var altn = caseStudy.altitudes.length;
+  var altn = caseStudy.altBands;
   for (var alti = 0; alti < altn; alti++) {
     var densities = data.avDensities[alti];
-    var hue = util.mapRange(alti, 0, altn, altiHueMin, altiHueMax);
-    var lcolor = util.hsvToHex(hue, altiSaturation, altiBrightness);
+    var hue = caseStudy.hues[alti];
+    var lcolor = caseStudy.altHexColors[alti];
 
     // for each radar:
     caseStudy.radars.forEach(function (radar, radi) {
@@ -409,8 +455,8 @@ function drawPaths(data) {
       // for each path:
       for (var pathi = 0; pathi < pathn; pathi++) {
         //console.log("> pathi: " + pathi + " - alti: " + alti);
-        var pa = ras[alti][pathi];  // path anchor angle
-        var pd = rds[alti][pathi];  // path anchor distance
+        var pa = ras[radi][alti][pathi];  // path anchor angle
+        var pd = rds[radi][alti][pathi];  // path anchor distance
         var px0 = radx + Math.cos(pa) * pd;  // path anchor longitude
         var px = px0;
         var py0 = rady + Math.sin(pa) * pd;  // path anchor latitude
@@ -489,7 +535,7 @@ function drawPaths(data) {
           .attr('cx', np[0])
           .attr('cy', np[1])
           .attr('r', 2)
-          .attr("style", "fill:" + util.hsvToHex(hue, 0.8, 0.6)
+          .attr("style", "fill:" + util.hsvToHex(hue, altiSaturation, altiBrightness)
           + ";opacity:0.5");
       }
     });
@@ -548,18 +594,15 @@ function drawColorLegend_hor(svgGroup) {
 
   var tx = legendL;
   ty = mapH - 20 - legendH;
-  var alti, altn = caseStudy.altitudes.length;
+  var alti, altn = caseStudy.altBands;
   var dx = legendW / altn;
-  var hue, hex;
   for (alti = 0; alti < altn; alti++) {
-    hue = util.mapRange(alti, 0, altn, altiHueMin, altiHueMax);
-    hex = util.hsvToHex(hue, altiSaturation, altiBrightness);
     svgGroup.append("svg:rect")
       .attr("x", tx)
       .attr("y", ty)
       .attr("width", Math.ceil(dx))
       .attr("height", legendH)
-      .attr("style", "fill:" + hex + ";");
+      .attr("style", "fill:" + caseStudy.altHexColors[alti] + ";");
     tx += dx;
   }
 }
@@ -571,18 +614,16 @@ function drawColorLegend(svgGroup) {
   var legendT = margin;
 
   var ty = legendT;
-  var alti, altn = caseStudy.altitudes.length;
+  var alti, altn = caseStudy.altBands;
   var dy = legendH / altn;
   var hue, hex;
-  for (alti = 0; alti < altn; alti++) {
-    hue = util.mapRange(alti, 0, altn, altiHueMax, altiHueMin);
-    hex = util.hsvToHex(hue, altiSaturation, altiBrightness);
+  for (alti = altn - 1; alti >= 0; alti--) {
     svgGroup.append("svg:rect")
       .attr("x", margin)
       .attr("y", ty)
       .attr("width", legendW)
       .attr("height", Math.ceil(dy))
-      .attr("style", "fill:" + hex + ";");
+      .attr("style", "fill:" + caseStudy.altHexColors[alti] + ";");
     ty += dy;
   }
 
