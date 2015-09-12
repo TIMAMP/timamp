@@ -490,58 +490,53 @@ function drawPaths(data) {
  * Draws the legend.
  * @param svgGroup
  */
-function drawColorLegend(svgGroup) {
-  var legendH = 16;
-
+function drawColorLegend_hor(svgGroup) {
+  var legendH = 12;
+  var legendL = 25;
+  //var tx0 = legendL;
+  //var td = 6;
+  var ty = mapH - 20 - legendH - 8;
   var markerGr = svgGroup.append("svg:g");
-  var tx0 = 20;
-  var tx = tx0;
-  var td = 6;
-  var ty = mapH - 20 - legendH - 3 - td - 4;
   markerGr.append("svg:text")
     .classed("legend-label", true)
-    .attr("x", tx0)
-    .attr("y", ty)
-    .text("200m");
-  markerGr.append("svg:text")
-    .classed("legend-label", true)
-    .attr("x", tx0 + legendW / 2)
+    .attr("x", legendL)
     .attr("y", ty)
     .attr("text-anchor", "middle")
-    .text("2000m");
+    .text("0");
   markerGr.append("svg:text")
     .classed("legend-label", true)
-    .attr("x", tx0 + legendW)
+    .attr("x", legendL + legendW / 2)
     .attr("y", ty)
-    .attr("text-anchor", "end")
-    .text("4000m");
+    .attr("text-anchor", "middle")
+    .text("2");
+  markerGr.append("svg:text")
+    .classed("legend-label", true)
+    .attr("x", legendL + legendW + 6)
+    .attr("y", ty)
+    .attr("text-anchor", "middle")
+    .text("4 km");
 
-  ty = mapH - 20 - legendH - 3 - td;
-  var points = tx + "," + ty;
-  points += " " + (tx + td) + "," + ty;
-  points += " " + tx + "," + (ty + td);
-  markerGr.append("svg:polygon")
-    .attr("points", points)
-    .classed("color-legend-label-anchor", true);
+  var lineH = 7;
+  svgGroup.append("svg:line")
+    .classed("scale-legend-line", true)
+    .attr("x1", legendL)
+    .attr("y1", mapH - 20 - legendH - lineH)
+    .attr("x2", legendL)
+    .attr("y2", mapH - 20);
+  svgGroup.append("svg:line")
+    .classed("scale-legend-line", true)
+    .attr("x1", legendL + legendW / 2)
+    .attr("y1", mapH - 20 - legendH - lineH)
+    .attr("x2", legendL + legendW / 2)
+    .attr("y2", mapH - 20);
+  svgGroup.append("svg:line")
+    .classed("scale-legend-line", true)
+    .attr("x1", legendL + legendW)
+    .attr("y1", mapH - 20 - legendH - lineH)
+    .attr("x2", legendL + legendW)
+    .attr("y2", mapH - 20);
 
-  tx = tx0 + legendW;
-  points = tx + "," + ty;
-  points += " " + (tx - td) + "," + ty;
-  points += " " + tx + "," + (ty + td);
-  markerGr.append("svg:polygon")
-    .attr("points", points)
-    .classed("color-legend-label-anchor", true);
-
-  tx = tx0 + legendW / 2;
-  td = 5
-  points = (tx - td) + "," + ty;
-  points += " " + (tx + td) + "," + ty;
-  points += " " + tx + "," + (ty + td);
-  markerGr.append("svg:polygon")
-    .attr("points", points)
-    .classed("color-legend-label-anchor", true);
-
-  tx = 20;
+  var tx = legendL;
   ty = mapH - 20 - legendH;
   var alti, altn = caseStudy.altitudes.length;
   var dx = legendW / altn;
@@ -557,6 +552,69 @@ function drawColorLegend(svgGroup) {
       .attr("style", "fill:" + hex + ";");
     tx += dx;
   }
+}
+
+function drawColorLegend(svgGroup) {
+  var margin = 20;
+  var legendW = 12;
+  var legendH = 100;
+  var legendT = mapH - margin - legendH;
+
+  var ty = legendT;
+  var alti, altn = caseStudy.altitudes.length;
+  var dy = legendH / altn;
+  var hue, hex;
+  for (alti = 0; alti < altn; alti++) {
+    hue = util.mapRange(alti, 0, altn, altiHueMax, altiHueMin);
+    hex = util.hsvToHex(hue, altiSaturation, altiBrightness);
+    svgGroup.append("svg:rect")
+      .attr("x", margin)
+      .attr("y", ty)
+      .attr("width", legendW)
+      .attr("height", Math.ceil(dy))
+      .attr("style", "fill:" + hex + ";");
+    ty += dy;
+  }
+
+  var lineW = 7;
+  svgGroup.append("svg:line")
+    .classed("scale-legend-line", true)
+    .attr("x1", margin)
+    .attr("y1", legendT)
+    .attr("x2", margin + legendW + lineW)
+    .attr("y2", legendT);
+  svgGroup.append("svg:line")
+    .classed("scale-legend-line", true)
+    .attr("x1", margin + legendW)
+    .attr("y1", legendT + legendH / 2)
+    .attr("x2", margin + legendW + lineW)
+    .attr("y2", legendT + legendH / 2);
+  svgGroup.append("svg:line")
+    .classed("scale-legend-line", true)
+    .attr("x1", margin)
+    .attr("y1", legendT + legendH)
+    .attr("x2", 84)
+    .attr("y2", legendT + legendH);
+
+  svgGroup.append("svg:text")
+    .classed("legend-label", true)
+    .attr("x", margin + legendW + lineW + 4)
+    .attr("y", legendT)
+    .attr("alignment-baseline", "central")
+    .text("4000 m");
+  svgGroup.append("svg:text")
+    .classed("legend-label", true)
+    .attr("x", margin + legendW + lineW + 4)
+    .attr("y", legendT + legendH / 2)
+    .attr("alignment-baseline", "central")
+    .text("2000 m");
+
+  svgGroup.append("svg:text")
+    .classed("legend-label", true)
+    .attr("x", margin + legendW + lineW + 2)
+    .attr("y", legendT + legendH - 4)
+    //.attr("text-anchor", "left")
+    .text("altitude");
 }
 
 function drawSizeLegend(svgGroup, markers) {
