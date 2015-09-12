@@ -150,11 +150,11 @@ svg.map {
 }
 
 .scale-legend-line {
-    stroke: #444;
-    stroke-width: 1px;
+    stroke: #222;
+    stroke-width: 0.5px;
 }
 
 .highlight {
     fill: #f00;
-    fill-opacity: .5;
+    fill-opacity: 0.5;
 }

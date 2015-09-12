@@ -27,3 +27,29 @@ object with the following properties:
     * __min__ - the minimum of the altitude range
     * __max__ - the maximum of the altitude range
     * __idx__ - the index
+
+# 3rd-Party libraries
+
+Most 3rd-party client libraries are managed through Bower, except for the Foundation library, which is a custom build. See below for more details.
+
+## Bower components
+
+* __modernizr__
+* __fastclick__
+* __moment__ - beter date/time handling
+* __d3__ - visualisation
+* __topojson__ - d3 plugin for drawing topography from topojson data
+* __jquery__ - actually only needed for Foundation
+* [__file-saver.js__](https://github.com/Teleborder/FileSaver.js)
+
+## Foundation
+
+This app uses Foundation for its responsiveness.
+This Foundation is a custom build of v5.5.2 that includes:
+
+* grid
+* visibility
+
+The js and css files are maintained in the ./vendor directory.
+
+

@@ -6,20 +6,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Time Integrated Multi-Altitude Migration Flows</title>
 
-  <link rel="stylesheet" type="text/css" href="css/normalize.css" />
-  <link rel="stylesheet" type="text/css" href="css/foundation.min.css" />
+  <link rel="stylesheet" type="text/css" href="vendor/foundation-5.5.2.custom/css/normalize.css" />
+  <link rel="stylesheet" type="text/css" href="vendor/foundation-5.5.2.custom/css/foundation.min.css" />
   <link rel="stylesheet" type="text/css" href="css/tipaths.css">
 
-  <script src="js/lib/modernizr.2.8.3.js"></script>
-  <script src="js/lib/jquery.2.1.4.js"></script>
-  <script src="js/lib/foundation.min.js"></script>
+  <script src="bower_components/modernizr/modernizr.js"></script>
+  <script src="bower_components/fastclick/lib/fastclick.js"></script>
   <script src="bower_components/moment/min/moment.min.js"></script>
-  <script src="bower_components/docReady/docready.js"></script>
-  <script src="js/lib/d3.3.5.5.js"></script>
-  <script src="js/lib/topojson.1.6.19.js"></script>
-  <script src="js/data.js"></script>
+  <script src="bower_components/d3/d3.min.js"></script>
+  <script src="bower_components/topojson/topojson.js"></script>
+  <script src="bower_components/jquery/dist/jquery.min.js"></script>
+  <script src="vendor/foundation-5.5.2.custom/js/foundation.min.js"></script>
   <script src="js/util.js"></script>
-	<script src="js/main.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
 </head>
 
 <body>
@@ -32,13 +32,7 @@
 
 <div class="row">
   <div class="small-12 medium-8 large-9 columns">
-    <div id="map-container">
-      <!--
-                      <svg>
-                          <circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow" />
-                      </svg>
-      -->
-    </div>
+    <div id="map-container"></div>
   </div>
   <div class="small-12 medium-4 large-3 columns">
     <div class="show-for-medium-up">
@@ -102,7 +96,8 @@
 -->
 
 <script>
-  docReady(initApp, "data/case-us.json");
+  $(document).foundation();
+  $(document).ready(function () { initApp("data/case-us.json"); });
 </script>
 
 </body>
