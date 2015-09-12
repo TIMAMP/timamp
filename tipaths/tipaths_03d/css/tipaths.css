@@ -101,12 +101,11 @@ p.description {
 }
 
 
-
 /*** SVG styles ***/
 
 .graticule {
     fill: none;
-    stroke: #999;
+    stroke: #aaa;
 	stroke-width: 0.3px;
 }
 
