@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Time Integrated Multi-Altitude Migration Flows</title>
+    
+    <link rel="stylesheet" type="text/css" href="css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="css/foundation.min.css" />
+    <link rel="stylesheet" type="text/css" href="css/tipaths.css">
+    
+    <script src="js/lib/modernizr.2.8.3.js"></script>
+    <script src="js/lib/jquery.2.1.4.js"></script>
+    <script src="js/lib/foundation.min.js"></script>
+    <script src="js/lib/svg.js"></script>
+    <script src="js/lib/svg.parser.min.js"></script>
+    <script src="js/lib/svg.import.js"></script>
+    <script src="js/lib/proj4.js"></script>
+    <script src="js/lib/d3.3.5.5.js"></script>
+    <script src="js/lib/topojson.1.6.19.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/Map.js"></script>
+    <script src="js/util.js"></script>
+    <script src="js/main.js"></script>
+</head>
+
+<body>
+
+    <div class="row">
+        <div class="small-12 show-for-small-only small-title">
+            <h1>Time Integrated Multi-Altitude Migration Flows</h1>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="small-12 medium-8 large-12 columns">
+            <div id="svg">
+<!--
+                <svg>
+                    <circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow" />
+                </svg>
+-->
+            </div>
+        </div>
+        <div class="small-12 medium-4 large-12 columns">
+            <div class="show-for-medium-up">
+                <h1>Time Integrated Multi-Altitude Migration Flows</h1>
+            </div>
+            
+            <form>
+                <div class="row collapse">
+                    <div class="small-4 medium-4 columns">
+                        <strong>Date:</strong><br class="show-for-small-only">
+                        September <input type="number" id="input_days" class="inline"
+                                 min="2" max="11" step="1" value="2"
+                                 style="width: 3em"> '10
+                    </div>
+                    <div class="small-4 medium-4 columns">
+                        <strong>Time:</strong><br class="show-for-small-only">
+                        <input type="number" id="input_hours" class="inline"
+                            min="-1" max="24" step="1" value="21"
+                            style="width: 3em"> :
+                        <input type="number" id="input_minutes" class="inline"
+                            min="-10" max="70" step="10" value="0"
+                            style="width: 3em">
+                    </div>
+                    <div class="small-4 medium-4 columns">
+                        <strong>Duration:</strong><br class="show-for-small-only">
+                        <input type="number" id="input_duration" class="inline"
+                            min="1" max="8" step="1" value="3"
+                            style="width: 3em"> hrs.
+                    </div>
+                </div>
+                
+                <!--<button id="button_redraw" type="button">redraw</button>-->
+            </form>
+            
+            <p class="description">This visualization shows bird migration flowlines for a range of altitudes during an observation window of 1 to 8 hours. The flowlines represent bird movement data, integrated over time. The density of the flows is based on the density data averaged over the given window.</p>
+            
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="small-12 medium-12 large-12 columns footer">
+            <p><a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a></p>
+            <p>
+                <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title">Time Integrated Multi-Altitude Migration Patterns</span><br>
+                by <a xmlns:cc="http://creativecommons.org/ns#" href="http://timamp.github.io/" property="cc:attributionName" rel="cc:attributionURL">Wouter Van den Broeck, Jan Klaas Van Den Meersche, Kyle Horton and S&eacute;rgio Branco</a><br>
+                is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
+            </p>
+            <p>Data served by <a href="http://cartodb.com">CartoDB</a>.</p>
+        </div>
+    </div>
+    
+   
+<!--
+    <div class="descriptionDiv">
+    </div>
+    <div class="bottomDiv">
+        <div class="licenseDiv">
+        </div>
+    </div>
+    <img id="img_map" src="images/basemap_01.png" style="width: 1px; height: 1px;">
+-->
+
+    <script>
+        $(document).ready(init);
+    </script>
+    
+</body>
+</html>

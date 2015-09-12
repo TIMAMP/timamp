@@ -1,0 +1,126 @@
+
+/*** STRUCTURE ***/
+
+body {
+    padding-top: 1em;
+}
+
+.small-title {
+    padding: 0 1em;
+}
+
+div#svg {
+    float: left;
+}
+
+/*
+.descriptionDiv {
+    width: 536px;
+    margin-top: .1em;
+    box-sizing: border-box;
+}
+.bottomDiv {
+    width: 740px;
+    box-sizing: border-box;
+    text-align: center;
+    margin-top: 3em;
+}
+.licenseDiv {
+    width: 400px;
+    display: inline-block;
+    box-sizing: border-box;
+}
+*/
+
+input[type="text"], input[type="password"], input[type="date"], input[type="datetime"], input[type="datetime-local"], input[type="month"], input[type="week"], input[type="email"], input[type="number"], input[type="search"], input[type="tel"], input[type="time"], input[type="url"], input[type="color"], textarea, label {
+    margin-bottom: .5em !important;
+}
+input[type="number"] {
+    text-align: center;
+    font-size: 90%;
+    padding: .25em;
+    height: 2em;
+}
+
+input.inline {
+    display: inline;
+}
+
+/*** TYPOGRAPHY ***/
+
+body, p, small {
+    font-family: 'Droid Serif', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+h1, h3 {
+    font-family: Montserrat, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+body {
+    font-size: 100%;
+}
+h1 {
+    color: rgb(51, 51, 51);
+    display: block;
+    font-size: 170%;
+    font-weight: bold;
+    margin: 0 0 .5em 0;
+    line-height: 100%;
+    text-transform: uppercase;
+}
+h3 {
+    font-size: 100%;
+    font-weight: 600;
+    margin: .5em 0 0 0;
+    padding: 0;
+}
+p {
+    margin: .25em 0 .25em 0;
+    display: block;
+    font-size: 15px;
+    line-height: 120%;
+    color: #333;
+}
+p.description {
+    text-align: justify;
+}
+::selection {
+    text-shadow: none;
+    background: #fed136;
+}
+.footer {
+    margin-top: 1em;
+}
+.footer p {
+    margin-top: 1em;
+    text-align: center;
+    font-size: 75%;
+    color: #666;
+}
+
+/*** SVG ***/
+
+.graticule {
+    fill: none;
+    stroke: #999;
+	stroke-width: 0.3px;
+}
+
+.radar circle {
+    fill: #000;
+}
+
+.land {
+    fill: #D0E7D0;
+}
+
+.country-boundary {
+    fill: none;
+    stroke: #70a070;
+    stroke-width: .5px;
+    stroke-dasharray: 2, 4;
+    stroke-linejoin: round;
+}
+
+.legend-labels {
+    font-family: Helvetica, Sans-serif;
+    font-size: 11px;
+}
