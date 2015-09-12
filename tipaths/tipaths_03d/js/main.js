@@ -27,16 +27,12 @@ var svg;
 var pathsSVGGroup;
 var projection;
 var projectionPath;
-var caseService;
 var caseStudy;
-var topography;
 
 /** @type {Object} */
 var currData;
 
-function initApp(theCaseService) {
-  caseService = theCaseService;
-
+function initApp(caseStudyUrl) {
   $(document).foundation(); // TODO
 
   if (!document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#Image", "1.1")) {
@@ -44,19 +40,28 @@ function initApp(theCaseService) {
     return;
   }
 
-  var busy = 3;
-
-  d3.json(caseService.topoJsonUrl, function (error, json) {
-    if (error) {
-      console.error(error);
-      return;
-    }
-    topography = json;
-    if (--busy == 0) initDone();
-  });
-  dataService.loadCaseStudy(caseService.caseStudyUrl, function (json) {
+  // load the case study data:
+  dataService.loadCaseStudy(caseStudyUrl, function (json) {
     //console.log(json);
     caseStudy = json;
+
+    var busy = 3;
+
+    // load the topography:
+    d3.json(caseStudy.topoJsonUrl, function (error, json) {
+      if (error) {
+        console.error(error);
+        return;
+      }
+      caseStudy.topoJson = json;
+      if (--busy == 0) initDone();
+    });
+
+    // load the query template:
+    dataService.loadQueryTemplate(caseStudy.queryTemplateUrl, function () {
+      if (--busy == 0) initDone();
+    });
+
     var altn = caseStudy.altitudes.length;
     maxPathCnt = maxDensity / altn;
 
@@ -75,9 +80,6 @@ function initApp(theCaseService) {
       rds.push(rdset);
     }
 
-    if (--busy == 0) initDone();
-  });
-  dataService.loadQueryTemplate(caseService.queryTemplateUrl, function () {
     if (--busy == 0) initDone();
   });
 }
@@ -245,7 +247,7 @@ function updateMap(dataDirty, mapDirty) {
       interval : 20 /* the duration of a window in minutes */,
       intervalCount: parseInt($("#input_duration").val()) * 3
     };
-    dataService.loadData(caseService.queryBaseUrl, data, caseStudy, function () {
+    dataService.loadData(caseStudy.queryBaseUrl, data, caseStudy, function () {
       currData = data;
       drawPaths(currData);
     });
@@ -265,9 +267,9 @@ function updateMapData() {
 
   // specify the projection based of the size of the map:
   projection = d3.geo.mercator()
-    .scale(caseService.mapScaleFactor * mapW)
+    .scale(caseStudy.mapScaleFactor * mapW)
     .translate([mapW / 2, mapH / 2])
-    .center(caseService.mapCenter);
+    .center(caseStudy.mapCenter);
 
   // initialize the d3 path with which to draw the geography:
   projectionPath = d3.geo.path().projection(projection);
@@ -290,8 +292,8 @@ function drawMap() {
     .classed("map", true);
 
   var datum = topojson.feature(
-    topography,
-    topography.objects.countries
+    caseStudy.topoJson,
+    caseStudy.topoJson.objects.countries
   );
   svg.append("svg:path")
     .datum(datum)
@@ -299,8 +301,8 @@ function drawMap() {
     .attr("d", projectionPath);
 
   datum = topojson.mesh(
-    topography,
-    topography.objects.countries,
+    caseStudy.topoJson,
+    caseStudy.topoJson.objects.countries,
     function(a, b) { return a !== b; }
   );
   svg.append("svg:path")
@@ -354,7 +356,7 @@ function drawMap() {
 
   // draw legends:
   drawColorLegend(svg.append("svg:g"));
-  drawSizeLegend(svg.append("svg:g"), caseService.scaleLegendMarkers);
+  drawSizeLegend(svg.append("svg:g"), caseStudy.scaleLegendMarkers);
 }
 
 /**

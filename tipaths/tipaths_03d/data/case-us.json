@@ -3,6 +3,13 @@
   "dateMin": { "year": 2010, "month": 8, "date": 8 },
   "dateMax": { "year": 2010, "month": 8, "date": 11 },
   "dateFocus": { "year": 2010, "month": 8, "date": 11, "hour": 0, "minute": 0 },
+  "mapCenter": [-73.2, 42],
+  "mapScaleFactor": 4.25,
+  "topoJsonUrl": "data/topo-us.json",
+  "queryTemplateUrl": "data/template-us.sql",
+  "queryBaseUrl": "https://gbernstein.cartodb.com/api/v2/sql?q=",
+  "colorLegendMarkers": [0, 2, 4, "km"],
+  "scaleLegendMarkers": [0, 100, 200, "km"],
   "radars": [
 	{
 	  "id": "KBGM",

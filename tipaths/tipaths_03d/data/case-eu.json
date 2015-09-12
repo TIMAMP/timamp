@@ -3,6 +3,13 @@
   "dateMin": { "year": 2013, "month": 3, "day": 5 },
   "dateMax": { "year": 2013, "month": 3, "day": 11 },
   "dateFocus": { "year": 2013, "month": 3, "date": 7, "hour": 18, "minute": 0 },
+  "mapCenter": [4.5, 51.55],
+  "mapScaleFactor": 8.5,
+  "topoJsonUrl": "data/topo-eu.json",
+  "queryTemplateUrl": "data/template-eu.sql",
+  "queryBaseUrl": "http://lifewatch.cartodb.com/api/v2/sql?q=",
+  "colorLegendMarkers": [0, 2, 4, "km"],
+  "scaleLegendMarkers": [0, 50, 100, "km"],
   "radars": [
 	{
 	  "id": 6477,
