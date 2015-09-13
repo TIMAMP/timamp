@@ -1,17 +1,3 @@
-
-# This query is a variation of the query proposed on
-# https://github.com/enram/case-study/tree/master/data/bird-migration-altitude-profiles#aggregation
-#
-# This variation does not aggregate altitudes and adds the avg_speed, altitude_idx and
-# interval_idx values.
-# This is intended to load data from https://gbernstein.cartodb.com/api/v2/.
-#
-# Information about the data:
-# - for scans in which we have identified rain, we have set the velocity to 0 so that
-#   no lines/particles are created there. This is a temporary fix until the viz setups
-#   can directly handle weather
-# - the dataset includes the proper groundspeed
-
 WITH conditional_data AS (
     SELECT
         DIV(CAST((EXTRACT(EPOCH FROM start_time) -

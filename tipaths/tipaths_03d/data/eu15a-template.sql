@@ -1,10 +1,3 @@
-
-# This query is a variation of the query proposed on
-# https://github.com/enram/case-study/tree/master/data/bird-migration-altitude-profiles#aggregation
-#
-# This variation does not aggregate altitudes and adds the avg_speed, altitude_idx and
-# interval_idx values.
-
 WITH conditional_data AS (
     SELECT
         DIV(CAST((EXTRACT(EPOCH FROM start_time) -
