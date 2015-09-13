@@ -112,7 +112,9 @@ dataService.loadData = function (baseUrl, data, caseStudy, handler) {
       from: data.focusMoment.toISOString(),
       till: tillMoment.toISOString(),
       interval: data.interval * 60,  // interval as seconds,
-      altBandSize: caseStudy.altBandSize
+      strataSize: caseStudy.maxAltitude / 1000 / caseStudy.strataCount, // in km
+      minAlt: caseStudy.minAltitude / 1000,
+      maxAlt: caseStudy.maxAltitude / 1000
     }
   );
   //console.log(sql);
@@ -143,7 +145,7 @@ dataService.loadData = function (baseUrl, data, caseStudy, handler) {
 dataService._processData = function (json, data, caseStudy) {
   //console.log(JSON.stringify(json));
   var inti, intn = data.intervalCount,
-    alti, altn = caseStudy.altBands,
+    alti, altn = caseStudy.strataCount,
     rowi, rown = json.total_rows,
     row,
     radi, radn = caseStudy.radarCount,

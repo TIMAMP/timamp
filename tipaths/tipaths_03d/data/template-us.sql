@@ -18,7 +18,7 @@ WITH conditional_data AS (
                   EXTRACT(EPOCH FROM TIMESTAMP '{{from}}')) AS NUMERIC),
             {{interval}})
             AS interval_idx,
-        DIV(altitude::NUMERIC * 10, {{altBandSize}}) AS altitude_idx,
+        DIV(altitude::NUMERIC * 10, {{strataSize}} * 10) AS altitude_idx,
         radar_id,
         u_speed,
         CASE
@@ -38,8 +38,8 @@ WITH conditional_data AS (
 
   FROM enram_case_study
 
-  WHERE altitude <= 4.0
-    AND altitude >= 0
+  WHERE altitude >= {{minAlt}}
+    AND altitude <= {{maxAlt}}
     AND start_time >= '{{from}}'
     AND start_time < '{{till}}'
 )

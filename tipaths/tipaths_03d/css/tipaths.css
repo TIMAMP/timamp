@@ -36,18 +36,26 @@ div#map-container {
 }
 */
 
-input[type="text"], input[type="password"], input[type="date"], input[type="datetime"], input[type="datetime-local"], input[type="month"], input[type="week"], input[type="email"], input[type="number"], input[type="search"], input[type="tel"], input[type="time"], input[type="url"], input[type="color"], textarea, label {
+input[type="number"],
+textarea,
+label {
   margin-bottom: .5em !important;
 }
 input[type="number"] {
-  text-align: center;
-  font-size: 90%;
-  padding: .25em;
-  height: 2em;
 }
 
-input.inline {
+input[type="number"].inline {
   display: inline;
+  text-align: center;
+  font-size: 90%;
+  padding: 0;
+  width: 2.8em;
+  height: 2em;
+}
+select.inline {
+  display: inline;
+  width: 3em;
+  height: 2em;
 }
 
 /*** TYPOGRAPHY ***/

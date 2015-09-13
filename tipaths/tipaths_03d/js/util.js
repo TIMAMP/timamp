@@ -3,6 +3,13 @@
 
 var util = {};
 
+/**
+ * Identity function, simply returns the first argument.
+ * @param {*} d
+ * @returns {*}
+ */
+util.id = function (d) { return d; }
+
 // #############################################################################
 // Geometric functions
 // -----------------------------------------------------------------------------

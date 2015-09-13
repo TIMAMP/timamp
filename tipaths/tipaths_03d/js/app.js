@@ -4,8 +4,7 @@
 
 "use strict";
 
-//    console.log("SVG.parse: " + SVG.parse);
-//    console.log("SVG.ImportStore: " + SVG.ImportStore);
+// TODO: There is a problem when setting strataCount to 1.
 
 // Configuration settings that do not change:
 var mapHeightFactor = 940 / 720;
@@ -35,11 +34,8 @@ var currData;
 /**
  * Start the app. Call this function from a script element at the end of the html-doc.
  * @param {string} caseStudyUrl The url of the case study metadata json file.
- * @param {number} altBands     The number of altitude bands to aggregate the data in.
- *                              This number should be a whole divisor of the number of
- *                              altitudes given in the case study metadata.
  */
-function startApp(caseStudyUrl, altBands) {
+function startApp(caseStudyUrl) {
 
   // assert that SVG is supported by the browser:
   if (!document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#Image", "1.1")) {
@@ -59,20 +55,8 @@ function startApp(caseStudyUrl, altBands) {
       urlQuery[nvPair[0]] = nvPair[1];
     });
     //console.log(urlQuery);
-    if (urlQuery.altBands) { altBands = urlQuery.altBands; }
-    
-    // Assert that the given number of altitude bands is a whole divisor of the number
-    // of altitudes in the data.
-    // Note: This code currently assumes that the altitudes range from 0 to 4 km and that
-    // the number of altitudes in the data is a whole divisor of 40.
-    if (caseStudy.altitudes % altBands != 0) {
-      console.error("The given number of altitude bands (" + altBands
-        + ") should be a whole divisor of the number of altitudes in the data ("
-        + caseStudy.altitudes + ").");
-      return;
-    }
-    caseStudy.altBands = altBands;
-    caseStudy.altBandSize = 40 / altBands;
+    if (urlQuery.strataCount) { setStrataCount(urlQuery.strataCount); }
+    else if (urlQuery.altBands) { setStrataCount(urlQuery.altBands); }  // legacy
 
     var busy = 3;
 
@@ -91,41 +75,75 @@ function startApp(caseStudyUrl, altBands) {
       if (--busy == 0) initDone();
     });
 
-    var altn = caseStudy.altBands, alti;
+    var altn = caseStudy.strataCount, alti;
     maxPathCnt = maxDensity / altn;
 
-    // the angle (in degrees) of the radius around the radars in which to anchor flows:
-    var radarRadiusAngle = util.geoDistAngle(150);
+    updateAnchors();
+    updateColors();
 
-    // prepare the fixed lists of random anchors:
-    var radn = caseStudy.radarCount;
-    for (var radi = 0; radi < radn; radi++) {
-      var raraset = [];
-      var rardset = [];
-      for (alti = 0; alti < altn; alti++) {
-        var raset = [];
-        var rdset = [];
-        for (var i = 0; i < 50; i++) {
-          raset.push(Math.random() * Math.PI * 2);
-          rdset.push(Math.random() * radarRadiusAngle);
-        }
-        raraset.push(raset);
-        rardset.push(rdset);
-      }
-      ras.push(raraset);
-      rds.push(rardset);
-    }
-
-    // prepare the hues (one for each altitude band):
-    caseStudy.hues = [];
-    caseStudy.altHexColors = [];
-    for (alti = 0; alti < altn; alti++) {
-      var hue = util.mapRange(alti, 0, altn - 1, altiHueMin, altiHueMax);
-      caseStudy.hues.push(hue);
-      caseStudy.altHexColors.push(util.hsvToHex(hue, altiSaturation, altiBrightness));
-    }
     if (--busy == 0) initDone();
   });
+}
+
+/**
+ * Prepare the fixed lists of random anchors.
+ */
+function updateAnchors() {
+  // the angle (in degrees) of the radius around the radars in which to anchor flows:
+  var radarRadiusAngle = util.geoDistAngle(150);
+  var newRas = [];
+  var newRds = [];
+  var radn = caseStudy.radarCount;
+  var altn = caseStudy.strataCount;
+  for (var radi = 0; radi < radn; radi++) {
+    var raraset = [];
+    var rardset = [];
+    for (var alti = 0; alti < altn; alti++) {
+      var raset = [];
+      var rdset = [];
+      for (var i = 0; i < 50; i++) {
+        raset.push(Math.random() * Math.PI * 2);
+        rdset.push(Math.random() * radarRadiusAngle);
+      }
+      raraset.push(raset);
+      rardset.push(rdset);
+    }
+    newRas.push(raraset);
+    newRds.push(rardset);
+  }
+  ras = newRas;
+  rds = newRds;
+}
+
+/**
+ * Prepare the hues for the altitude strata.
+ */
+function updateColors() {
+  caseStudy.hues = [];
+  caseStudy.altHexColors = [];
+  var altn = caseStudy.strataCount;
+  for (var alti = 0; alti < altn; alti++) {
+    var hue = util.mapRange(alti, 0, altn - 1, altiHueMin, altiHueMax);
+    caseStudy.hues.push(hue);
+    caseStudy.altHexColors.push(util.hsvToHex(hue, altiSaturation, altiBrightness));
+  }
+}
+
+/**
+ * Use this function to update the strataCount value in the case study.
+ * @param {number} newCount
+ */
+function setStrataCount(newCount) {
+  // Assert that the strata count is a whole divisor of the number
+  // of altitudes in the data.
+  if (caseStudy.altitudes % newCount != 0) {
+    console.error("The given strata count (" + newCount
+      + ") should be a whole divisor of the number of altitudes in the data ("
+      + caseStudy.altitudes + ").");
+    return;
+  }
+
+  caseStudy.strataCount = newCount;
 }
 
 function initDone() {
@@ -133,10 +151,12 @@ function initDone() {
   //dataService.printSpecifics_01b();
   //dataService.printSpecifics_01c();
 
+  caseStudy.focusDuration = 8;
+
   var dayMin = caseStudy.minMoment.date();
   var dayMax = caseStudy.maxMoment.date();
 
-  d3.select("#input_day")
+  d3.select("#input-day")
     .property('value', caseStudy.focusMoment.date())
     .attr('min', caseStudy.minMoment.date())
     .attr('max', caseStudy.maxMoment.date())
@@ -147,13 +167,13 @@ function initDone() {
       updateMap(true, false);
     });
 
-  d3.select("#input_hour")
+  d3.select("#input-hour")
     .property('value', caseStudy.focusMoment.hour())
     .on('change', function () {
-      var input_day = d3.select("#input_day");
-      var date = parseInt(input_day.property('value'));
-      var input_hour = d3.select("#input_hour");
-      var hour = parseInt(input_hour.property('value'));
+      var inputDay = d3.select("#input-day");
+      var date = parseInt(inputDay.property('value'));
+      var inputHour = d3.select("#input-hour");
+      var hour = parseInt(inputHour.property('value'));
       if (hour >= 24) {
         if (date >= dayMax) {
           date = dayMax;
@@ -175,8 +195,8 @@ function initDone() {
         }
       }
 
-      input_day.property('value', date);
-      input_hour.property('value', hour);
+      inputDay.property('value', date);
+      inputHour.property('value', hour);
 
       var focusDirty = false;
       if (caseStudy.focusMoment.date() != date) {
@@ -190,75 +210,26 @@ function initDone() {
       if (focusDirty) updateMap(true, false);
     });
 
-  d3.select("#input_minute")
-    .property('value', caseStudy.focusMoment.minute())
+  d3.select("#input-strata")
+    .selectAll('option')
+    .data(caseStudy.strataCounts)
+    .enter().append("option")
+    .property('value', util.id)
+    .text(util.id);
+  d3.select("#input-strata")
+    .property('value', caseStudy.strataCount)
     .on('change', function () {
-      var input_day = d3.select("#input_day");
-      var day = parseInt(input_day.property('value'));
-      var input_hour = d3.select("#input_hour");
-      var hour = parseInt(input_hour.property('value'));
-      var input_minute = d3.select("#input_minute");
-      var minute = parseInt(input_minute.property('value'));
-
-      if (minute >= 60) {
-        if (hour >= 23) {
-          if (day >= dayMax) {
-            day = dayMax;
-            hour = 23;
-            minute = 50;
-          }
-          else {
-            day++;
-            hour = 0;
-            minute = 0;
-          }
-        }
-        else {
-          hour++;
-          minute = 0;
-        }
-      }
-      else if (minute < 0) {
-        if (hour <= 0) {
-          if (day <= dayMin) {
-            day = dayMin;
-            hour = 0;
-            minute = 0;
-          }
-          else {
-            day--;
-            hour = 23;
-            minute = 50;
-          }
-        }
-        else {
-          hour--;
-          minute = 50;
-        }
-      }
-
-      input_day.property('value', day);
-      input_hour.property('value', hour);
-      input_minute.property('value', minute);
-
-      var focusDirty = false;
-      if (caseStudy.focusMoment.date() != day) {
-        caseStudy.focusMoment.date(day);
-        focusDirty = true;
-      }
-      if (caseStudy.focusMoment.hour() != hour) {
-        caseStudy.focusMoment.hour(hour);
-        focusDirty = true;
-      }
-      if (caseStudy.focusMoment.minute() != minute) {
-        caseStudy.focusMoment.minute(minute);
-        focusDirty = true;
-      }
-      if (focusDirty) updateMap(true, false);
+      //console.log("input-strata changed:", d3.select(this).property('value'));
+      setStrataCount(d3.select(this).property('value'));
+      updateAnchors();
+      updateColors();
+      updateMap(true, true);
     });
 
-  d3.select("#input_duration")
+  d3.select("#input-duration")
+    .property('value', caseStudy.focusDuration)
     .on('change', function () {
+      caseStudy.focusDuration = parseInt(d3.select("#input-duration").property('value'));
       updateMap(true, false);
     });
 
@@ -289,7 +260,7 @@ function updateMap(dataDirty, mapDirty) {
     var data = {
       focusMoment: moment.utc(caseStudy.focusMoment),
       interval : 20 /* the duration of a window in minutes */,
-      intervalCount: parseInt(d3.select("#input_duration").property('value')) * 3
+      intervalCount: caseStudy.focusDuration * 3
     };
     dataService.loadData(caseStudy.queryBaseUrl, data, caseStudy, function () {
       currData = data;
@@ -439,7 +410,7 @@ function drawPaths(data) {
   //var contextVolume = Math.PI * 100 * 100 / 5;
 
   // for each altitude:
-  var altn = caseStudy.altBands;
+  var altn = caseStudy.strataCount;
   for (var alti = 0; alti < altn; alti++) {
     var densities = data.avDensities[alti];
     var hue = caseStudy.hues[alti];
@@ -594,7 +565,7 @@ function drawColorLegend_hor(svgGroup) {
 
   var tx = legendL;
   ty = mapH - 20 - legendH;
-  var alti, altn = caseStudy.altBands;
+  var alti, altn = caseStudy.strataCount;
   var dx = legendW / altn;
   for (alti = 0; alti < altn; alti++) {
     svgGroup.append("svg:rect")
@@ -614,7 +585,7 @@ function drawColorLegend(svgGroup) {
   var legendT = margin;
 
   var ty = legendT;
-  var alti, altn = caseStudy.altBands;
+  var alti, altn = caseStudy.strataCount;
   var dy = legendH / altn;
   var hue, hex;
   for (alti = altn - 1; alti >= 0; alti--) {

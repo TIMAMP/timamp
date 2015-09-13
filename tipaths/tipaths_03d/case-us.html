@@ -41,25 +41,23 @@
 
     <form>
       <div class="row collapse">
-        <div class="small-4 medium-12 columns">
+        <div class="small-3 medium-12 columns">
           <strong>Date:</strong><br class="show-for-small-only">
-          October <input type="number" id="input_day" class="inline" step="1"
-                       style="width: 3em"> '10
+          <input id="input-day" type="number" class="inline" step="1"> apr.
         </div>
-        <div class="small-4 medium-12 columns">
+        <div class="small-3 medium-12 columns">
           <strong>Time:</strong><br class="show-for-small-only">
-          <input type="number" id="input_hour" class="inline"
-                 min="-1" max="24" step="1"
-                 style="width: 3em"> :
-          <input type="number" id="input_minute" class="inline"
-                 min="-10" max="70" step="10"
-                 style="width: 3em">
+          <input id="input-hour" type="number" class="inline"
+                 min="-1" max="24" step="1"> h.
         </div>
-        <div class="small-4 medium-12 columns">
-          <strong>Duration:</strong><br class="show-for-small-only">
-          <input type="number" id="input_duration" class="inline"
-                 min="1" max="8" step="1" value="8"
-                 style="width: 3em"> hrs.
+        <div class="small-3 medium-12 columns">
+          <strong>Window:</strong><br class="show-for-small-only">
+          <input id="input-duration" type="number" class="inline"
+                 min="1" max="8" step="1"> h.
+        </div>
+        <div class="small-3 medium-12 columns">
+          <strong>Strata:</strong><br class="show-for-small-only">
+          <select id="input-strata" class="inline"></select>
         </div>
       </div>
 
@@ -97,7 +95,7 @@
 
 <script>
   $(document).foundation();
-  $(document).ready(function () { startApp("data/case-us.json", 4); });
+  $(document).ready(function () { startApp("data/case-us.json"); });
 </script>
 
 </body>
