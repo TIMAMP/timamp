@@ -12,45 +12,45 @@
   "colorLegendMarkers": [0, 2, 4, "km"],
   "scaleLegendMarkers": [0, 50, 100, "km"],
   "radars": [
-	{
-	  "id": 6477,
-	  "name": "Wideumont",
-	  "country": "BE",
-	  "type": "weather",
-	  "longitude": 5.5045,
-	  "latitude": 49.914
-	},
-	{
-	  "id": 6451,
-	  "name": "Zaventem",
-	  "country": "BE",
-	  "type": "weather",
-	  "longitude": 4.451,
-	  "latitude": 50.901
-	},
-	{
-	  "id": 6410,
-	  "name": "Jabbeke",
-	  "country": "BE",
-	  "type": "weather",
-	  "longitude": 3.0654,
-	  "latitude": 51.1927
-	},
-	{
-	  "id": 6260,
-	  "name": "De Bilt",
-	  "country": "NL",
-	  "type": "weather",
-	  "longitude": 5.1783,
-	  "latitude": 52.1017
-	},
-	{
-	  "id": 6234,
-	  "name": "Den Helder",
-	  "country": "NL",
-	  "type": "weather",
-	  "longitude": 4.7899,
-	  "latitude": 52.9533
-	}
+    {
+      "id": 6477,
+      "name": "Wideumont",
+      "country": "BE",
+      "type": "weather",
+      "longitude": 5.5045,
+      "latitude": 49.914
+    },
+    {
+      "id": 6451,
+      "name": "Zaventem",
+      "country": "BE",
+      "type": "weather",
+      "longitude": 4.451,
+      "latitude": 50.901
+    },
+    {
+      "id": 6410,
+      "name": "Jabbeke",
+      "country": "BE",
+      "type": "weather",
+      "longitude": 3.0654,
+      "latitude": 51.1927
+    },
+    {
+      "id": 6260,
+      "name": "De Bilt",
+      "country": "NL",
+      "type": "weather",
+      "longitude": 5.1783,
+      "latitude": 52.1017
+    },
+    {
+      "id": 6234,
+      "name": "Den Helder",
+      "country": "NL",
+      "type": "weather",
+      "longitude": 4.7899,
+      "latitude": 52.9533
+    }
   ]
 }
