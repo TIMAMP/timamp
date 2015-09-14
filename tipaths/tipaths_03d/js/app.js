@@ -9,18 +9,17 @@
 // Configuration settings that do not change:
 var mapHeightFactor = 940 / 720;
 var legendWidthFactor = 200 / 720;
-var maxDensity = 3200;
 var altiHueMin = 0.5;
 var altiHueMax = 1;
 var altiSaturation = 0.8;
 var altiBrightness = 0.8;
 
 // System variables:
-var maxPathCnt;
 var ras = [];   // random angles for path anchors
 var rds = [];   // random distances for path anchors
 var mapW = 100;
 var mapH = 100;
+var maxPathCount = 50;
 var legendW;
 var svg;
 var pathsSVGGroup;
@@ -75,9 +74,6 @@ function startApp(caseStudyUrl) {
       if (--busy == 0) initDone();
     });
 
-    var altn = caseStudy.strataCount, alti;
-    maxPathCnt = maxDensity / altn;
-
     updateAnchors();
     updateColors();
 
@@ -90,29 +86,65 @@ function startApp(caseStudyUrl) {
  */
 function updateAnchors() {
   // the angle (in degrees) of the radius around the radars in which to anchor flows:
-  var radarRadiusAngle = util.geoDistAngle(150);
-  var newRas = [];
-  var newRds = [];
-  var radn = caseStudy.radarCount;
+  //var radarRadiusAngle = util.geoDistAngle(150);
+  //var newRas = [];
+  //var newRds = [];
+  //var radn = caseStudy.radarCount;
+  //var altn = caseStudy.strataCount;
+  //for (var radi = ras.length; radi < radn; radi++) {
+  //  var raraset = [];
+  //  var rardset = [];
+  //  for (var alti = 0; alti < altn; alti++) {
+  //    var raset = [];
+  //    var rdset = [];
+  //    for (var i = 0; i < maxPathCount; i++) {
+  //      raset.push(Math.random() * Math.PI * 2);
+  //      rdset.push(Math.random() * radarRadiusAngle);
+  //    }
+  //    raraset.push(raset);
+  //    rardset.push(rdset);
+  //  }
+  //  newRas.push(raraset);
+  //  newRds.push(rardset);
+  //}
+  //ras = newRas;
+  //rds = newRds;
+
+  var radi, radn, alti, raraset, rardset;
   var altn = caseStudy.strataCount;
-  for (var radi = 0; radi < radn; radi++) {
-    var raraset = [];
-    var rardset = [];
-    for (var alti = 0; alti < altn; alti++) {
-      var raset = [];
-      var rdset = [];
-      for (var i = 0; i < 50; i++) {
-        raset.push(Math.random() * Math.PI * 2);
-        rdset.push(Math.random() * radarRadiusAngle);
-      }
-      raraset.push(raset);
-      rardset.push(rdset);
+  // append existing:
+  radn = Math.min(ras.length, caseStudy.radarCount);
+  for (radi = 0; radi < radn; radi++) {
+    raraset = ras[radi];
+    rardset = rds[radi];
+    for (alti = raraset.length; alti < altn; alti++) {
+      raraset.push([]);
+      rardset.push([]);
     }
-    newRas.push(raraset);
-    newRds.push(rardset);
   }
-  ras = newRas;
-  rds = newRds;
+  // add new:
+  radn = caseStudy.radarCount;
+  for (radi = ras.length; radi < radn; radi++) {
+    raraset = [];
+    rardset = [];
+    for (alti = 0; alti < altn; alti++) {
+      raraset.push([]);
+      rardset.push([]);
+    }
+    ras.push(raraset);
+    rds.push(rardset);
+  }
+}
+
+function addAnchors(radi, alti, pathn) {
+  // the angle (in degrees) of the radius around the radars in which to anchor flows:
+  var radarRadiusAngle = util.geoDistAngle(150);
+  var raset = ras[radi][alti];
+  var rdset = rds[radi][alti];
+  for (var pathi = raset.length; pathi < pathn; pathi++) {
+    raset.push(Math.random() * Math.PI * 2);
+    rdset.push(Math.random() * radarRadiusAngle);
+  }
 }
 
 /**
@@ -421,7 +453,10 @@ function drawPaths(data) {
       var radx = radar.longitude;
       var rady = radar.latitude;
       var pathGr = pathsSVGGroup.append("svg:g");
-      var pathn = util.mapRange(densities[radi], 0, maxDensity, 0, maxPathCnt);
+      var pathn = densities[radi];
+      if (ras[radi][alti].length < pathn) {
+        addAnchors(radi, alti, pathn);
+      }
 
       // for each path:
       for (var pathi = 0; pathi < pathn; pathi++) {
@@ -502,12 +537,16 @@ function drawPaths(data) {
           .attr("points", points)
           .attr("style", "stroke:" + lcolor +
           ";fill:none;stroke-width:1.5;opacity:" + 1);
-        pathGr.append('svg:circle')
-          .attr('cx', np[0])
-          .attr('cy', np[1])
-          .attr('r', 2)
-          .attr("style", "fill:" + util.hsvToHex(hue, altiSaturation, altiBrightness)
-          + ";opacity:0.5");
+        try {
+          pathGr.append('svg:circle')
+            .attr('cx', np[0])
+            .attr('cy', np[1])
+            .attr('r', 2)
+            .attr("style", "fill:" + util.hsvToHex(hue, altiSaturation, altiBrightness)
+            + ";opacity:0.5");
+        } catch (error) {
+          console.error(np);
+        }
       }
     });
   }

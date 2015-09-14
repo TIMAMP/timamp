@@ -1,4 +1,22 @@
+# About this visualization
 
+This visualization shows a number of lines -paths- on a geographic map. These paths are meant to give an indication of the migration flows during a certain time window. The user can interactively select the starting date/time and the duration of this time window in the web app. The visualization will be updated accordingly.
+
+This visualization is also meant to expose differences in the migration flows at different altitudes. This is done by aggregating the data in different strata (altitude bands) and drawing separate color coded paths for each strata. The user can interactively select the number of strata to consider.
+
+Each path has a dot as its *head* on one end and a fading *tail* on the other. The head marks the direction in which the migration flows.
+
+The density of the paths is meant to give an indication of the number of birds involved in the represented migration flows. For each radar and for each strata, a number of paths are drawn in the vicinity of that radar. The exact number of path is a function of the average bird density for the concerned radar and strata during the given time window. To be exact, the number of paths for a given radar and strata equals the rounded result of the average bird densities (as birds/kmˆ3) for all observations within the given time window, the given radar and all altitudes within the given strata, multiplied by the height of the strata, yielding a bird density expressed as birds/kmˆ2.
+
+The mid-path anchor point is randomly positioned within a 75 km radius.
+
+The number of paths depends on the average bird density 
+
+Each path consists of a number of segments, one for each 20-minute interval in the shown time window. 
+
+### Future work:
+
+- Currently for each radar independently a number of paths are instantiated at random locations within a certain radius of that radar. As a consequence, there are  too many paths where these circular areas overlap.
 
 # Case study metadata json format
 
@@ -36,8 +54,8 @@ Most 3rd-party client libraries are managed through Bower, except for the Founda
 
 * __modernizr__
 * __fastclick__
-* __moment__ - beter date/time handling
-* __d3__ - visualisation
+* __moment__ - better date/time handling
+* __d3__ - visualization
 * __topojson__ - d3 plugin for drawing topography from topojson data
 * __jquery__ - actually only needed for Foundation
 * [__file-saver.js__](https://github.com/Teleborder/FileSaver.js)

@@ -155,7 +155,8 @@ dataService._processData = function (json, data, caseStudy) {
     speeds,
     dsum, avds;
 
-  // Prepare the data structure:
+  // Prepare the data structure which is constructed such that it efficiently facilitates
+  // the interpolation operations needed when constructing the paths.
   data.densities = [];
   data.uSpeeds = [];
   data.vSpeeds = [];
@@ -177,7 +178,7 @@ dataService._processData = function (json, data, caseStudy) {
     data.speeds.push(speeds);
   }
 
-  // Fill the data structure with the given data:
+  // Add the data in the data structure:
   for (rowi = 0; rowi < rown; rowi++) {
     row = json.rows[rowi];
     inti = row.interval_idx;
@@ -189,7 +190,12 @@ dataService._processData = function (json, data, caseStudy) {
     data.speeds[inti][alti][radi] = row.avg_speed;
   }
 
-  // Add average densities per radar-altitude combination:
+  // The strata height in km:
+  var strataHeight = caseStudy.maxAltitude / caseStudy.strataCount / 1000;
+
+  // Calculate average densities per radar-altitude combination, integrated
+  // over the strata height. These numbers thus represent the number of birds
+  // per square km in the concerned strata.
   data.avDensities = [];
   for (alti = 0; alti < altn; alti++) {
     avds = [];
@@ -198,7 +204,7 @@ dataService._processData = function (json, data, caseStudy) {
       for (inti = 0; inti < intn; inti++) {
         dsum += data.densities[inti][alti][radi];
       }
-      avds[radi] = dsum / intn;
+      avds[radi] = dsum / intn * strataHeight;
     }
     data.avDensities.push(avds);
   }
