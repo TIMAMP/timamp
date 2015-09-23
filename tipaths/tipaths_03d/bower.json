@@ -23,6 +23,7 @@
     "jquery": "~2.1.4",
     "modernizr": "~2.8.3",
     "moment": "~2.10.6",
+    "numeral": "~1.5.3",
     "seedrandom": "~2.4.2",
     "topojson": "~1.6.19"
   }

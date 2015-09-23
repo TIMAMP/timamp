@@ -58,6 +58,10 @@ select.inline {
   height: 2em;
 }
 
+P.description {
+  margin-top: 1em;
+}
+
 /*** TYPOGRAPHY ***/
 
 body, p, small {

@@ -93,6 +93,9 @@ function startApp(_caseStudy) {
     return;
   }
 
+  d3.select("#path-bird-count").text(numeral(pathBirdCount).format('0,0'));
+  d3.select("#radar-anchor-radius").text(radarAnchorRadius);
+
   caseStudy = _caseStudy;
 
   // load the case study data:

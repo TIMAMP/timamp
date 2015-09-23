@@ -17,6 +17,7 @@
   <script src="bower_components/topojson/topojson.js"></script>
   <script src="bower_components/jquery/dist/jquery.min.js"></script>
   <script src="bower_components/seedrandom/seedrandom.min.js"></script>
+  <script src="bower_components/numeral/numeral.js"></script>
   <script src="vendor/foundation-5.5.2.custom/js/foundation.min.js"></script>
   <script src="js/util.js"></script>
   <script src="js/data.js"></script>
@@ -28,7 +29,7 @@
 
 <div class="row">
   <div class="small-12 show-for-small-only small-title">
-    <h1>Time Integrated Multi-Altitude Migration Flows</h1>
+    <h1>Time Integrated Multi-Altitude Migration Paths</h1>
   </div>
 </div>
 
@@ -66,8 +67,7 @@
       <!--<button id="button_redraw" type="button">redraw</button>-->
     </form>
 
-    <p class="description">This visualization shows bird migration flowlines for a range of altitudes during an observation window of 1 to 8 hours. The flowlines represent bird movement data, integrated over time. The density of the flows is based on the density data averaged over the given window.</p>
-
+    <p class="description">This visualization shows bird migration flows for a range of altitudes during an observation window of 1 to 8 hours. The paths represent bird movement data, integrated over time. The density of the flows is based on the density data averaged over the given window. Each path corresponds to approx. <span id="path-bird-count"></span> birds. Paths are anchored within a radius of <span id="radar-anchor-radius"></span> km around the radars. Their length corresponds to the distance covered by the migrating birds during the selected time window.</p>
   </div>
 </div>
 
