@@ -8,6 +8,7 @@
   "maxAltitude": 4000,
   "strataCounts": [1, 2, 4, 5, 10, 20],
   "strataCount": 5,
+  "segmentInterval": 20,
   "mapCenter": [4.5, 51.55],
   "mapScaleFactor": 8.5,
   "queryBaseUrl": "http://lifewatch.cartodb.com/api/v2/sql?q=",

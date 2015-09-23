@@ -138,66 +138,6 @@ function startApp(_caseStudy) {
   });
 }
 
-/** Initialize the anchors. */
-function initAnchors() {
-  var locTopLeft = projection.invert([0, 0]);  // the location at the top-left corner
-  var locBotRight = projection.invert([mapW, mapH]);  // the loc. at the bottom-right
-  var rra = util.geo.distAngle(radarAnchorRadius);  // radar radius as angel
-  var dlon = util.geo.destination(caseStudy.mapCenter, 90, anchorInterval)[0]
-    - caseStudy.mapCenter[0];  // longitude delta
-  var dlat = util.geo.destination(caseStudy.mapCenter, 0, anchorInterval)[1]
-    - caseStudy.mapCenter[1];  // latitude delta
-  anchorLocations = [];
-  for (var lon = locTopLeft[0]; lon < locBotRight[0]; lon += dlon) {
-    for (var lat = locTopLeft[1]; lat > locBotRight[1]; lat -= dlat) {
-      caseStudy.radars.forEach(function (radar) {
-        if (util.degrees(d3.geo.distance(radar.coordinate, [lon, lat])) <= rra) {
-          anchorLocations.push([lon, lat]);
-        }
-      });
-    }
-  }
-}
-
-/**
- * Prepare the hues for the altitude strata.
- */
-function updateColors() {
-  caseStudy.hues = [];
-  caseStudy.altHexColors = [];
-  var altn = caseStudy.strataCount;
-  var hue;
-  if (altn == 1) {
-    hue = (altiHueMin + altiHueMax) / 2;
-    caseStudy.hues.push(hue);
-    caseStudy.altHexColors.push(util.hsvToHex(hue, altiSaturation, altiBrightness));
-  }
-  else {
-    for (var alti = 0; alti < altn; alti++) {
-      hue = util.mapRange(alti, 0, altn - 1, altiHueMin, altiHueMax);
-      caseStudy.hues.push(hue);
-      caseStudy.altHexColors.push(util.hsvToHex(hue, altiSaturation, altiBrightness));
-    }
-  }
-}
-
-/**
- * Use this function to update the strataCount value in the case study.
- * @param {number} newCount
- */
-function setStrataCount(newCount) {
-  // Assert that the strata count is a whole divisor of the number
-  // of altitudes in the data.
-  if (caseStudy.altitudes % newCount != 0) {
-    console.error("The given strata count (" + newCount
-      + ") should be a whole divisor of the number of altitudes in the data ("
-      + caseStudy.altitudes + ").");
-    return;
-  }
-
-  caseStudy.strataCount = newCount;
-}
-
 function initDone() {
   caseStudy.focusDuration = 8;
 
@@ -299,6 +239,45 @@ function initDone() {
   updateMap(true, true);
 }
 
+/**
+ * Use this function to update the strataCount value in the case study.
+ * @param {number} newCount
+ */
+function setStrataCount(newCount) {
+  // Assert that the strata count is a whole divisor of the number
+  // of altitudes in the data.
+  if (caseStudy.altitudes % newCount != 0) {
+    console.error("The given strata count (" + newCount
+      + ") should be a whole divisor of the number of altitudes in the data ("
+      + caseStudy.altitudes + ").");
+    return;
+  }
+
+  caseStudy.strataCount = newCount;
+}
+
+/**
+ * Prepare the hues for the altitude strata.
+ */
+function updateColors() {
+  caseStudy.hues = [];
+  caseStudy.altHexColors = [];
+  var altn = caseStudy.strataCount;
+  var hue;
+  if (altn == 1) {
+    hue = (altiHueMin + altiHueMax) / 2;
+    caseStudy.hues.push(hue);
+    caseStudy.altHexColors.push(util.hsvToHex(hue, altiSaturation, altiBrightness));
+  }
+  else {
+    for (var alti = 0; alti < altn; alti++) {
+      hue = util.mapRange(alti, 0, altn - 1, altiHueMin, altiHueMax);
+      caseStudy.hues.push(hue);
+      caseStudy.altHexColors.push(util.hsvToHex(hue, altiSaturation, altiBrightness));
+    }
+  }
+}
+
 function updateMap(dataDirty, mapDirty) {
   if (mapDirty) updateMapData();
 
@@ -307,8 +286,8 @@ function updateMap(dataDirty, mapDirty) {
   if (dataDirty) {
     var data = {
       focusMoment: moment.utc(caseStudy.focusMoment),
-      interval : 20 /* the duration of a window in minutes */,
-      intervalCount: caseStudy.focusDuration * 3
+      interval : caseStudy.segmentInterval /* the duration of a window in minutes */,
+      intervalCount: caseStudy.focusDuration * 60 / caseStudy.segmentInterval
     };
     dataService.loadData(caseStudy.queryBaseUrl, data, caseStudy, function () {
       currData = data;
@@ -334,6 +313,27 @@ function updateMapData() {
   projectionPath = d3.geo.path().projection(projection);
 
   initAnchors();
+}
+
+/** Initialize the anchors. */
+function initAnchors() {
+  var locTopLeft = projection.invert([0, 0]);  // the location at the top-left corner
+  var locBotRight = projection.invert([mapW, mapH]);  // the loc. at the bottom-right
+  var rra = util.geo.distAngle(radarAnchorRadius);  // radar radius as angel
+  var dlon = util.geo.destination(caseStudy.mapCenter, 90, anchorInterval)[0]
+    - caseStudy.mapCenter[0];  // longitude delta
+  var dlat = util.geo.destination(caseStudy.mapCenter, 0, anchorInterval)[1]
+    - caseStudy.mapCenter[1];  // latitude delta
+  anchorLocations = [];
+  for (var lon = locTopLeft[0]; lon < locBotRight[0]; lon += dlon) {
+    for (var lat = locTopLeft[1]; lat > locBotRight[1]; lat -= dlat) {
+      caseStudy.radars.forEach(function (radar) {
+        if (util.degrees(d3.geo.distance(radar.coordinate, [lon, lat])) <= rra) {
+          anchorLocations.push([lon, lat]);
+        }
+      });
+    }
+  }
 }
 
 function drawMap() {
@@ -447,15 +447,19 @@ function drawPaths(data) {
   var rlats = caseStudy.radLats;
   var idw = util.idw;
 
+  //var stop = false;
+
   // for each strata:
   var strn = caseStudy.strataCount;
   for (var stri = 0; stri < strn; stri++) {
     var densities = data.avDensities[stri];
     anchorLocations.forEach(function (anchorLoc) {
+      //if (stop) return;
       var density = idw(anchorLoc[0], anchorLoc[1], densities, rlons, rlats, 2);
       if (Math.random() >= density * anchorArea / pathBirdCount) {
         return;
       }
+      //stop = true;
 
       var pathData = buildPathData(data, stri, anchorLoc, half);
 
@@ -476,6 +480,22 @@ function buildPathData(data, stri, anchorLoc, half) {
   var rlats = caseStudy.radLats;
   var idw = util.idw;
   var tf1 = data.interval * 0.06;
+
+  //function lprint(d) {
+  //  tt.push("[" + d[stri].join(", ") + "]");
+  //}
+  //
+  //var tt = [];
+  //data.uSpeeds.forEach(lprint);
+  //console.log("uSpeeds:", tt);
+  //
+  //tt = [];
+  //data.vSpeeds.forEach(lprint);
+  //console.log("vSpeeds:", tt);
+  //
+  //tt = [];
+  //data.densities.forEach(lprint);
+  //console.log("densities:", tt);
 
   // tail half:
   loc = anchorLoc;
