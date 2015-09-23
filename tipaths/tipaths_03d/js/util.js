@@ -44,7 +44,28 @@ util.geo.destination = function (start, bearing, distance) {
   var dR = distance / 6371;  // angular distance = distance / earth’s radius
   var lat1 = util.radians(start[1]);
   var lon1 = util.radians(start[0]);
-  var bearing = util.radians(bearing);
+  bearing = util.radians(bearing);
+  var lat2 = Math.asin(Math.sin(lat1) * Math.cos(dR) +
+    Math.cos(lat1) * Math.sin(dR) * Math.cos(bearing));
+  var lon2 = lon1 + Math.atan2(Math.sin(bearing) * Math.sin(dR) * Math.cos(lat1),
+      Math.cos(dR) - Math.sin(lat1) * Math.sin(lat2));
+  lon2 = (lon2 + 3 * Math.PI) % (2 * Math.PI) - Math.PI; // normalise to -180..+180°
+  //console.log(start, [Math.degrees(lon2), Math.degrees(lat2)]);
+  return [util.degrees(lon2), util.degrees(lat2)];
+};
+
+/**
+ * Returns the destination location, given a start location, a bearing and a
+ * distance. Based on http://www.movable-type.co.uk/scripts/latlong.html
+ * @param  {Array<number>} start a [lon, lat] coordinate in degrees
+ * @param  {number}        bearing in radians clockwise from north
+ * @param  {number}        distance in km
+ * @return {Array<number>} a [lon, lat] coordinate in degrees
+ */
+util.geo.destinationRad = function (start, bearing, distance) {
+  var dR = distance / 6371;  // angular distance = distance / earth’s radius
+  var lat1 = util.radians(start[1]);
+  var lon1 = util.radians(start[0]);
   var lat2 = Math.asin(Math.sin(lat1) * Math.cos(dR) +
     Math.cos(lat1) * Math.sin(dR) * Math.cos(bearing));
   var lon2 = lon1 + Math.atan2(Math.sin(bearing) * Math.sin(dR) * Math.cos(lat1),

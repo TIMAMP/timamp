@@ -432,18 +432,14 @@ function drawMap() {
  */
 function drawPaths(data) {
   //console.log(">> drawPaths - wind: " + wind);
+  Math.seedrandom('ENRAM');
+
   var wind = data.intervalCount;
   var half = Math.ceil(data.intervalCount / 2);
   var rlons = caseStudy.radLons;
   var rlats = caseStudy.radLats;
   var idw = util.idw;
-
-  // Angle seconds per meter, obtained by multiplying the angle that corresponds
-  // to a displacement of 1 meter on the earth's surface multiplied by the duration
-  // of one interval in seconds. Multiplying this asm value with a speed in
-  // meters per second yields the angle of the displacement at that speed during
-  // one interval.
-  var asm =  util.geo.distAngle(1 / 1000 * data.interval * 60);
+  var tf1 = data.interval * 0.06;
 
   // for each altitude:
   var altn = caseStudy.strataCount;
@@ -458,66 +454,55 @@ function drawPaths(data) {
       }
 
       var pathGr = pathsSVGGroup.append("svg:g");
-      var lon = anchorLoc[0];  // anchor longitude in decimal degrees
-      var lat = anchorLoc[1];  // anchor latitude in decimal degrees
+      var loc = anchorLoc;
       var pp = projection(anchorLoc);  // projected point
-      var wini, dlon, dlat, nlon, nlat, npp;
+      var wini, dlon, dlat, angle, distance, nloc, npp, lalpha, lwidth;
       for (wini = half - 1; wini >= 0; wini--) {
-        if (data.uSpeeds[wini] === undefined) { // DEBUG
-          console.error("data.uSpeeds[wini] is undefined for"
-            + " wini: " + wini + ", alti: " + alti);
-        }
-        dlon = idw(lon, lat, data.uSpeeds[wini][alti], rlons, rlats, 2) * asm; // delta
-        dlat = idw(lon, lat, data.vSpeeds[wini][alti], rlons, rlats, 2) * asm; // delta
-        nlon = lon - dlon;  // the next longitude
-        nlat = lat - dlat;  // the next latitude
-        npp = projection([nlon, nlat]);
-        var lalpha = util.mapRange(wini, half - 1, 0, 0.9, 0.3);
-        var lwidth = util.mapRange(wini, half - 1, 0, 1.5, 1);
+        // draw tail half:
+        dlon = idw(loc[0], loc[1], data.uSpeeds[wini][alti], rlons, rlats, 2) * tf1;
+        dlat = idw(loc[0], loc[1], data.vSpeeds[wini][alti], rlons, rlats, 2) * tf1;
+        angle = Math.atan2(-dlon, -dlat);
+        distance = util.vectorLength(dlon, dlat);
+        nloc = util.geo.destinationRad(loc, angle, distance);
+        npp = projection(nloc);
+        lalpha = util.mapRange(wini, half - 1, 0, 0.9, 0.3);
+        lwidth = util.mapRange(wini, half - 1, 0, 1.5, 1);
         pathGr.append("svg:line")
           .attr("x1", pp[0]).attr("y1", pp[1])
           .attr("x2", npp[0]).attr("y2", npp[1])
           .attr("style", "stroke:" + lcolor +
           ";stroke-width:" + lwidth +
           ";opacity:" + lalpha);
-        lon = nlon;
-        lat = nlat;
+        loc = nloc;
         pp = npp;
       }
 
-      lon = anchorLoc[0];
-      lat = anchorLoc[1];
-      pp = projection([lon, lat]);
+      // draw front half:
+      loc = anchorLoc;
+      pp = projection(loc);
       var points = "" + pp[0] + "," + pp[1];
       for (wini = half; wini < wind; wini++) {
-        //console.log("wini: " + wini + " - alti: " + alti);
-        if (data.uSpeeds[wini] === undefined) { // DEBUG
-          console.error("data.uSpeeds[wini] is undefined for"
-            + " wini: " + wini + ", alti: " + alti);
-        }
-        dlon = idw(lon, lat, data.uSpeeds[wini][alti], rlons, rlats, 2) * asm;
-        dlat = idw(lon, lat, data.vSpeeds[wini][alti], rlons, rlats, 2) * asm;
-        lon += dlon;
-        lat += dlat;
-        npp = projection([lon, lat]);
+        dlon = idw(loc[0], loc[1], data.uSpeeds[wini][alti], rlons, rlats, 2) * tf1;
+        dlat = idw(loc[0], loc[1], data.vSpeeds[wini][alti], rlons, rlats, 2) * tf1;
+        angle = Math.atan2(dlon, dlat);
+        distance = util.vectorLength(dlon, dlat);
+        nloc = util.geo.destinationRad(loc, angle, distance);
+        npp = projection(nloc);
         points += " " + npp[0] + "," + npp[1];
+        loc = nloc;
       }
       pathGr.append("svg:polyline")
         .attr("points", points)
         .attr("style", "stroke:" + lcolor +
         ";fill:none;stroke-width:1.5;opacity:" + 1);
 
-      // draw the head dot:
-      try {
-        pathGr.append('svg:circle')
-          .attr('cx', npp[0])
-          .attr('cy', npp[1])
-          .attr('r', 2)
-          .attr("style", "fill:" + util.hsvToHex(hue, altiSaturation, altiBrightness)
-          + ";opacity:0.5");
-      } catch (error) {
-        console.error(npp);
-      }
+      // draw head dot:
+      pathGr.append('svg:circle')
+        .attr('cx', npp[0])
+        .attr('cy', npp[1])
+        .attr('r', 2)
+        .attr("style", "fill:" + util.hsvToHex(hue, altiSaturation, altiBrightness)
+        + ";opacity:0.5");
     });
   }
 }
