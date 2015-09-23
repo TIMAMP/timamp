@@ -12,34 +12,45 @@ var dataService = {};
 
 /**
  * Load case study data from properly formatted json file.
- * @param {string}           url
+ * @param {Object}           caseStudy An object that represents the case study.
  * @param {function(Object)} handler
  */
-dataService.loadCaseStudy = function (url, handler) {
+dataService.initCaseStudy = function (caseStudy, handler) {
   //console.log(this);
-  d3.json(url, function (error, caseStudy) {
+  var urlBase = "data/" + caseStudy.id + "/";
+  d3.json(urlBase + "metadata.json", function (error, json) {
     if (error) {
       console.error(error);
       //throw new Error("Error in dataService.loadCaseStudy. "
       //    + JSON.parse(error.responseText).error.join("; "));
     }
     else {
+      for (var attr in json) {
+        if (json.hasOwnProperty(attr)) caseStudy[attr] = json[attr];
+      }
       caseStudy.minMoment = moment.utc(caseStudy.dateMin);
       caseStudy.maxMoment = moment.utc(caseStudy.dateMax);
       caseStudy.focusMoment = moment.utc(caseStudy.dateFocus);
 
       // Create mapping from radar ids to indices:
       caseStudy.radarIndices = {};
+      caseStudy.radLons = [];
+      caseStudy.radLats = [];
       caseStudy.radars.forEach(function (radar, i) {
-        caseStudy.radarIndices[radar.id] = i;
         radar.coordinate = [radar.longitude, radar.latitude];
+        caseStudy.radarIndices[radar.id] = i;
+        caseStudy.radLons.push(radar.longitude);
+        caseStudy.radLats.push(radar.latitude);
       });
 
       caseStudy.selectedRadar = caseStudy.radars[0];
       caseStudy.radarCount = caseStudy.radars.length;
 
+      caseStudy.topoJsonUrl = urlBase + "topo.json";
+      caseStudy.queryTemplateUrl = urlBase + "template.sql";
+
       console.log("Loaded case study", caseStudy.label);
-      handler(caseStudy);
+      handler();
     }
   });
 }

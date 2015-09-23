@@ -14,9 +14,7 @@ The number of paths depends on the average bird density
 
 Each path consists of a number of segments, one for each 20-minute interval in the shown time window. 
 
-### Future work:
-
-- Currently for each radar independently a number of paths are instantiated at random locations within a certain radius of that radar. As a consequence, there are  too many paths where these circular areas overlap.
+Each path represents 50000 birds. This value is specified in the *pathBirdCount* configuration property in *app.js*. 
 
 # Case study metadata json format
 
