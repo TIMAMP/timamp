@@ -555,9 +555,10 @@ function drawPath2(caseData, pathData, stri) {
   var lineData = [];
   var segd, angle, radius, dx, dy;
   var radiusFactor = 0.05;
+  var minRadius = .25;
 
   segd = pathData[0];
-  radius = segd[2] * radiusFactor;
+  radius = Math.max(minRadius, segd[2] * radiusFactor);
   angle = segd[3] + Math.PI * .5;
   dx = Math.sin(angle) * radius;
   dy = -Math.cos(angle) * radius;
@@ -567,7 +568,7 @@ function drawPath2(caseData, pathData, stri) {
   for (segi = 1; segi < segn; segi++) {
     segd = pathData[segi];
     angle = (pathData[segi - 1][3] + segd[3] + Math.PI) * .5;
-    radius = segd[2] * radiusFactor;
+    radius = Math.max(minRadius, segd[2] * radiusFactor);
     dx = Math.sin(angle) * radius;
     dy = -Math.cos(angle) * radius;
     lineData.push([segd[0] + dx, segd[1] + dy]);
@@ -575,7 +576,7 @@ function drawPath2(caseData, pathData, stri) {
   }
 
   segd = pathData[segn];
-  radius = segd[2] * radiusFactor;
+  radius = Math.max(minRadius, segd[2] * radiusFactor);
   angle = segd[3] + Math.PI * .5;
   dx = Math.sin(angle) * radius;
   dy = -Math.cos(angle) * radius;
