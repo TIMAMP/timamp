@@ -37,7 +37,7 @@ dataService.initCaseStudy = function (caseStudy, handler) {
       caseStudy.radLons = [];
       caseStudy.radLats = [];
       caseStudy.radars.forEach(function (radar, i) {
-        radar.coordinate = [radar.longitude, radar.latitude];
+        radar.location = [radar.longitude, radar.latitude];
         caseStudy.radarIndices[radar.id] = i;
         caseStudy.radLons.push(radar.longitude);
         caseStudy.radLats.push(radar.latitude);

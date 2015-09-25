@@ -69,6 +69,11 @@ var altiBrightness = 0.7;
  */
 var initialFocusDuration = 8;
 
+/**
+ * When true the special 'arty' mode is activated.
+ * @type {boolean}
+ */
+var arty = false;
 
 // -----------------------------------------------------------------------------
 // System variables:
@@ -85,8 +90,6 @@ var initialFocusDuration = 8;
 /** @type {Object} */ var caseData;
 
 // -----------------------------------------------------------------------------
-
-var arty = false;
 
 /**
  * Start the app. Call this function from a script element at the end of the html-doc.
@@ -368,7 +371,7 @@ function initAnchors() {
   for (var lon = locTopLeft[0]; lon < locBotRight[0]; lon += dlon) {
     for (var lat = locTopLeft[1]; lat > locBotRight[1]; lat -= dlat) {
       caseStudy.radars.forEach(function (radar) {
-        if (util.degrees(d3.geo.distance(radar.coordinate, [lon, lat])) <= rra) {
+        if (util.degrees(d3.geo.distance(radar.location, [lon, lat])) <= rra) {
           anchorLocations.push([lon, lat]);
         }
       });
@@ -410,7 +413,7 @@ function drawMap(mapGroup) {
   var rra = util.geo.distAngle(radarAnchorRadius); // radar radius as angel:
   var radarGroup = mapGroup.append("svg:g").attr("id", "radars");
   caseStudy.radars.forEach(function (radar, radi) {
-    //rp = projection(radar.coordinate);
+    //rp = projection(radar.location);
     //radarGroup.append('svg:circle')
     //  .attr('cx', rp[0])
     //  .attr('cy', rp[1])
@@ -419,14 +422,14 @@ function drawMap(mapGroup) {
 
     radarGroup.append("svg:path")
       .attr("id", "radar-radius")
-      .datum(d3.geo.circle().origin(radar.coordinate).angle(rra))
+      .datum(d3.geo.circle().origin(radar.location).angle(rra))
       .attr("d", projectionPath);
 
     // Draw series points around radar at the marker radius:
     //var n = 36;
     //for (var i = 0; i < n; i++) {
     //  var bearing = util.mapRange(i, 0, n, 0, 360);
-    //  var dest = util.geo.destination(radar.coordinate, bearing, radarAnchorRadius);
+    //  var dest = util.geo.destination(radar.location, bearing, radarAnchorRadius);
     //  radarGroup.append("svg:path")
     //    .datum(d3.geo.circle().origin(dest).angle(.01))
     //    .attr("d", projectionPath)
@@ -766,8 +769,8 @@ function drawColorLegend(legendGroup) {
 function drawScaleLegend(legendGroup, markers) {
   var totalKm = markers[2];
   var radar = caseStudy.radars[0];
-  var destProj = projection(util.geo.destination(radar.coordinate, 90, totalKm));
-  var legendW = destProj[0] - projection(radar.coordinate)[0];
+  var destProj = projection(util.geo.destination(radar.location, 90, totalKm));
+  var legendW = destProj[0] - projection(radar.location)[0];
   var marginR = 45;
   var legendL = mapW - marginR - legendW;
   var legendR = mapW - marginR;
