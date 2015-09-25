@@ -63,6 +63,12 @@ var altiSaturation = 1;
  */
 var altiBrightness = 0.7;
 
+/**
+ * The initial focus duration, in hours.
+ * @type {number}
+ */
+var initialFocusDuration = 8;
+
 
 // -----------------------------------------------------------------------------
 // System variables:
@@ -138,7 +144,7 @@ function startApp(_caseStudy) {
 }
 
 function initDone() {
-  caseStudy.focusDuration = 8;
+  caseStudy.focusDuration = initialFocusDuration;
 
   var dayMin = caseStudy.minMoment.date();
   var dayMax = caseStudy.maxMoment.date();
