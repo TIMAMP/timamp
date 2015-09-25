@@ -101,40 +101,44 @@ IMG.CC-BY-NC-SA {
 
 /*** SVG styles ***/
 
-.graticule {
+svg.visualisation {
+  background-color: #ccc;
+}
+
+rect#background {
+  fill: #ccc;
+}
+
+path#land {
+  fill: #e9e9e9;
+}
+
+path#country-boundary {
+  fill: none;
+  stroke: #555;
+  stroke-width: 1px;
+  stroke-dasharray: 2, 4;
+  stroke-linejoin: round;
+}
+
+path#graticule {
   fill: none;
   stroke: #aaa;
   stroke-width: 0.3px;
 }
 
-.radar-center {
-  fill: #253;
-  fill-opacity: 0.5;
-}
+/*.radar-center {*/
+/*fill: #253;*/
+/*fill-opacity: 0.5;*/
+/*}*/
 
-.radar-radius {
+#radar-radius {
   fill: #fff;
   fill-opacity: 0.25;
   /*stroke: #fff;*/
   /*stroke-width: 1px;*/
   /*stroke-opacity: 1;*/
   /*stroke-dasharray: 4, 8;*/
-}
-
-svg.map {
-  background-color: #ccc;
-}
-
-.map-land {
-  fill: #e9e9e9;
-}
-
-.country-boundary {
-  fill: none;
-  stroke: #555;
-  stroke-width: 1px;
-  stroke-dasharray: 2, 4;
-  stroke-linejoin: round;
 }
 
 .legend-label {

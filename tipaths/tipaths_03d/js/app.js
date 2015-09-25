@@ -73,11 +73,10 @@ var altiBrightness = 0.7;
 /** @type {number} */ var anchorArea = anchorInterval * anchorInterval;
 /** @type {array}  */ var anchorLocations;
 /** @type {Object} */ var svg;
-/** @type {Object} */ var pathsSVGGroup;
 /** @type {Object} */ var projection;
 /** @type {Object} */ var projectionPath;
 /** @type {Object} */ var caseStudy;
-/** @type {Object} */ var currData;
+/** @type {Object} */ var caseData;
 
 // -----------------------------------------------------------------------------
 
@@ -152,7 +151,7 @@ function initDone() {
       //console.log("change", d3.select(this).property('value'));
       var date = parseInt(d3.select(this).property('value'));
       caseStudy.focusMoment.date(date);
-      updateMap(true, false);
+      updateVisualisation(true, false);
     });
 
   d3.select("#input-hour")
@@ -195,7 +194,7 @@ function initDone() {
         caseStudy.focusMoment.hour(hour);
         focusDirty = true;
       }
-      if (focusDirty) updateMap(true, false);
+      if (focusDirty) updateVisualisation(true, false);
     });
 
   d3.select("#input-strata")
@@ -211,20 +210,20 @@ function initDone() {
       setStrataCount(d3.select(this).property('value'));
       //updateAnchors();
       updateColors();
-      updateMap(true, true);
+      updateVisualisation(true, true);
     });
 
   d3.select("#input-duration")
     .property('value', caseStudy.focusDuration)
     .on('change', function () {
       caseStudy.focusDuration = parseInt(d3.select("#input-duration").property('value'));
-      updateMap(true, false);
+      updateVisualisation(true, false);
     });
 
   d3.select(window)
     .on('resize', Foundation.utils.throttle(function(e) {
       if (d3.select("#map-container").node().getBoundingClientRect().width != mapW) {
-        updateMap(false, true);
+        updateVisualisation(false, true);
       }
     }, 25));
 
@@ -236,7 +235,7 @@ function initDone() {
     .style("height", mapH);
 
   // Now update the map for real:
-  updateMap(true, true);
+  updateVisualisation(true, true);
 }
 
 /**
@@ -278,10 +277,36 @@ function updateColors() {
   }
 }
 
-function updateMap(dataDirty, mapDirty) {
+function updateVisualisation(dataDirty, mapDirty) {
   if (mapDirty) updateMapData();
 
-  drawMap();
+  // create/replace svg object:
+  if (svg) { svg.remove(); }
+  svg = d3.select("#map-container").append("svg")
+    .attr("width", mapW)
+    .attr("height", mapH)
+    .classed("visualisation", true);
+
+  svg.append("defs")
+    .append("clipPath")
+    .attr("id", "clipRect")
+    .append("rect")
+    .attr("x", 0)
+    .attr("y", 0)
+    .attr("width", mapW)
+    .attr("height", mapH);
+
+  var clipGroup = svg.append("g");
+  clipGroup.attr("style", "clip-path: url(#clipRect);");
+
+  if (arty) clipGroup.attr("style", "background: #fff;");
+
+  if (!arty) {
+    var mapGroup = clipGroup.append("svg:g").attr("id", "map");
+  }
+  var pathsGroup = clipGroup.append("svg:g").attr("id", "paths");
+
+  drawMap(mapGroup);
 
   if (dataDirty) {
     var data = {
@@ -290,12 +315,21 @@ function updateMap(dataDirty, mapDirty) {
       intervalCount: caseStudy.focusDuration * 60 / caseStudy.segmentInterval
     };
     dataService.loadData(caseStudy.queryBaseUrl, data, caseStudy, function () {
-      currData = data;
-      drawPaths(currData);
+      caseData = data;
+      drawPaths(pathsGroup);
     });
   }
   else {
-    drawPaths(currData);
+    drawPaths(pathsGroup);
+  }
+
+  if (!arty) {
+    // draw legends:
+    drawColorLegend(clipGroup.append("svg:g").attr("id", "color-legend"));
+    drawScaleLegend(
+      clipGroup.append("svg:g").attr("id", "scale-legend"),
+      caseStudy.scaleLegendMarkers
+    );
   }
 }
 
@@ -336,113 +370,74 @@ function initAnchors() {
   }
 }
 
-function drawMap() {
-  if (svg) { svg.remove(); }
-  svg = d3.select("#map-container").append("svg")
-    .attr("width", mapW)
-    .attr("height", mapH)
-    .classed("map", true);
-
-  svg.append("defs")
-    .append("clipPath")
-    .attr("id", "clipRect")
-    .append("rect")
+function drawMap(mapGroup) {
+  mapGroup.append("rect")
+    .attr("id", "background")
     .attr("x", 0)
     .attr("y", 0)
     .attr("width", mapW)
     .attr("height", mapH);
 
-  var svgGroup = svg.append("svg:g")
-    .attr("style", "clip-path: url(#clipRect);");
-
-  if (arty) {
-    svg.attr("style", "background: #fff;");
-  }
-  else {
-    var datum = topojson.feature(
+  mapGroup.append("svg:path")
+    .attr("id", "land")
+    .datum(topojson.feature(
       caseStudy.topoJson,
       caseStudy.topoJson.objects.countries
-    );
-    svgGroup.append("svg:path")
-      .datum(datum)
-      .classed("map-land", true)
-      .attr("d", projectionPath);
+    ))
+    .attr("d", projectionPath);
 
-    datum = topojson.mesh(
+  mapGroup.append("svg:path")
+    .attr("id", "country-boundary")
+    .datum(topojson.mesh(
       caseStudy.topoJson,
       caseStudy.topoJson.objects.countries,
       function(a, b) { return a !== b; }
-    );
-    svgGroup.append("svg:path")
-      .datum(datum)
-      .classed("country-boundary", true)
+    ))
+    .attr("d", projectionPath);
+
+  mapGroup.append("svg:path")
+    .attr("id", "graticule")
+    .datum(d3.geo.graticule().step([1, 1]))
+    .attr("d", projectionPath);
+
+  // draw radars:
+  var rra = util.geo.distAngle(radarAnchorRadius); // radar radius as angel:
+  var radarGroup = mapGroup.append("svg:g").attr("id", "radars");
+  caseStudy.radars.forEach(function (radar, radi) {
+    //rp = projection(radar.coordinate);
+    //radarGroup.append('svg:circle')
+    //  .attr('cx', rp[0])
+    //  .attr('cy', rp[1])
+    //  .attr('r', 2)
+    //  .classed("radar-center", true);
+
+    radarGroup.append("svg:path")
+      .attr("id", "radar-radius")
+      .datum(d3.geo.circle().origin(radar.coordinate).angle(rra))
       .attr("d", projectionPath);
 
-    var graticule = d3.geo.graticule()
-      .step([1, 1]);
-    svgGroup.append("svg:path")
-      .datum(graticule)
-      .classed("graticule", true)
-      .attr("d", projectionPath);
-
-    // radar radius as angel:
-    var rra = util.geo.distAngle(radarAnchorRadius);
-    //console.log("rra:", rra);
-
-    // draw radars:
-    var radarGroup = svgGroup.append("svg:g");
-    var circle;
-    caseStudy.radars.forEach(function (radar, radi) {
-      //rp = projection(radar.coordinate);
-      //radarGroup.append('svg:circle')
-      //  .attr('cx', rp[0])
-      //  .attr('cy', rp[1])
-      //  .attr('r', 2)
-      //  .classed("radar-center", true);
-
-      circle = d3.geo.circle()
-        .origin(radar.coordinate)
-        .angle(rra)
-        .precision(0.1);
-      radarGroup.append("svg:path")
-        .datum(circle)
-        .attr("d", projectionPath)
-        .classed("radar-radius", true);
-
-      // Draw series points around radar at the marker radius:
-      //var n = 36;
-      //for (var i = 0; i < n; i++) {
-      //  var bearing = util.mapRange(i, 0, n, 0, 360);
-      //  var dest = util.geo.destination(radar.coordinate, bearing, radarAnchorRadius);
-      //  circle = d3.geo.circle().origin(dest).angle(.01);
-      //  radarGroup.append("svg:path")
-      //    .datum(circle)
-      //    .attr("d", projectionPath)
-      //    .classed("highlight3", true);
-      //}
-    });
-  }
-
-  // add the paths group:
-  pathsSVGGroup = svgGroup.append("svg:g");
-
-  if (!arty) {
-    // draw legends:
-    drawColorLegend(svgGroup.append("svg:g"));
-    drawSizeLegend(svgGroup.append("svg:g"), caseStudy.scaleLegendMarkers);
-  }
+    // Draw series points around radar at the marker radius:
+    //var n = 36;
+    //for (var i = 0; i < n; i++) {
+    //  var bearing = util.mapRange(i, 0, n, 0, 360);
+    //  var dest = util.geo.destination(radar.coordinate, bearing, radarAnchorRadius);
+    //  radarGroup.append("svg:path")
+    //    .datum(d3.geo.circle().origin(dest).angle(.01))
+    //    .attr("d", projectionPath)
+    //    .classed("highlight3", true);
+    //}
+  });
 }
 
 /**
  * Draw the paths.
- * @param {Object} data The data object.
  */
-function drawPaths(data) {
+function drawPaths(pathsGroup) {
   //console.log(">> drawPaths - wind: " + wind);
   Math.seedrandom('ENRAM');
 
   //var segi, segn = data.intervalCount;
-  var half = Math.floor(data.intervalCount / 2);
+  var half = Math.floor(caseData.intervalCount / 2);
   var rlons = caseStudy.radLons;
   var rlats = caseStudy.radLats;
   var idw = util.idw;
@@ -452,7 +447,7 @@ function drawPaths(data) {
   // for each strata:
   var strn = caseStudy.strataCount;
   for (var stri = 0; stri < strn; stri++) {
-    var densities = data.avDensities[stri];
+    var densities = caseData.avDensities[stri];
     anchorLocations.forEach(function (anchorLoc) {
       //if (stop) return;
       var density = idw(anchorLoc[0], anchorLoc[1], densities, rlons, rlats, 2);
@@ -461,25 +456,25 @@ function drawPaths(data) {
       }
       //stop = true;
 
-      var pathData = buildPathData(data, stri, anchorLoc, half);
+      var pathData = buildPathData(stri, anchorLoc, half);
 
       //console.log(pathData.map(function (d) {
       //  return '[' + d[0] + ', ' + d[1] + ', ' + d[2] + ', ' + d[3] + ']';
       //}));
 
-      drawPath2(data, pathData, stri);
+      drawPath2(pathsGroup.append("svg:g"), pathData, stri);
     });
   }
 }
 
-function buildPathData(data, stri, anchorLoc, half) {
+function buildPathData(stri, anchorLoc, half) {
   var pathData = [];
-  var segi, segn = data.intervalCount;
+  var segi, segn = caseData.intervalCount;
   var loc, lon, lat, dlon, dlat, pp, angl, dist, dens;
   var rlons = caseStudy.radLons;
   var rlats = caseStudy.radLats;
   var idw = util.idw;
-  var tf1 = data.interval * 0.06;
+  var tf1 = caseData.interval * 0.06;
 
   //function lprint(d) {
   //  tt.push("[" + d[stri].join(", ") + "]");
@@ -503,12 +498,12 @@ function buildPathData(data, stri, anchorLoc, half) {
   for (segi = half - 1; segi >= 0; segi--) {
     lon = loc[0];
     lat = loc[1];
-    dlon = idw(lon, lat, data.uSpeeds[segi][stri], rlons, rlats, 2) * tf1;
-    dlat = idw(lon, lat, data.vSpeeds[segi][stri], rlons, rlats, 2) * tf1;
+    dlon = idw(lon, lat, caseData.uSpeeds[segi][stri], rlons, rlats, 2) * tf1;
+    dlat = idw(lon, lat, caseData.vSpeeds[segi][stri], rlons, rlats, 2) * tf1;
     angl = Math.atan2(-dlon, -dlat);
     dist = util.vectorLength(dlon, dlat);
     loc = util.geo.destinationRad(loc, angl, dist);
-    dens = idw(loc[0], loc[1], data.densities[segi][stri], rlons, rlats, 2);
+    dens = idw(loc[0], loc[1], caseData.densities[segi][stri], rlons, rlats, 2);
     pp = projection(loc);
     pp.push(dens, angl + Math.PI);
     pathData.unshift(pp);
@@ -521,9 +516,9 @@ function buildPathData(data, stri, anchorLoc, half) {
     pp = projection(loc);
     lon = loc[0];
     lat = loc[1];
-    dens = idw(lon, lat, data.densities[segi][stri], rlons, rlats, 2);
-    dlon = idw(lon, lat, data.uSpeeds[segi][stri], rlons, rlats, 2) * tf1;
-    dlat = idw(lon, lat, data.vSpeeds[segi][stri], rlons, rlats, 2) * tf1;
+    dens = idw(lon, lat, caseData.densities[segi][stri], rlons, rlats, 2);
+    dlon = idw(lon, lat, caseData.uSpeeds[segi][stri], rlons, rlats, 2) * tf1;
+    dlat = idw(lon, lat, caseData.vSpeeds[segi][stri], rlons, rlats, 2) * tf1;
     angl = Math.atan2(dlon, dlat);
     pp.push(dens, angl);
     pathData.push(pp);
@@ -532,7 +527,7 @@ function buildPathData(data, stri, anchorLoc, half) {
   }
 
   pp = projection(loc);
-  dens = idw(loc[0], loc[1], data.densities[half][stri], rlons, rlats, 2);
+  dens = idw(loc[0], loc[1], caseData.densities[half][stri], rlons, rlats, 2);
   pp.push(dens, 0); // density
   pathData.push(pp);
   return pathData;
@@ -543,8 +538,7 @@ var lineFn = d3.svg.line()
   .y(function (d) { return d[1]; })
   .interpolate("basis-closed");
 
-function drawPath1(caseData, pathData, stri) {
-  var pathGr = pathsSVGGroup.append("svg:g");
+function drawPath1(pathGr, pathData, stri) {
   var lcolor = caseStudy.altHexColors[stri];
   var segi, segn = caseData.intervalCount;
   for (segi = 0; segi < segn; segi++) {
@@ -563,13 +557,12 @@ function drawPath1(caseData, pathData, stri) {
   }
 }
 
-function drawPath2(caseData, pathData, stri) {
+function drawPath2(pathGr, pathData, stri) {
   //console.log(pathData);
   if (pathData.length != caseData.intervalCount + 1) {
     throw new Error("Unexpected pathData length: " + pathData.length
       + ", " + caseData.intervalCount);
   }
-  var pathGr = pathsSVGGroup.append("svg:g");
   var lcolor = caseStudy.altHexColors[stri];
   var segi, segn = caseData.intervalCount;
   var lineData = [];
@@ -608,7 +601,7 @@ function drawPath2(caseData, pathData, stri) {
   //}));
 
   // draw paths:
-  var opacity = arty ? .6 : .6;
+  var opacity = arty ? .6 : .7;
   pathGr.append("svg:path")
     .attr("d", lineFn(lineData))
     .attr("style", "fill: " + lcolor + "; fill-opacity: " + opacity + ";");
@@ -622,7 +615,7 @@ function drawPath2(caseData, pathData, stri) {
   }
   else {
     radius = Math.max(1.5, pathData[segn][2] * radiusFactor + .5);
-    opacity = .5;
+    opacity = .7;
   }
   pathGr.append('svg:circle')
     .attr('cx', pathData[segn][0])
@@ -634,15 +627,15 @@ function drawPath2(caseData, pathData, stri) {
 
 /**
  * Draws the color legend in a horizontal layout.
- * @param svgGroup
+ * @param legendGroup
  */
-function drawColorLegend_hor(svgGroup) {
+function drawColorLegend_hor(legendGroup) {
   var legendH = 12;
   var legendL = 25;
   //var tx0 = legendL;
   //var td = 6;
   var ty = mapH - 20 - legendH - 8;
-  var markerGr = svgGroup.append("svg:g");
+  var markerGr = legendGroup.append("svg:g");
   markerGr.append("svg:text")
     .classed("legend-label", true)
     .attr("x", legendL)
@@ -663,19 +656,19 @@ function drawColorLegend_hor(svgGroup) {
     .text("4 km");
 
   var lineH = 7;
-  svgGroup.append("svg:line")
+  legendGroup.append("svg:line")
     .classed("scale-legend-line", true)
     .attr("x1", legendL)
     .attr("y1", mapH - 20 - legendH - lineH)
     .attr("x2", legendL)
     .attr("y2", mapH - 20);
-  svgGroup.append("svg:line")
+  legendGroup.append("svg:line")
     .classed("scale-legend-line", true)
     .attr("x1", legendL + legendW / 2)
     .attr("y1", mapH - 20 - legendH - lineH)
     .attr("x2", legendL + legendW / 2)
     .attr("y2", mapH - 20);
-  svgGroup.append("svg:line")
+  legendGroup.append("svg:line")
     .classed("scale-legend-line", true)
     .attr("x1", legendL + legendW)
     .attr("y1", mapH - 20 - legendH - lineH)
@@ -687,7 +680,7 @@ function drawColorLegend_hor(svgGroup) {
   var alti, altn = caseStudy.strataCount;
   var dx = legendW / altn;
   for (alti = 0; alti < altn; alti++) {
-    svgGroup.append("svg:rect")
+    legendGroup.append("svg:rect")
       .attr("x", tx)
       .attr("y", ty)
       .attr("width", Math.ceil(dx))
@@ -699,9 +692,9 @@ function drawColorLegend_hor(svgGroup) {
 
 /**
  * Draws the color legend in a vertical layout.
- * @param svgGroup
+ * @param legendGroup
  */
-function drawColorLegend(svgGroup) {
+function drawColorLegend(legendGroup) {
   var margin = 20;
   var legendW = 12;
   var legendH = 100;
@@ -712,7 +705,7 @@ function drawColorLegend(svgGroup) {
   var dy = legendH / altn;
   var hue, hex;
   for (alti = altn - 1; alti >= 0; alti--) {
-    svgGroup.append("svg:rect")
+    legendGroup.append("svg:rect")
       .attr("x", margin)
       .attr("y", ty)
       .attr("width", legendW)
@@ -722,37 +715,37 @@ function drawColorLegend(svgGroup) {
   }
 
   var lineW = 7;
-  svgGroup.append("svg:line")
+  legendGroup.append("svg:line")
     .classed("scale-legend-line", true)
     .attr("x1", margin)
     .attr("y1", legendT)
     .attr("x2", margin + legendW + lineW)
     .attr("y2", legendT);
-  svgGroup.append("svg:line")
+  legendGroup.append("svg:line")
     .classed("scale-legend-line", true)
     .attr("x1", margin + legendW)
     .attr("y1", legendT + legendH / 2)
     .attr("x2", margin + legendW + lineW)
     .attr("y2", legendT + legendH / 2);
-  svgGroup.append("svg:line")
+  legendGroup.append("svg:line")
     .classed("scale-legend-line", true)
     .attr("x1", margin)
     .attr("y1", legendT + legendH)
     .attr("x2", 84)
     .attr("y2", legendT + legendH);
 
-  svgGroup.append("svg:text")
+  legendGroup.append("svg:text")
     .classed("legend-label", true)
     .attr("x", margin + legendW + lineW + 4)
     .attr("y", legendT + 4)
     .text("4000 m");
-  svgGroup.append("svg:text")
+  legendGroup.append("svg:text")
     .classed("legend-label", true)
     .attr("x", margin + legendW + lineW + 4)
     .attr("y", legendT + legendH / 2 + 4)
     .text("2000 m");
 
-  svgGroup.append("svg:text")
+  legendGroup.append("svg:text")
     .classed("legend-label", true)
     .attr("x", margin + legendW + lineW + 2)
     .attr("y", legendT + legendH - 4)
@@ -760,11 +753,11 @@ function drawColorLegend(svgGroup) {
 }
 
 /**
- * Draws the size legend.
- * @param svgGroup
+ * Draws the scale legend.
+ * @param legendGroup
  * @param markers
  */
-function drawSizeLegend(svgGroup, markers) {
+function drawScaleLegend(legendGroup, markers) {
   var totalKm = markers[2];
   var radar = caseStudy.radars[0];
   var destProj = projection(util.geo.destination(radar.coordinate, 90, totalKm));
@@ -775,7 +768,7 @@ function drawSizeLegend(svgGroup, markers) {
   var lineH = 7;
   var ty = mapH - 20 - lineH - 4;
 
-  var markerGr = svgGroup.append("svg:g");
+  var markerGr = legendGroup.append("svg:g");
   markerGr.append("svg:text")
     .classed("legend-label", true)
     .attr("x", legendL)
@@ -795,25 +788,25 @@ function drawSizeLegend(svgGroup, markers) {
     .attr("text-anchor", "middle")
     .text(markers[2] + " km");
 
-  svgGroup.append("svg:line")
+  legendGroup.append("svg:line")
     .classed("scale-legend-line", true)
     .attr("x1", legendL)
     .attr("y1", mapH - 20)
     .attr("x2", legendR)
     .attr("y2", mapH - 20);
-  svgGroup.append("svg:line")
+  legendGroup.append("svg:line")
     .classed("scale-legend-line", true)
     .attr("x1", legendL)
     .attr("y1", mapH - 20 - lineH)
     .attr("x2", legendL)
     .attr("y2", mapH - 20);
-  svgGroup.append("svg:line")
+  legendGroup.append("svg:line")
     .classed("scale-legend-line", true)
     .attr("x1", (legendL + legendR) / 2)
     .attr("y1", mapH - 20 - lineH)
     .attr("x2", (legendL + legendR) / 2)
     .attr("y2", mapH - 20);
-  svgGroup.append("svg:line")
+  legendGroup.append("svg:line")
     .classed("scale-legend-line", true)
     .attr("x1", legendR)
     .attr("y1", mapH - 20 - lineH)
