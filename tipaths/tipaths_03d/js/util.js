@@ -90,6 +90,7 @@ util.idw = function (x, y, tValues, xValues, yValues, power) {
   for (i = 0; i < len; i++) {
     dx = x - xValues[i];
     dy = y - yValues[i];
+    if (dx == 0 && dy == 0) { return tValues[i]; }
     wi = 1 / Math.pow(Math.sqrt(dx * dx + dy * dy), power);
     r += wi * tValues[i];
     ws += wi;

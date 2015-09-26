@@ -70,6 +70,12 @@ var altiBrightness = 0.7;
 var initialFocusDuration = 8;
 
 /**
+ * When true then only one path per radar is drawn.
+ * @type {boolean}
+ */
+var singlePath = false;
+
+/**
  * When true the special 'arty' mode is activated.
  * @type {boolean}
  */
@@ -118,9 +124,15 @@ function startApp(_caseStudy) {
       nvPair = nvPair.split('=');
       urlQuery[nvPair[0]] = nvPair[1];
     });
-    //console.log(urlQuery);
-    if (urlQuery.strataCount) { setStrataCount(urlQuery.strataCount); }
-    else if (urlQuery.altBands) { setStrataCount(urlQuery.altBands); }  // legacy
+    if (urlQuery["strata-count"]) {
+      setStrataCount(parseInt(urlQuery["strata-count"]));
+    }
+    else if (urlQuery["single-path"]) {
+      singlePath = (urlQuery["single-path"] == "true");
+    }
+    else if (urlQuery.altBands) {  // legacy
+      setStrataCount(urlQuery.altBands);
+    }
 
     var busy = 3;
 
@@ -453,26 +465,44 @@ function drawPaths(pathsGroup) {
 
   //var stop = false;
 
-  // for each strata:
-  var strn = caseStudy.strataCount;
-  for (var stri = 0; stri < strn; stri++) {
-    var densities = caseData.avDensities[stri];
-    anchorLocations.forEach(function (anchorLoc) {
-      //if (stop) return;
-      var density = idw(anchorLoc[0], anchorLoc[1], densities, rlons, rlats, 2);
-      if (Math.random() >= density * anchorArea / pathBirdCount) {
-        return;
-      }
-      //stop = true;
+  if (singlePath) {
+    // for each strata:
+    var strn = caseStudy.strataCount;
+    var tdy = Math.min(20 * strn, 200);
+    var radiusFactor = 0.05;
+    for (var stri = 0; stri < strn; stri++) {
+      caseStudy.radars.forEach(function (radar, radi) {
+        var pathData = buildPathData_singlePath(stri, radi, radar.location, half);
+        //var dy = 20;
+        //var oy = strn * dy / 2 - stri * dy;
+        var oy = util.mapRange(stri, 0, strn - 1, tdy / 2, -tdy / 2);
+        pathData = pathData.map(function (d) {
+          return [d[0], d[1] + oy, d[2], d[3]];
+        });
+        var lineData = buildOutline(pathData, radiusFactor);
+        drawPath2(pathsGroup.append("svg:g"), pathData, lineData, stri, radiusFactor);
+      });
+    }
+  }
+  else {
+    // for each strata:
+    var strn = caseStudy.strataCount;
+    var radiusFactor = 0.05;
+    for (var stri = 0; stri < strn; stri++) {
+      var densities = caseData.avDensities[stri];
+      anchorLocations.forEach(function (anchorLoc) {
+        //if (stop) return;
+        var density = idw(anchorLoc[0], anchorLoc[1], densities, rlons, rlats, 2);
+        if (Math.random() >= density * anchorArea / pathBirdCount) {
+          return;
+        }
+        //stop = true;
 
-      var pathData = buildPathData(stri, anchorLoc, half);
-
-      //console.log(pathData.map(function (d) {
-      //  return '[' + d[0] + ', ' + d[1] + ', ' + d[2] + ', ' + d[3] + ']';
-      //}));
-
-      drawPath2(pathsGroup.append("svg:g"), pathData, stri);
-    });
+        var pathData = buildPathData(stri, anchorLoc, half);
+        var lineData = buildOutline(pathData, radiusFactor);
+        drawPath2(pathsGroup.append("svg:g"), pathData, lineData, stri, radiusFactor);
+      });
+    }
   }
 }
 
@@ -483,7 +513,7 @@ function buildPathData(stri, anchorLoc, half) {
   var rlons = caseStudy.radLons;
   var rlats = caseStudy.radLats;
   var idw = util.idw;
-  var tf1 = caseData.interval * 0.06;
+  var tf1 = caseData.interval * 0.06;  // 0.06 = 60 sec. * 0.001 km/m
 
   //function lprint(d) {
   //  tt.push("[" + d[stri].join(", ") + "]");
@@ -536,9 +566,52 @@ function buildPathData(stri, anchorLoc, half) {
   }
 
   pp = projection(loc);
-  dens = idw(loc[0], loc[1], caseData.densities[half][stri], rlons, rlats, 2);
-  pp.push(dens, 0); // density
+  pp.push(dens, 0); // same density as last segment
   pathData.push(pp);
+
+  return pathData;
+}
+
+function buildPathData_singlePath(stri, radi, anchorLoc, half) {
+  var pathData = [];
+  var segi, segn = caseData.intervalCount;
+  var loc, dlon, dlat, pp, angl, dist, dens;
+  var tf1 = caseData.interval * 0.06;  // 0.06 = 60 sec. * 0.001 km/m
+
+  // tail half:
+  loc = anchorLoc;
+  pp = projection(loc);
+  for (segi = half - 1; segi >= 0; segi--) {
+    dlon = caseData.uSpeeds[segi][stri][radi] * tf1;
+    dlat = caseData.vSpeeds[segi][stri][radi] * tf1;
+    angl = Math.atan2(-dlon, -dlat);
+    dist = util.vectorLength(dlon, dlat);
+    loc = util.geo.destinationRad(loc, angl, dist);
+    dens = caseData.densities[segi][stri][radi];
+    pp = projection(loc);
+    pp.push(dens, angl + Math.PI);
+    pathData.unshift(pp);
+  }
+
+  // front half:
+  loc = anchorLoc;
+  pp = projection(loc);
+  for (segi = half; segi < segn; segi++) {
+    pp = projection(loc);
+    dens = caseData.densities[segi][stri][radi];
+    dlon = caseData.uSpeeds[segi][stri][radi] * tf1;
+    dlat = caseData.vSpeeds[segi][stri][radi] * tf1;
+    angl = Math.atan2(dlon, dlat);
+    pp.push(dens, angl);
+    pathData.push(pp);
+    dist = util.vectorLength(dlon, dlat);
+    loc = util.geo.destinationRad(loc, angl, dist);
+  }
+
+  pp = projection(loc);
+  pp.push(dens, 0);  // same density as last segment
+  pathData.push(pp);
+
   return pathData;
 }
 
@@ -566,21 +639,17 @@ function drawPath1(pathGr, pathData, stri) {
   }
 }
 
-function drawPath2(pathGr, pathData, stri) {
-  //console.log(pathData);
-  if (pathData.length != caseData.intervalCount + 1) {
-    throw new Error("Unexpected pathData length: " + pathData.length
-      + ", " + caseData.intervalCount);
-  }
-  var lcolor = caseStudy.altHexColors[stri];
-  var segi, segn = caseData.intervalCount;
+function buildOutline(pathData, radiusFactor) {
+  //console.log(pathData.map(function (d) {
+  //  return '[' + d[0] + ', ' + d[1] + ', ' + d[2] + ', ' + d[3] + ']';
+  //}));
   var lineData = [];
+  var segi, segn = caseData.intervalCount;
   var segd, angle, radius, dx, dy;
-  var radiusFactor = 0.05;
   var minRadius = .25;
 
   segd = pathData[0];
-  radius = Math.max(minRadius, segd[2] * radiusFactor);
+  radius = minRadius + segd[2] * radiusFactor;
   angle = segd[3] + Math.PI * .5;
   dx = Math.sin(angle) * radius;
   dy = -Math.cos(angle) * radius;
@@ -590,7 +659,7 @@ function drawPath2(pathGr, pathData, stri) {
   for (segi = 1; segi < segn; segi++) {
     segd = pathData[segi];
     angle = (pathData[segi - 1][3] + segd[3] + Math.PI) * .5;
-    radius = Math.max(minRadius, segd[2] * radiusFactor);
+    radius = minRadius + segd[2] * radiusFactor;
     dx = Math.sin(angle) * radius;
     dy = -Math.cos(angle) * radius;
     lineData.push([segd[0] + dx, segd[1] + dy]);
@@ -598,16 +667,23 @@ function drawPath2(pathGr, pathData, stri) {
   }
 
   segd = pathData[segn];
-  radius = Math.max(minRadius, segd[2] * radiusFactor);
+  radius = minRadius + segd[2] * radiusFactor;
   angle = segd[3] + Math.PI * .5;
   dx = Math.sin(angle) * radius;
   dy = -Math.cos(angle) * radius;
   lineData.push([segd[0] + dx, segd[1] + dy]);
   lineData.unshift([segd[0] - dx, segd[1] - dy]);
 
+  return lineData;
+}
+
+function drawPath2(pathGr, pathData, lineData, stri, radiusFactor) {
   //console.log(lineData.map(function (d) {
   //  return '[' + d[0] + ', ' + d[1] + ']';
   //}));
+  var lcolor = caseStudy.altHexColors[stri];
+  var segn = caseData.intervalCount;
+  var radius;
 
   // draw paths:
   var opacity = arty ? .6 : .7;
@@ -631,7 +707,6 @@ function drawPath2(pathGr, pathData, stri) {
     .attr('cy', pathData[segn][1])
     .attr('r', radius)
     .attr("style", "fill: " + lcolor + "; fill-opacity: " + opacity + ";");
-
 }
 
 /**
