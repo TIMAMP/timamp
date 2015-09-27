@@ -133,6 +133,9 @@ function startApp(_caseStudy) {
     if (urlQuery["single-path"]) {
       singlePath = urlQuery["single-path"] == "true";
     }
+    if (urlQuery["length"]) {
+      initialFoucsLength = parseInt(urlQuery["length"]);
+    }
 
     var busy = 3;
 
