@@ -132,7 +132,7 @@ path#graticule {
 /*fill-opacity: 0.5;*/
 /*}*/
 
-#radar-radius {
+path#radar-radius {
   fill: #fff;
   fill-opacity: 0.25;
   /*stroke: #fff;*/

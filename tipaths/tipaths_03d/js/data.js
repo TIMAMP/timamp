@@ -155,8 +155,8 @@ dataService.loadData = function (baseUrl, data, caseStudy, handler) {
  */
 dataService._processData = function (json, data, caseStudy) {
   //console.log(JSON.stringify(json));
-  var inti, intn = data.intervalCount,
-    alti, altn = caseStudy.strataCount,
+  var segi, segn = data.intervalCount,
+    stri, strn = caseStudy.strataCount,
     rowi, rown = json.total_rows,
     row,
     radi, radn = caseStudy.radarCount,
@@ -172,12 +172,12 @@ dataService._processData = function (json, data, caseStudy) {
   data.uSpeeds = [];
   data.vSpeeds = [];
   data.speeds = [];
-  for (inti = 0; inti < intn; inti++) {
+  for (segi = 0; segi < segn; segi++) {
     densities = [];
     uSpeeds = [];
     vSpeeds = [];
     speeds = [];
-    for (alti = 0; alti < altn; alti++) {
+    for (stri = 0; stri < strn; stri++) {
       densities.push(util.zeroArray(radn));
       uSpeeds.push(util.zeroArray(radn));
       vSpeeds.push(util.zeroArray(radn));
@@ -192,13 +192,13 @@ dataService._processData = function (json, data, caseStudy) {
   // Add the data in the data structure:
   for (rowi = 0; rowi < rown; rowi++) {
     row = json.rows[rowi];
-    inti = row.interval_idx;
-    alti = row.altitude_idx;
+    segi = row.interval_idx;
+    stri = row.altitude_idx;
     radi = caseStudy.radarIndices[row.radar_id];
-    data.densities[inti][alti][radi] = row.avg_bird_density;
-    data.uSpeeds[inti][alti][radi] = row.avg_u_speed;
-    data.vSpeeds[inti][alti][radi] = row.avg_v_speed;
-    data.speeds[inti][alti][radi] = row.avg_speed;
+    data.densities[segi][stri][radi] = row.avg_bird_density;
+    data.uSpeeds[segi][stri][radi] = row.avg_u_speed;
+    data.vSpeeds[segi][stri][radi] = row.avg_v_speed;
+    data.speeds[segi][stri][radi] = row.avg_speed;
   }
 
   // The strata height in km:
@@ -208,14 +208,14 @@ dataService._processData = function (json, data, caseStudy) {
   // over the strata height. These numbers thus represent the number of birds
   // per square km in the concerned strata.
   data.avDensities = [];
-  for (alti = 0; alti < altn; alti++) {
+  for (stri = 0; stri < strn; stri++) {
     avds = [];
     for (radi = 0; radi < radn; radi++) {
       dsum = 0;
-      for (inti = 0; inti < intn; inti++) {
-        dsum += data.densities[inti][alti][radi];
+      for (segi = 0; segi < segn; segi++) {
+        dsum += data.densities[segi][stri][radi];
       }
-      avds[radi] = dsum / intn * strataHeight;
+      avds[radi] = dsum / segn * strataHeight;
     }
     data.avDensities.push(avds);
   }
