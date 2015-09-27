@@ -370,6 +370,10 @@ function updateMapData() {
   // initialize the d3 path with which to draw the geography:
   projectionPath = d3.geo.path().projection(projection);
 
+  caseStudy.radars.forEach(function (radar) {
+    radar.projection = projection(radar.location);
+  });
+
   initAnchors();
 }
 
@@ -497,6 +501,15 @@ function drawPaths_singlePath(caseStudy, pathsGroup) {
   for (var stri = 0; stri < strn; stri++) {
     caseStudy.radars.forEach(function (radar, radi) {
       var oy = util.mapRange(stri, 0, strn - 1, tdy / 2, -tdy / 2);
+      // draw anchor marks:
+      pathsGroup.append('svg:circle')
+        .attr('cx', radar.projection[0])
+        .attr('cy', radar.projection[1] + oy)
+        .attr('r', 1)
+        .classed("acchor", true);
+      if (caseData.avDensities[stri][radi] == 0) {
+        return;  // do not draw empty paths
+      }
       var pathData = buildPathData_singlePath(stri, radi, radar.location);
       pathData = pathData.map(function (d) {
         return [d[0], d[1] + oy, d[2], d[3]];

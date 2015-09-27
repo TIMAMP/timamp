@@ -141,6 +141,11 @@ path#radar-radius {
   /*stroke-dasharray: 4, 8;*/
 }
 
+.acchor {
+  fill: #000;
+  fill-opacity: 0.5;
+}
+
 .legend-label {
   font-family: Helvetica, sans-serif;
   font-size: 11px;
