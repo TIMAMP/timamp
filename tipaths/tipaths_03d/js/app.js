@@ -496,7 +496,7 @@ function drawPaths_multiPath(caseStudy, pathsGroup) {
 
 function drawPaths_singlePath(caseStudy, pathsGroup) {
   var strn = caseStudy.strataCount;
-  var tdy = Math.min(15 * strn, 150);
+  var tdy = Math.min(12 * strn, 150);
   var radiusFactor = 0.05;
   for (var stri = 0; stri < strn; stri++) {
     caseStudy.radars.forEach(function (radar, radi) {
