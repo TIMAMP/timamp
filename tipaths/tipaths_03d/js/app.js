@@ -127,11 +127,11 @@ function startApp(_caseStudy) {
     if (urlQuery["strata-count"]) {
       setStrataCount(parseInt(urlQuery["strata-count"]));
     }
-    else if (urlQuery["single-path"]) {
-      singlePath = (urlQuery["single-path"] == "true");
-    }
     else if (urlQuery.altBands) {  // legacy
       setStrataCount(urlQuery.altBands);
+    }
+    if (urlQuery["single-path"]) {
+      singlePath = (urlQuery["single-path"] == "true");
     }
 
     var busy = 3;
