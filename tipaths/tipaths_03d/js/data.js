@@ -206,7 +206,7 @@ dataService._processData = function (json, data, caseStudy) {
 
   // Calculate average densities per radar-altitude combination, integrated
   // over the strata height. These numbers thus represent the number of birds
-  // per square km in the concerned strata.
+  // per square km in a given strata.
   data.avDensities = [];
   for (stri = 0; stri < strn; stri++) {
     avds = [];

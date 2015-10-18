@@ -14,16 +14,16 @@
 var radarAnchorRadius = 75;
 
 /**
- * the interval between anchors in km
- * @type {number}
+ * The migrants-per-path options.
  */
-var anchorInterval = 10;
-
-/**
- * The number of birds each path represents.
- * @type {number}
- */
-var pathBirdCount = 50000;
+var migrantsPerPathOptions = [
+  { value: 10000, text: "10K" },
+  { value: 25000, text: "25K" },
+  { value: 50000, text: "50K" },
+  { value: 100000, text: "100K" },
+  { value: 250000, text: "250K" },
+  { value: 500000, text: "500K" }
+];
 
 /**
  * The height of the template map divided by its width, used to obtain the actual
@@ -76,6 +76,12 @@ var initialFoucsLength = 6;
 var singlePath = false;
 
 /**
+ * When true then basic metadata is provided in the visualisation.
+ * @type {boolean}
+ */
+var writeMetaDataInViz = true;
+
+/**
  * When true the special 'arty' mode is activated.
  * @type {boolean}
  */
@@ -87,7 +93,7 @@ var arty = false;
 /** @type {number} */ var mapW = 0;
 /** @type {number} */ var mapH = 0;
 /** @type {number} */ var legendW = 0;
-/** @type {number} */ var anchorArea = anchorInterval * anchorInterval;
+/** @type {number} */ var anchorArea;
 /** @type {array}  */ var anchorLocations;
 /** @type {Object} */ var svg;
 /** @type {Object} */ var projection;
@@ -109,14 +115,15 @@ function startApp(_caseStudy) {
     return;
   }
 
-  d3.select("#path-bird-count").text(numeral(pathBirdCount).format('0,0'));
-  d3.select("#radar-anchor-radius").text(radarAnchorRadius);
-
   caseStudy = _caseStudy;
+
+  d3.select("#radar-anchor-radius").text(radarAnchorRadius);
 
   // load the case study data:
   dataService.initCaseStudy(caseStudy, function () {
     //console.log(caseStudy);
+
+    d3.select("#path-bird-count").text(numeral(caseStudy.migrantsPerPath).format('0,0'));
 
     // parse the url query:
     var urlQuery = {};
@@ -156,6 +163,8 @@ function startApp(_caseStudy) {
 
     //updateAnchors();
     updateColors();
+
+    anchorArea = caseStudy.anchorInterval * caseStudy.anchorInterval;
 
     if (--busy == 0) initDone();
   });
@@ -221,6 +230,15 @@ function initDone() {
       if (focusDirty) updateVisualisation(true, false);
     });
 
+  // input-length:
+  d3.select("#input-length")
+    .property('value', caseStudy.focusLength)
+    .on('change', function () {
+      caseStudy.focusLength = parseInt(d3.select("#input-length").property('value'));
+      updateVisualisation(true, false);
+    });
+
+  // input-strata:
   d3.select("#input-strata")
     .selectAll('option')
     .data(caseStudy.strataCounts)
@@ -237,13 +255,23 @@ function initDone() {
       updateVisualisation(true, true);
     });
 
-  d3.select("#input-length")
-    .property('value', caseStudy.focusLength)
+  // input-migrants-per-path:
+  d3.select("#input-migrants-per-path")
+    .selectAll('option')
+    .data(migrantsPerPathOptions)
+    .enter().append("option")
+    .property("value", function (d) { return d.value; })
+    //.property("selected", function(d) { return d === caseStudy.migrantsPerPath; })
+    .text(function (d) { return d.text; });
+  d3.select("#input-migrants-per-path")
+    .property('value', caseStudy.migrantsPerPath)
     .on('change', function () {
-      caseStudy.focusLength = parseInt(d3.select("#input-length").property('value'));
-      updateVisualisation(true, false);
+      console.log("input-migrants-per-path changed:", d3.select(this).property('value'));
+      setMigrantsPerPath(d3.select(this).property('value'));
+      updateVisualisation(false, false);
     });
 
+  // set resize handler that updates the visualisation:
   d3.select(window)
     .on('resize', Foundation.utils.throttle(function(e) {
       if (d3.select("#map-container").node().getBoundingClientRect().width != mapW) {
@@ -277,6 +305,11 @@ function setStrataCount(newCount) {
   }
 
   caseStudy.strataCount = newCount;
+}
+
+function setMigrantsPerPath(newCount) {
+  caseStudy.migrantsPerPath = newCount;
+  d3.select("#path-bird-count").text(numeral(caseStudy.migrantsPerPath).format('0,0'));
 }
 
 /**
@@ -354,6 +387,7 @@ function updateVisualisation(dataDirty, mapDirty) {
       clipGroup.append("svg:g").attr("id", "scale-legend"),
       caseStudy.scaleLegendMarkers
     );
+    writeMetaData(clipGroup);
   }
 }
 
@@ -381,10 +415,10 @@ function updateMapData() {
 function initAnchors() {
   var locTopLeft = projection.invert([0, 0]);  // the location at the top-left corner
   var locBotRight = projection.invert([mapW, mapH]);  // the loc. at the bottom-right
-  var rra = util.geo.distAngle(radarAnchorRadius);  // radar radius as angel
-  var dlon = util.geo.destination(caseStudy.mapCenter, 90, anchorInterval)[0]
+  var rra = util.geo.distAngle(radarAnchorRadius);  // radar radius as angle
+  var dlon = util.geo.destination(caseStudy.mapCenter, 90, caseStudy.anchorInterval)[0]
     - caseStudy.mapCenter[0];  // longitude delta
-  var dlat = util.geo.destination(caseStudy.mapCenter, 0, anchorInterval)[1]
+  var dlat = util.geo.destination(caseStudy.mapCenter, 0, caseStudy.anchorInterval)[1]
     - caseStudy.mapCenter[1];  // latitude delta
   anchorLocations = [];
   for (var lon = locTopLeft[0]; lon < locBotRight[0]; lon += dlon) {
@@ -429,7 +463,7 @@ function drawMap(mapGroup) {
     .attr("d", projectionPath);
 
   // draw radars:
-  var rra = util.geo.distAngle(radarAnchorRadius); // radar radius as angel:
+  var rra = util.geo.distAngle(radarAnchorRadius); // radar radius as angle:
   var radarGroup = mapGroup.append("svg:g").attr("id", "radars");
   caseStudy.radars.forEach(function (radar, radi) {
     //rp = projection(radar.location);
@@ -477,19 +511,18 @@ function drawPaths_multiPath(caseStudy, pathsGroup) {
   var idw = util.idw;
   var strn = caseStudy.strataCount;
   var radiusFactor = 0.05;
+  var probf = anchorArea / caseStudy.migrantsPerPath;
   for (var stri = 0; stri < strn; stri++) {
-    var densities = caseData.avDensities[stri];
+    var densities = caseData.avDensities[stri]; // birds/km2 in the strata
     anchorLocations.forEach(function (anchorLoc) {
       //if (stop) return;
       var density = idw(anchorLoc[0], anchorLoc[1], densities, rlons, rlats, 2);
-      if (Math.random() >= density * anchorArea / pathBirdCount) {
-        return;
+      if (Math.random() < density * probf) {
+        //stop = true;
+        var pathData = buildPathData(stri, anchorLoc);
+        var lineData = buildOutline(pathData, radiusFactor);
+        drawPath_variableThickness(pathsGroup.append("svg:g"), pathData, lineData, stri, radiusFactor);
       }
-      //stop = true;
-
-      var pathData = buildPathData(stri, anchorLoc);
-      var lineData = buildOutline(pathData, radiusFactor);
-      drawPath_varialeThickness(pathsGroup.append("svg:g"), pathData, lineData, stri, radiusFactor);
     });
   }
 }
@@ -515,7 +548,7 @@ function drawPaths_singlePath(caseStudy, pathsGroup) {
         return [d[0], d[1] + oy, d[2], d[3]];
       });
       var lineData = buildOutline(pathData, radiusFactor);
-      drawPath_varialeThickness(pathsGroup.append("svg:g"),
+      drawPath_variableThickness(pathsGroup.append("svg:g"),
         pathData, lineData, stri, radiusFactor);
     });
   }
@@ -694,7 +727,7 @@ function buildOutline(pathData, radiusFactor) {
   return lineData;
 }
 
-function drawPath_varialeThickness(pathGr, pathData, lineData, stri, radiusFactor) {
+function drawPath_variableThickness(pathGr, pathData, lineData, stri, radiusFactor) {
   //console.log(lineData.map(function (d) {
   //  return '[' + d[0] + ', ' + d[1] + ']';
   //}));
@@ -717,7 +750,7 @@ function drawPath_varialeThickness(pathGr, pathData, lineData, stri, radiusFacto
   }
   else {
     radius = Math.max(1.5, pathData[segn][2] * radiusFactor + .5);
-    opacity = .7;
+    opacity = .6;
   }
   pathGr.append('svg:circle')
     .attr('cx', pathData[segn][0])
@@ -914,3 +947,34 @@ function drawScaleLegend(legendGroup, markers) {
     .attr("x2", legendR)
     .attr("y2", mapH - 20);
 }
+
+function writeMetaData(clipGroup) {
+  if (!writeMetaDataInViz) return;
+
+  var mdGroup = clipGroup.append("svg:g").attr("id", "meta-data");
+  var margin = 18;
+  var lh = 15;
+  var ly = mapH - 7 - 3 * lh;
+
+  mdGroup.append("svg:text")
+    .classed("legend-label", true)
+    .attr("x", margin)
+    .attr("y", ly)
+    .text("From: " + caseStudy.focusMoment.format('MMM Do YYYY, h:mm a') + "");
+
+  ly += lh;
+  mdGroup.append("svg:text")
+    .classed("legend-label", true)
+    .attr("x", margin)
+    .attr("y", ly)
+    .text("Duration: " + caseStudy.focusLength + " h. ");
+
+  ly += lh;
+  mdGroup.append("svg:text")
+    .classed("legend-label", true)
+    .attr("x", margin)
+    .attr("y", ly)
+    .text("Migrants per line: " + caseStudy.migrantsPerPath);
+
+}
+

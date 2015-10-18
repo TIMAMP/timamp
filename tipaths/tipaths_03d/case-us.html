@@ -44,23 +44,27 @@
 
     <form>
       <div class="row collapse">
-        <div class="small-3 medium-12 columns">
+        <div class="small-4 medium-12 columns">
           <strong>Date:</strong><br class="show-for-small-only">
           <input id="input-day" type="number" class="inline" step="1"> apr.
         </div>
-        <div class="small-3 medium-12 columns">
+        <div class="small-4 medium-12 columns">
           <strong>Time:</strong><br class="show-for-small-only">
           <input id="input-hour" type="number" class="inline"
                  min="-1" max="24" step="1"> h.
         </div>
-        <div class="small-3 medium-12 columns">
+        <div class="small-4 medium-12 columns">
           <strong>Length:</strong><br class="show-for-small-only">
           <input id="input-length" type="number" class="inline"
                  min="1" max="8" step="1"> h.
         </div>
-        <div class="small-3 medium-12 columns">
+        <div class="small-4 medium-12 columns">
           <strong>Strata:</strong><br class="show-for-small-only">
           <select id="input-strata" class="inline"></select>
+        </div>
+        <div class="small-8 medium-12 columns">
+          <strong>Migrants/Path:</strong><br class="show-for-small-only">
+          <select id="input-migrants-per-path" class="inline"></select>
         </div>
       </div>
 
@@ -68,12 +72,18 @@
     </form>
 
     <p class="description">
-      This visualization shows bird migration flows for a range of altitudes during an observation window of 1 to 8 hours.
-      The paths represent bird movement data, integrated over time.
-      The density of the flows is based on the density data averaged over the given window.
-      Each path corresponds to approx. <span id="path-bird-count"></span> birds.
-      Paths are anchored within a radius of <span id="radar-anchor-radius"></span> km around the radars.
-      Their length corresponds to the distance covered by the migrating birds during the selected time window while the varying thickness corresponds with the varying bird density over time.
+      This visualization provide a holistic picture of the spatial and temporal
+      variation in migration activity during an observation window of one to eight hours.
+      Each pathline represents the expected travel path of an imaginary swarm
+      of average migrants during the selected observation window.
+      Each pathline corresponds to approx. <span id="path-bird-count"></span> migrants.
+      The amount of pathline and their distribution corresponds with the observed
+      densities during the observation window.
+      Paths are anchored within a radius of <span id="radar-anchor-radius"></span> km
+      around the radars.
+      Their length corresponds to the distance covered by the migrants during
+      the selected time window while the varying thickness reflects changes in
+      migrant density during the observation window.
     </p>
 
   </div>
