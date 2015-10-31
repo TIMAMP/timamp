@@ -668,7 +668,7 @@ function buildPathData_singlePath(stri, radi, anchorLoc) {
 var lineFn = d3.svg.line()
   .x(function (d) { return d[0]; })
   .y(function (d) { return d[1]; })
-  .interpolate("basis-closed");
+  .interpolate("cardinal-closed");
 
 function drawPath_fixedThickness(pathGr, pathData, stri) {
   var lcolor = caseStudy.altHexColors[stri];
