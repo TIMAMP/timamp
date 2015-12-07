@@ -99,7 +99,6 @@ var arty = false;
 /** @type {Object} */ var projection;
 /** @type {Object} */ var projectionPath;
 /** @type {Object} */ var caseStudy;
-/** @type {Object} */ var caseData;
 
 // -----------------------------------------------------------------------------
 
@@ -120,7 +119,7 @@ function startApp(_caseStudy) {
   d3.select("#radar-anchor-radius").text(radarAnchorRadius);
 
   // load the case study data:
-  dataService.initCaseStudy(caseStudy, function () {
+  caseStudy.initialize(function () {
     //console.log(caseStudy);
 
     d3.select("#path-bird-count").text(numeral(caseStudy.migrantsPerPath).format('0,0'));
@@ -144,7 +143,7 @@ function startApp(_caseStudy) {
       initialFoucsLength = parseInt(urlQuery["length"]);
     }
 
-    var busy = 3;
+    var busy = 2;
 
     // load the topography:
     d3.json(caseStudy.topoJsonUrl, function (error, json) {
@@ -153,11 +152,6 @@ function startApp(_caseStudy) {
         return;
       }
       caseStudy.topoJson = json;
-      if (--busy == 0) initDone();
-    });
-
-    // load the query template:
-    dataService.loadQueryTemplate(caseStudy.queryTemplateUrl, function () {
       if (--busy == 0) initDone();
     });
 
@@ -366,15 +360,7 @@ function updateVisualisation(dataDirty, mapDirty) {
   drawMap(mapGroup);
 
   if (dataDirty) {
-    var data = {
-      focusMoment: moment.utc(caseStudy.focusMoment),
-      interval : caseStudy.segmentInterval /* the duration of a window in minutes */,
-      intervalCount: caseStudy.focusLength * 60 / caseStudy.segmentInterval
-    };
-    dataService.loadData(caseStudy.queryBaseUrl, data, caseStudy, function () {
-      caseData = data;
-      drawPaths(pathsGroup);
-    });
+    caseStudy.loadData(function () { drawPaths(pathsGroup); });
   }
   else {
     drawPaths(pathsGroup);
@@ -513,10 +499,22 @@ function drawPaths_multiPath(caseStudy, pathsGroup) {
   var radiusFactor = 0.05;
   var probf = anchorArea / caseStudy.migrantsPerPath;
   for (var stri = 0; stri < strn; stri++) {
-    var densities = caseData.avDensities[stri]; // birds/km2 in the strata
+    try {
+      var densities = caseStudy.data.avDensities[stri]; // birds/km2 in the strata
+    } catch (error) {
+      console.error("- stri: " + stri);
+      console.error("- strn: " + strn);
+      console.error("- caseStudy.data.avDensities: " + caseStudy.data.avDensities);
+      throw (error);
+    }
     anchorLocations.forEach(function (anchorLoc) {
       //if (stop) return;
-      var density = idw(anchorLoc[0], anchorLoc[1], densities, rlons, rlats, 2);
+      try {
+        var density = idw(anchorLoc[0], anchorLoc[1], densities, rlons, rlats, 2);
+      } catch (error) {
+        console.error("- anchorLoc: " + anchorLoc);
+        throw (error);
+      }
       if (Math.random() < density * probf) {
         //stop = true;
         var pathData = buildPathData(stri, anchorLoc);
@@ -540,7 +538,7 @@ function drawPaths_singlePath(caseStudy, pathsGroup) {
         .attr('cy', radar.projection[1] + oy)
         .attr('r', 1)
         .classed("acchor", true);
-      if (caseData.avDensities[stri][radi] == 0) {
+      if (caseStudy.data.avDensities[stri][radi] == 0) {
         return;  // do not draw empty paths
       }
       var pathData = buildPathData_singlePath(stri, radi, radar.location);
@@ -556,13 +554,13 @@ function drawPaths_singlePath(caseStudy, pathsGroup) {
 
 function buildPathData(stri, anchorLoc) {
   var pathData = [];
-  var segi, segn = caseData.intervalCount;
+  var segi, segn = caseStudy.data.intervalCount;
   var loc, lon, lat, dlon, dlat, pp, angl, dist, dens;
   var rlons = caseStudy.radLons;
   var rlats = caseStudy.radLats;
   var idw = util.idw;
-  var tf1 = caseData.interval * 0.06;  // 0.06 = 60 sec. * 0.001 km/m
-  var half = Math.floor(caseData.intervalCount / 2);
+  var tf1 = caseStudy.data.interval * 0.06;  // 0.06 = 60 sec. * 0.001 km/m
+  var half = Math.floor(caseStudy.data.intervalCount / 2);
 
   //function lprint(d) {
   //  tt.push("[" + d[stri].join(", ") + "]");
@@ -586,12 +584,12 @@ function buildPathData(stri, anchorLoc) {
   for (segi = half - 1; segi >= 0; segi--) {
     lon = loc[0];
     lat = loc[1];
-    dlon = idw(lon, lat, caseData.uSpeeds[segi][stri], rlons, rlats, 2) * tf1;
-    dlat = idw(lon, lat, caseData.vSpeeds[segi][stri], rlons, rlats, 2) * tf1;
+    dlon = idw(lon, lat, caseStudy.data.uSpeeds[segi][stri], rlons, rlats, 2) * tf1;
+    dlat = idw(lon, lat, caseStudy.data.vSpeeds[segi][stri], rlons, rlats, 2) * tf1;
     angl = Math.atan2(-dlon, -dlat);
     dist = util.vectorLength(dlon, dlat);
     loc = util.geo.destinationRad(loc, angl, dist);
-    dens = idw(loc[0], loc[1], caseData.densities[segi][stri], rlons, rlats, 2);
+    dens = idw(loc[0], loc[1], caseStudy.data.densities[segi][stri], rlons, rlats, 2);
     pp = projection(loc);
     pp.push(dens, angl + Math.PI);
     pathData.unshift(pp);
@@ -604,9 +602,9 @@ function buildPathData(stri, anchorLoc) {
     pp = projection(loc);
     lon = loc[0];
     lat = loc[1];
-    dens = idw(lon, lat, caseData.densities[segi][stri], rlons, rlats, 2);
-    dlon = idw(lon, lat, caseData.uSpeeds[segi][stri], rlons, rlats, 2) * tf1;
-    dlat = idw(lon, lat, caseData.vSpeeds[segi][stri], rlons, rlats, 2) * tf1;
+    dens = idw(lon, lat, caseStudy.data.densities[segi][stri], rlons, rlats, 2);
+    dlon = idw(lon, lat, caseStudy.data.uSpeeds[segi][stri], rlons, rlats, 2) * tf1;
+    dlat = idw(lon, lat, caseStudy.data.vSpeeds[segi][stri], rlons, rlats, 2) * tf1;
     angl = Math.atan2(dlon, dlat);
     pp.push(dens, angl);
     pathData.push(pp);
@@ -623,21 +621,21 @@ function buildPathData(stri, anchorLoc) {
 
 function buildPathData_singlePath(stri, radi, anchorLoc) {
   var pathData = [];
-  var segi, segn = caseData.intervalCount;
+  var segi, segn = caseStudy.data.intervalCount;
   var loc, dlon, dlat, pp, angl, dist, dens;
-  var tf1 = caseData.interval * 0.06;  // 0.06 = 60 sec. * 0.001 km/m
-  var half = Math.floor(caseData.intervalCount / 2);
+  var tf1 = caseStudy.data.interval * 0.06;  // 0.06 = 60 sec. * 0.001 km/m
+  var half = Math.floor(caseStudy.data.intervalCount / 2);
 
   // tail half:
   loc = anchorLoc;
   pp = projection(loc);
   for (segi = half - 1; segi >= 0; segi--) {
-    dlon = caseData.uSpeeds[segi][stri][radi] * tf1;
-    dlat = caseData.vSpeeds[segi][stri][radi] * tf1;
+    dlon = caseStudy.data.uSpeeds[segi][stri][radi] * tf1;
+    dlat = caseStudy.data.vSpeeds[segi][stri][radi] * tf1;
     angl = Math.atan2(-dlon, -dlat);
     dist = util.vectorLength(dlon, dlat);
     loc = util.geo.destinationRad(loc, angl, dist);
-    dens = caseData.densities[segi][stri][radi];
+    dens = caseStudy.data.densities[segi][stri][radi];
     pp = projection(loc);
     pp.push(dens, angl + Math.PI);
     pathData.unshift(pp);
@@ -648,9 +646,9 @@ function buildPathData_singlePath(stri, radi, anchorLoc) {
   pp = projection(loc);
   for (segi = half; segi < segn; segi++) {
     pp = projection(loc);
-    dens = caseData.densities[segi][stri][radi];
-    dlon = caseData.uSpeeds[segi][stri][radi] * tf1;
-    dlat = caseData.vSpeeds[segi][stri][radi] * tf1;
+    dens = caseStudy.data.densities[segi][stri][radi];
+    dlon = caseStudy.data.uSpeeds[segi][stri][radi] * tf1;
+    dlat = caseStudy.data.vSpeeds[segi][stri][radi] * tf1;
     angl = Math.atan2(dlon, dlat);
     pp.push(dens, angl);
     pathData.push(pp);
@@ -672,7 +670,7 @@ var lineFn = d3.svg.line()
 
 function drawPath_fixedThickness(pathGr, pathData, stri) {
   var lcolor = caseStudy.altHexColors[stri];
-  var segi, segn = caseData.intervalCount;
+  var segi, segn = caseStudy.data.intervalCount;
   for (segi = 0; segi < segn; segi++) {
     var node1 = pathData[segi];
     var node2 = pathData[segi + 1];
@@ -694,7 +692,7 @@ function buildOutline(pathData, radiusFactor) {
   //  return '[' + d[0] + ', ' + d[1] + ', ' + d[2] + ', ' + d[3] + ']';
   //}));
   var lineData = [];
-  var segi, segn = caseData.intervalCount;
+  var segi, segn = caseStudy.data.intervalCount;
   var segd, angle, radius, dx, dy;
   var minRadius = .25;
 
@@ -732,7 +730,7 @@ function drawPath_variableThickness(pathGr, pathData, lineData, stri, radiusFact
   //  return '[' + d[0] + ', ' + d[1] + ']';
   //}));
   var lcolor = caseStudy.altHexColors[stri];
-  var segn = caseData.intervalCount;
+  var segn = caseStudy.data.intervalCount;
   var radius;
 
   // draw paths:

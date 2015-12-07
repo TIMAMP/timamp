@@ -218,6 +218,7 @@ util.hsvaToRgba = function (h, s, v, a) {
  * @returns {Number|undefined} The average or undefined if the array is empty.
  */
 util.average = function (ary, undefAv) {
+  if (arguments.length === 1) { undefAv = 0; }
   if (ary === undefined) { return undefAv; }
   var len = ary.length;
   if (len === 0) { return undefAv;  }

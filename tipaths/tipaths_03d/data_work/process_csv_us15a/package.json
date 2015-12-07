@@ -1,0 +1,12 @@
+{
+  "name": "process_csv_us15a",
+  "version": "1.0.0",
+  "description": "Docker image that runs NodeJS app that processes the csv data file with the us15a case study data.",
+  "author": "Wouter Van den Broeck <wouter@addith.be>",
+  "main": "index.js",
+  "dependencies": {
+    "csv": "^0.4.6",
+    "jsonfile": "^2.2.3",
+    "moment": "^2.10.6"
+  }
+}
