@@ -20,10 +20,10 @@
  * - speeds: Empty data matrix with dimensions: [segments, strata, radars].
  * - avDensities: Empty data matrix with dimensions: [strata, radars].
  */
-function initDataObject(caseStudy) {
+function initDataObject(caseStudy, basic) {
   var data = {
     focusMoment: moment.utc(caseStudy.focusMoment),
-    interval : caseStudy.segmentInterval /* the duration of a window in minutes */,
+    interval : caseStudy.segmentInterval,  // the duration of one segment in minutes:
     intervalCount: caseStudy.focusLength * 60 / caseStudy.segmentInterval,
     densities: [],
     uSpeeds: [],
@@ -32,10 +32,13 @@ function initDataObject(caseStudy) {
     avDensities: []
   };
 
+  if (basic) { return data; }
+
   // Prepare the data structure which is constructed such that it efficiently facilitates
   // the interpolation operations needed when constructing the paths.
 
-  var segn = data.intervalCount;
+  // add one in the following to allow for the 2-stage Runge–Kutta interpolation:
+  var segn = data.intervalCount + 1;
   var strn = caseStudy.strataCount;
   var radn = caseStudy.radarCount;
   for (var segi = 0; segi < segn; segi++) {

@@ -90,12 +90,13 @@ function dataServiceInitializer(caseStudy) {
 
   dataService.loadData = function (handler) {
     //console.log(">> dataService.loadData()");
-    var data = initDataObject(caseStudy);
+    var data = initDataObject(caseStudy, true);
     var startTime = caseStudy.minMoment.valueOf();
     var dt = data.focusMoment.valueOf() - startTime;
     var intervalSec = caseStudy.segmentInterval * 60 * 1000;
     var iFrom = Math.floor(dt / intervalSec);
-    var iTill = iFrom + data.intervalCount;
+    // add one in the following to allow for the 2-stage Runge–Kutta interpolation
+    var iTill = iFrom + data.intervalCount + 1;
     //console.log(firstIntervalIdx, caseStudy.minMoment.toDate(), data.focusMoment.toDate());
 
     data.densities = this.data.densities.slice(iFrom, iTill);
@@ -103,6 +104,30 @@ function dataServiceInitializer(caseStudy) {
     data.vSpeeds = this.data.vSpeeds.slice(iFrom, iTill);
     data.speeds = this.data.speeds.slice(iFrom, iTill);
     data.avDensities = this.data.avDensities;
+
+    // Make sure that the data structure is complete:
+    if (data.densities.length < data.intervalCount + 1) {
+      //console.log(data.densities.length);
+      var segn = data.intervalCount + 1;
+      var strn = caseStudy.strataCount;
+      var radn = caseStudy.radarCount;
+      for (var segi = data.densities.length; segi < segn; segi++) {
+        var densities = [];
+        var uSpeeds = [];
+        var vSpeeds = [];
+        var speeds = [];
+        for (var stri = 0; stri < strn; stri++) {
+          densities.push(util.zeroArray(radn));
+          uSpeeds.push(util.zeroArray(radn));
+          vSpeeds.push(util.zeroArray(radn));
+          speeds.push(util.zeroArray(radn));
+        }
+        data.densities.push(densities);
+        data.uSpeeds.push(uSpeeds);
+        data.vSpeeds.push(vSpeeds);
+        data.speeds.push(speeds);
+      }
+    }
 
     handler(data);
   };

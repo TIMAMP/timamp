@@ -1,5 +1,7 @@
 'use strict';
 
+// See README.md for general documentation.
+
 // Dependencies:
 var fs = require('fs');
 var csv = require('csv');
@@ -8,66 +10,82 @@ var moment = require('moment');
 
 // cofiguration:
 var csv_path = "data.csv";
+var raw_data_path = "raw-data.json";
 var data_path = "data.json";
 var metadata_path = "metadata.json";
 //var id = "us15a";
-var si_radar_id = 0,
-  si_interval_start_time = 1,
-  si_altitude_band = 2,
-  si_avg_u_speed = 3,
-  si_avg_v_speed = 4,
-  si_avg_bird_density = 5,
-  si_vertical_integrated_density = 6,
-  si_number_of_measurements = 7;
+
+// Raw data indices:
+var ri_radar_id = 0,
+  ri_interval_start_time = 1,
+  ri_altitude_band = 2,
+  ri_avg_u_speed = 3,
+  ri_avg_v_speed = 4,
+  ri_avg_bird_density = 5,
+  ri_vertical_integrated_density = 6,
+  ri_number_of_measurements = 7,
+  ri_speed = 8;
 
 function start() {
-  fs.readFile(metadata_path, 'utf8', function (err, json) {
+  fs.readFile(metadata_path, 'utf8', function (err, raw) {
     if (err) {
       console.error("! Failed to read '" + metadata_path + "'. " + err);
       throw err;
     }
 
-    var metadata = JSON.parse(json);
+    var metadata = JSON.parse(raw);
+
+    // segment duration in milliseconds:
+    var intervalMs = metadata.segmentInterval * 60 * 1000;
+
     var startMoment = moment.utc(metadata.dateMin);
     var endMoment = moment.utc(metadata.dateMax);
     var startTime = startMoment.valueOf();
     var endTime = endMoment.valueOf();
-    var intervalMs = metadata.segmentInterval * 60 * 1000;
+
+    // the number of segments:
+    var segn = Math.floor((endTime - startTime) / intervalMs);
+
+    // data structure to map radar ids to the radar index:
     var radarIndices = {};
     metadata.radars.forEach(function (radar, i) {
       radarIndices[radar.id] = i;
     });
-    var segn = Math.floor((endTime - startTime) / intervalMs);
-    var strn = metadata.strataCount;
-    var radn = metadata.radars.length;
-    var data = {
-      densities: [],
-      uSpeeds: [],
-      vSpeeds: [],
-      speeds: [],
-      avDensities: []
-    };
-    var parseConfig = { auto_parse: true, auto_parse_date: true };
 
+    // the number of strata:
+    var strn = metadata.strataCount;
+
+    // the number of radars:
+    var radn = metadata.radars.length;
+
+    // read the csv-data:
+    var parseConfig = { auto_parse: true, auto_parse_date: true };
     var parser = csv.parse(parseConfig, function (err, records) {
       if (err) {
         console.error("! Failed to read '" + csv_path + "'. " + err);
         throw err;
       }
 
-      var headers = records.shift(); // remove headers
-      var segi, stri, radi;
+      // remove the headers:
+      var headers = records.shift();
+
+      // Parse the dates and normalize the altitude id:
+      records.forEach(function (record) {
+        record[ri_interval_start_time] = new Date(record[ri_interval_start_time]);
+        record[ri_altitude_band] = record[ri_altitude_band] - 1;
+      });
+
+      // Sort the records by date:
+      records.sort(function (ra, rb) {
+        if (ra[ri_interval_start_time] < rb[ri_interval_start_time]) return -1;
+        if (ra[ri_interval_start_time] > rb[ri_interval_start_time]) return 1;
+        return 0;
+      });
 
       // Check if the given dates are inside the min-max range given in
       // the metadata:
-      var minDate = -1;
-      var maxDate = -1;
-      records.forEach(function (record) {
-        var date = new Date(record[si_interval_start_time]);
-        record[si_interval_start_time] = date;
-        if (minDate == -1 || date < minDate) minDate = date;
-        if (maxDate == -1 || date > maxDate) maxDate = date;
-      });
+      var minDate = records[0][ri_interval_start_time];
+      var maxDate = records[records.length - 1][ri_interval_start_time];
       if (minDate < startMoment.toDate()) {
         throw new Error("minDate < startMoment, minDate: " + minDate
           + ", startMoment: " + startMoment.toDate());
@@ -77,8 +95,28 @@ function start() {
           + ", endMoment: " + endMoment.toDate());
       }
 
-      // Prepare the data structure which is constructed such that it efficiently facilitates
-      // the interpolation operations needed when constructing the paths.
+      var segi, stri, radi;
+
+      // Prepare the raw-data structure:
+      var rawData = [];
+      for (radi = 0; radi < radn; radi++) {
+        var radData = []; // per radar
+        for (stri = 0; stri < strn; stri++) {
+          radData.push([]); // per strata
+        }
+        rawData.push(radData);
+      }
+
+      // Prepare the TIMAMP data structure which is constructed such that
+      // it efficiently facilitates the interpolation operations needed when
+      // constructing the paths.
+      var data = {
+        densities: [],
+        uSpeeds: [],
+        vSpeeds: [],
+        speeds: [],
+        avDensities: []
+      };
       for (segi = 0; segi < segn; segi++) {
         var densities = [];
         var uSpeeds = [];
@@ -109,16 +147,25 @@ function start() {
       // Parse the records and put all values for each segment in lists:
       var uSpeed, vSpeed, speed;
       records.forEach(function (record) {
+        var dt = record[ri_interval_start_time].getTime() - startTime;
+        if (dt < 0) { throw new Error("dt < 0"); }
+
+        segi = Math.floor(dt / intervalMs);
+        stri = record[ri_altitude_band];
+        radi = radarIndices[record[ri_radar_id]];
+        //console.log(segi, segn, stri, strn, radi, radn);
+
+        uSpeed = record[ri_avg_u_speed];
+        vSpeed = record[ri_avg_v_speed];
+        speed = Math.sqrt(uSpeed * uSpeed + vSpeed * vSpeed);
+        record.push(speed);
+
+        // add record in the raw-data structure:
+        rawData[radi][stri].push(record);
+
+        // add data in the TIMAMP data structure:
         try {
-          var dt = record[si_interval_start_time].getTime() - startTime;
-          segi = Math.floor(dt / intervalMs);
-          stri = record[si_altitude_band] - 1;
-          radi = radarIndices[record[si_radar_id]];
-          //console.log(segi, segn, stri, strn, radi, radn);
-          uSpeed = record[si_avg_u_speed];
-          vSpeed = record[si_avg_v_speed];
-          speed = Math.sqrt(uSpeed * uSpeed + vSpeed * vSpeed);
-          data.densities[segi][stri][radi].push(record[si_avg_bird_density]);
+          data.densities[segi][stri][radi].push(record[ri_avg_bird_density]);
           data.uSpeeds[segi][stri][radi].push(uSpeed);
           data.vSpeeds[segi][stri][radi].push(vSpeed);
           data.speeds[segi][stri][radi].push(speed);
@@ -131,7 +178,26 @@ function start() {
           throw error;
         }
       });
-      console.log(2);
+
+      // Detect segments without data for all radars:
+      //for (segi = 0; segi < segn; segi++) {
+      //  var segTime = new Date(startTime + segi * intervalMs);
+      //  for (stri = 0; stri < strn; stri++) {
+      //    var foundDensities = false;
+      //    for (radi = 0; radi < radn; radi++) {
+      //      if (data.densities[segi][stri][radi].length > 0) {
+      //        foundDensities = true;
+      //        break;
+      //      }
+      //      //data.uSpeeds[segi][stri][radi] = average(data.uSpeeds[segi][stri][radi]);
+      //      //data.vSpeeds[segi][stri][radi] = average(data.vSpeeds[segi][stri][radi]);
+      //      //data.speeds[segi][stri][radi] = average(data.speeds[segi][stri][radi]);
+      //    }
+      //    if (!foundDensities) {
+      //      console.log("- no densities in segment " + segi + " (" + segTime + ")" + ", strata " + stri);
+      //    }
+      //  }
+      //}
 
       // Calculate the averages for each segment:
       for (segi = 0; segi < segn; segi++) {
@@ -144,7 +210,6 @@ function start() {
           }
         }
       }
-      console.log(3);
 
       // The strata height in km:
       var strataHeight = metadata.maxAltitude / metadata.strataCount / 1000;
@@ -164,15 +229,24 @@ function start() {
         data.avDensities.push(avds);
       }
 
-      console.log("# Writing " + data_path);
-      jsonfile.writeFile(data_path, data, function (err) {
+      // write the raw data in a json format:
+      console.log("# Writing " + raw_data_path);
+      jsonfile.writeFile(raw_data_path, rawData, function (err) {
         if (err) {
-          console.error("Failed to write '" + data_path + "'. " + err);
+          console.error("Failed to write '" + raw_data_path + "'. " + err);
         }
-        else {
-          console.error("# Done");
-        }
+
+        console.log("# Writing " + data_path);
+        jsonfile.writeFile(data_path, data, function (err) {
+          if (err) {
+            console.error("Failed to write '" + data_path + "'. " + err);
+          }
+          else {
+            console.error("# Done");
+          }
+        });
       });
+
     });
 
     console.log('# Reading ' + csv_path);

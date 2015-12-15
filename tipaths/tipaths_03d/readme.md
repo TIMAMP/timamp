@@ -32,7 +32,7 @@ object with the following properties:
 * __strataCounts__ - The strata count options. Each value in this list must be a whole divisor of the number of altitudes for which data is available (see the *altitudes* property above).
 * __strataCount__ - The default strata count.
 * __migrantsPerPath__ - The number of migrants each pathline represents.
-* __segmentInterval__ - The duration of each segment, in minutes.
+* __segmentSize__ - The duration of each segment, in minutes.
 * __anchorInterval__ - The interval between potential anchors in km.
 * __mapCenter__ - A list with two elements, the longitude and latitude (in degrees) on which to center the map.
 * __mapScaleFactor__ - The factor with which the map-width needs to be multiplied to get the map scaling.
@@ -74,4 +74,6 @@ This Foundation is a custom build of v5.5.2 that includes:
 
 The js and css files are maintained in the ./vendor directory.
 
+# References
 
+- __[Darmofal_96a]__ – _An Analysis of 3D Particle Path Integration Algorithms._ D. L. Darmofal. Journal of Computanional Physics 123, 182–195 (1996).

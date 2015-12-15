@@ -125,11 +125,6 @@ path#graticule {
   stroke-width: 0.3px;
 }
 
-/*.radar-center {*/
-/*fill: #253;*/
-/*fill-opacity: 0.5;*/
-/*}*/
-
 path#radar-radius {
   fill: #fff;
   fill-opacity: 0.25;
@@ -137,6 +132,19 @@ path#radar-radius {
   /*stroke-width: 1px;*/
   /*stroke-opacity: 1;*/
   /*stroke-dasharray: 4, 8;*/
+}
+
+.radar-center {
+  fill: #000;
+  fill-opacity: 0.5;
+}
+
+.radar-label {
+  font-family: Helvetica, sans-serif;
+  font-size: 10px;
+  fill: #000;
+  fill-opacity: 0.5;
+  stroke: none;
 }
 
 .acchor {
