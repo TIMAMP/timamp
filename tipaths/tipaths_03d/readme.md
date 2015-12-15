@@ -23,15 +23,15 @@ For each case study a set of metadata is provided in a json file. This file cont
 object with the following properties:
 
 * __label__ - Text label.
-* __dateMin__ - The first day for which data is available, expressed as an object that can be passed to the moment constructor.
-* __dateMax__ - The last day for which data is available, expressed as an object that can be passed to the moment constructor.
-* __dateFocus__ - The initial focus moment, expressed as an object that can be passed to the moment constructor.
+* __dateFrom__ - The first day for which data is available, expressed as an object that can be passed to the moment constructor.
+* __dateTill__ - The last day for which data is available, expressed as an object that can be passed to the moment constructor.
+* __defaultFocusFrom__ - The initial focus moment, expressed as an object that can be passed to the moment constructor.
 * __altitudes__ - The number of altitudes for which data is available.
 * __minAltitude__ - The lowest altitude for which data is available.
 * __maxAltitude__ - The highest altitude for which data is available.
 * __strataCounts__ - The strata count options. Each value in this list must be a whole divisor of the number of altitudes for which data is available (see the *altitudes* property above).
-* __strataCount__ - The default strata count.
-* __migrantsPerPath__ - The number of migrants each pathline represents.
+* __defaultStrataCount__ - The default strata count.
+* __defaultMigrantsPerPath__ - The number of migrants each pathline represents.
 * __segmentSize__ - The duration of each segment, in minutes.
 * __anchorInterval__ - The interval between potential anchors in km.
 * __mapCenter__ - A list with two elements, the longitude and latitude (in degrees) on which to center the map.

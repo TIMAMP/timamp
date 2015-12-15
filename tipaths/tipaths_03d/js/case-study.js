@@ -43,9 +43,9 @@ function initCaseStudy(id, dataServiceInitializer) {
         for (var attr in json) {
           if (json.hasOwnProperty(attr)) caseStudy[attr] = json[attr];
         }
-        caseStudy.minMoment = moment.utc(caseStudy.dateMin);
-        caseStudy.maxMoment = moment.utc(caseStudy.dateMax);
-        caseStudy.focusMoment = moment.utc(caseStudy.dateFocus);
+        caseStudy.dataFrom = moment.utc(caseStudy.dataFrom);
+        caseStudy.dataTill = moment.utc(caseStudy.dataTill);
+        caseStudy.defaultFocusFrom = moment.utc(caseStudy.defaultFocusFrom);
 
         // Create mapping from radar ids to indices:
         caseStudy.radarIndices = {};
@@ -81,9 +81,9 @@ function initCaseStudy(id, dataServiceInitializer) {
     handler();
   };
 
-  caseStudy.loadData = function (handler) {
-    //console.log(">> caseStudy.loadData()");
-    this.dataService.loadData(function (data) {
+  caseStudy.loadFocusData = function (focus, handler) {
+    //console.log(">> caseStudy.loadFocusData()");
+    this.dataService.loadFocusData(focus, function (data) {
       caseStudy.data = data;
       handler(data);
     });

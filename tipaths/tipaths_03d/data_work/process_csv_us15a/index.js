@@ -36,10 +36,10 @@ function start() {
     var metadata = JSON.parse(raw);
 
     // segment duration in milliseconds:
-    var intervalMs = metadata.segmentInterval * 60 * 1000;
+    var intervalMs = metadata.segmentSize * 60 * 1000;
 
-    var startMoment = moment.utc(metadata.dateMin);
-    var endMoment = moment.utc(metadata.dateMax);
+    var startMoment = moment.utc(metadata.dataFrom);
+    var endMoment = moment.utc(metadata.dataTill);
     var startTime = startMoment.valueOf();
     var endTime = endMoment.valueOf();
 

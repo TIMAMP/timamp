@@ -67,7 +67,7 @@ var altiBrightness = 0.7;
  * The initial focus duration, in hours.
  * @type {number}
  */
-var initialFocusLength = 6;
+var defaultFocusDuration = 6;
 
 /**
  * When true then only one path per radar is drawn.
@@ -100,7 +100,9 @@ var showRadarLabels = true;
 /** @type {Object} */ var svg;
 /** @type {Object} */ var projection;
 /** @type {Object} */ var projectionPath;
-/** @type {Object} */ var caseStudy;
+/** @type {Object} */ var caseStudy;  // TODO: move to startApp
+/** @type {Object} */ var focus;  // TODO: move to startApp
+/** @type {Object} */ var currentData;  // TODO: move to startApp
 
 // -----------------------------------------------------------------------------
 
@@ -124,7 +126,14 @@ function startApp(_caseStudy) {
   caseStudy.initialize(function () {
     //console.log(caseStudy);
 
-    d3.select("#path-bird-count").text(numeral(caseStudy.migrantsPerPath).format('0,0'));
+    focus = enram.focus(
+      caseStudy.defaultFocusFrom,
+      defaultFocusDuration,
+      caseStudy.defaultStrataCount,
+      caseStudy.defaultMigrantsPerPath
+    );
+
+    d3.select("#path-bird-count").text(numeral(focus.migrantsPerPath).format('0,0'));
 
     // parse the url query:
     var urlQuery = {};
@@ -142,7 +151,7 @@ function startApp(_caseStudy) {
       singlePath = urlQuery["single-path"] == "true";
     }
     if (urlQuery["length"]) {
-      initialFocusLength = parseInt(urlQuery["length"]);
+      defaultFocusDuration = parseInt(urlQuery["length"]);
     }
 
     var busy = 2;
@@ -158,7 +167,7 @@ function startApp(_caseStudy) {
     });
 
     //updateAnchors();
-    updateColors();
+    updateColors(caseStudy, focus);
 
     anchorArea = caseStudy.anchorInterval * caseStudy.anchorInterval;
 
@@ -167,63 +176,63 @@ function startApp(_caseStudy) {
 }
 
 function initDone() {
-  caseStudy.focusLength = initialFocusLength;
+  caseStudy.focusLength = defaultFocusDuration;
 
-  var dayMin = caseStudy.minMoment.date();
-  var dayMax = caseStudy.maxMoment.date();
+  var dataFromDay = caseStudy.dataFrom.date();
+  var dataTillDay = caseStudy.dataTill.date();
 
   d3.select("#input-day")
-    .property('value', caseStudy.focusMoment.date())
-    .attr('min', caseStudy.minMoment.date())
-    .attr('max', caseStudy.maxMoment.date())
+    .property('value', focus.from.date())
+    .attr('min', caseStudy.dataFrom.date())
+    .attr('max', caseStudy.dataTill.date())
     .on('change', function () {
       //console.log("change", d3.select(this).property('value'));
       var date = parseInt(d3.select(this).property('value'));
-      caseStudy.focusMoment.date(date);
-      updateVisualisation(true, false);
+      focus.from.date(date);
+      updateVisualisation(caseStudy, focus, true, false);
     });
 
   d3.select("#input-hour")
-    .property('value', caseStudy.focusMoment.hour())
+    .property('value', focus.from.hour())
     .on('change', function () {
       var inputDay = d3.select("#input-day");
-      var date = parseInt(inputDay.property('value'));
+      var day = parseInt(inputDay.property('value'));
       var inputHour = d3.select("#input-hour");
       var hour = parseInt(inputHour.property('value'));
       if (hour >= 24) {
-        if (date >= dayMax) {
-          date = dayMax;
+        if (day >= dataTillDay) {
+          day = dataTillDay;
           hour = 23;
         }
         else {
-          date++;
+          day++;
           hour = 0;
         }
       }
       else if (hour < 0) {
-        if (date <= dayMin) {
-          date = dayMin;
+        if (day <= dataFromDay) {
+          day = dataFromDay;
           hour = 0;
         }
         else {
-          date--;
+          day--;
           hour = 23;
         }
       }
 
-      inputDay.property('value', date);
+      inputDay.property('value', day);
       inputHour.property('value', hour);
 
       var focusDirty = false;
-      if (caseStudy.focusMoment.date() != date) {
-        caseStudy.focusMoment.date(date);
+      if (focus.from.date() != day) {
+        focus.from.date(day);
         focusDirty = true;
       }
-      if (caseStudy.focusMoment.hour() != hour) {
-        caseStudy.focusMoment.hour(hour);
+      if (focus.from.hour() != hour) {
+        focus.from.hour(hour);
         focusDirty = true;
       }
-      if (focusDirty) updateVisualisation(true, false);
+      if (focusDirty) updateVisualisation(caseStudy, focus, true, false);
     });
 
   // input-length:
@@ -231,7 +240,7 @@ function initDone() {
     .property('value', caseStudy.focusLength)
     .on('change', function () {
       caseStudy.focusLength = parseInt(d3.select("#input-length").property('value'));
-      updateVisualisation(true, false);
+      updateVisualisation(caseStudy, focus, true, false);
     });
 
   // input-strata:
@@ -242,13 +251,13 @@ function initDone() {
     .property('value', util.id)
     .text(util.id);
   d3.select("#input-strata")
-    .property('value', caseStudy.strataCount)
+    .property('value', focus.strataCount)
     .on('change', function () {
       //console.log("input-strata changed:", d3.select(this).property('value'));
       setStrataCount(d3.select(this).property('value'));
       //updateAnchors();
-      updateColors();
-      updateVisualisation(true, true);
+      updateColors(caseStudy, focus);
+      updateVisualisation(caseStudy, focus, true, true);
     });
 
   // input-migrants-per-path:
@@ -257,21 +266,21 @@ function initDone() {
     .data(migrantsPerPathOptions)
     .enter().append("option")
     .property("value", function (d) { return d.value; })
-    //.property("selected", function(d) { return d === caseStudy.migrantsPerPath; })
+    //.property("selected", function(d) { return d === focus.migrantsPerPath; })
     .text(function (d) { return d.text; });
   d3.select("#input-migrants-per-path")
-    .property('value', caseStudy.migrantsPerPath)
+    .property('value', focus.migrantsPerPath)
     .on('change', function () {
-      console.log("input-migrants-per-path changed:", d3.select(this).property('value'));
+      //console.log("input-migrants-per-path changed:", d3.select(this).property('value'));
       setMigrantsPerPath(d3.select(this).property('value'));
-      updateVisualisation(false, false);
+      updateVisualisation(caseStudy, focus, false, false);
     });
 
   // set resize handler that updates the visualisation:
   d3.select(window)
     .on('resize', Foundation.utils.throttle(function(e) {
       if (d3.select("#map-container").node().getBoundingClientRect().width != mapW) {
-        updateVisualisation(false, true);
+        updateVisualisation(caseStudy, focus, false, true);
       }
     }, 25));
 
@@ -283,7 +292,7 @@ function initDone() {
     .style("height", mapH);
 
   // Now update the map for real:
-  updateVisualisation(true, true);
+  updateVisualisation(caseStudy, focus, true, true);
 }
 
 /**
@@ -300,21 +309,21 @@ function setStrataCount(newCount) {
     return;
   }
 
-  caseStudy.strataCount = newCount;
+  focus.strataCount = newCount;
 }
 
-function setMigrantsPerPath(newCount) {
-  caseStudy.migrantsPerPath = newCount;
-  d3.select("#path-bird-count").text(numeral(caseStudy.migrantsPerPath).format('0,0'));
+function setMigrantsPerPath(migrantsPerPath) {
+  focus.migrantsPerPath = migrantsPerPath;
+  d3.select("#path-bird-count").text(numeral(migrantsPerPath).format('0,0'));
 }
 
 /**
  * Prepare the hues for the altitude strata.
  */
-function updateColors() {
+function updateColors(caseStudy, focus) {
   caseStudy.hues = [];
   caseStudy.altHexColors = [];
-  var altn = caseStudy.strataCount;
+  var altn = focus.strataCount;
   var hue;
   if (altn == 1) {
     hue = (altiHueMin + altiHueMax) / 2;
@@ -330,7 +339,7 @@ function updateColors() {
   }
 }
 
-function updateVisualisation(dataDirty, mapDirty) {
+function updateVisualisation(caseStudy, focus, dataDirty, mapDirty) {
   if (mapDirty) updateMapData();
 
   // create/replace svg object:
@@ -349,33 +358,39 @@ function updateVisualisation(dataDirty, mapDirty) {
     .attr("width", mapW)
     .attr("height", mapH);
 
-  var clipGroup = svg.append("g");
-  clipGroup.attr("style", "clip-path: url(#clipRect);");
+  var clipG = svg.append("g");
+  clipG.attr("style", "clip-path: url(#clipRect);");
 
-  if (arty) clipGroup.attr("style", "background: #fff;");
+  if (arty) clipG.attr("style", "background: #fff;");
 
   if (!arty) {
-    var mapGroup = clipGroup.append("g").attr("id", "map");
+    var mapG = clipG.append("g").attr("id", "map");
   }
-  var pathsGroup = clipGroup.append("g").attr("id", "paths");
+  var pathsG = clipG.append("g").attr("id", "paths");
 
-  drawMap(mapGroup);
+  drawMap(mapG);
 
   if (dataDirty) {
-    caseStudy.loadData(function () { drawPaths(pathsGroup); });
+    // A clone of the focus is passed to the loader. This focus will be set
+    // as focus property on the resulting data object.
+    caseStudy.loadFocusData(focus.clone(), function (data) {
+      currentData = data;
+      drawPaths(data, pathsG);
+    });
   }
   else {
-    drawPaths(pathsGroup);
+    drawPaths(currentData, pathsG);
   }
 
   if (!arty) {
     // draw legends:
-    drawColorLegend(clipGroup.append("g").attr("id", "color-legend"));
-    drawScaleLegend(
-      clipGroup.append("g").attr("id", "scale-legend"),
-      caseStudy.scaleLegendMarkers
-    );
-    writeMetaData(clipGroup);
+    var legendG = clipG.append("g").attr("id", "color-legend");
+    drawColorLegend(caseStudy, focus, legendG);
+
+    legendG = clipG.append("g").attr("id", "scale-legend");
+    drawScaleLegend(caseStudy, legendG, caseStudy.scaleLegendMarkers);
+
+    writeMetaData(caseStudy, focus, clipG);
   }
 }
 
@@ -493,35 +508,33 @@ function drawMap(mapGroup) {
 /**
  * Draw the paths.
  */
-function drawPaths(pathsGroup) {
+function drawPaths(data, pathsG) {
   if (singlePath) {
-    drawPaths_singlePath(caseStudy, pathsGroup);
+    drawPaths_singlePath(data, pathsG);
   }
   else {
-    drawPaths_multiPath(caseStudy, pathsGroup);
+    drawPaths_multiPath(data, pathsG);
   }
 }
 
-function drawPaths_multiPath(caseStudy, pathsG) {
-  //var stop = false;
+function drawPaths_multiPath(data, pathsG) {
   Math.seedrandom('ENRAM');
-  var rlons = caseStudy.radLons;
-  var rlats = caseStudy.radLats;
+  var rlons = data.caseStudy.radLons;
+  var rlats = data.caseStudy.radLats;
   var idw = util.idw;
-  var strn = caseStudy.strataCount;
+  var strn = data.focus.strataCount;
   var radiusFactor = 0.05;
-  var probf = anchorArea / caseStudy.migrantsPerPath;
+  var probf = anchorArea / data.focus.migrantsPerPath;
   for (var stri = 0; stri < strn; stri++) {
     try {
-      var densities = caseStudy.data.avDensities[stri]; // birds/km2 in the strata
+      var densities = data.avDensities[stri]; // birds/km2 in the strata
     } catch (error) {
       console.error("- stri: " + stri);
       console.error("- strn: " + strn);
-      console.error("- caseStudy.data.avDensities: " + caseStudy.data.avDensities);
+      console.error("- data.avDensities: " + data.avDensities);
       throw (error);
     }
     anchorLocations.forEach(function (anchorLoc) {
-      //if (stop) return;
       try {
         var density = idw(anchorLoc[0], anchorLoc[1], densities, rlons, rlats, 2);
       } catch (error) {
@@ -529,8 +542,7 @@ function drawPaths_multiPath(caseStudy, pathsG) {
         throw (error);
       }
       if (Math.random() < density * probf) {
-        //stop = true;
-        var pathData = timamp.buildPathData(caseStudy, stri, anchorLoc);
+        var pathData = timamp.buildPathData(data, stri, anchorLoc);
         if (pathData.length == 0) {
           //console.log("got empty pathData");
           return;
@@ -552,50 +564,50 @@ function drawPaths_multiPath(caseStudy, pathsG) {
 
 //var DEBUG_ANCHOR_IDX = 324;
 
-function drawPaths_singlePath(caseStudy, pathsGroup) {
-  var strn = caseStudy.strataCount;
+function drawPaths_singlePath(data, pathsG) {
+  var strn = data.focus.strataCount;
   var tdy = Math.min(12 * strn, 150);
   var radiusFactor = 0.05;
   for (var stri = 0; stri < strn; stri++) {
-    caseStudy.radars.forEach(function (radar, radi) {
+    data.caseStudy.radars.forEach(function (radar, radi) {
       var oy = util.mapRange(stri, 0, strn - 1, tdy / 2, -tdy / 2);
       // draw anchor marks:
-      pathsGroup.append('svg:circle')
+      pathsG.append('svg:circle')
         .attr('cx', radar.projection[0])
         .attr('cy', radar.projection[1] + oy)
         .attr('r', 1)
         .classed("acchor", true);
-      if (caseStudy.data.avDensities[stri][radi] == 0) {
+      if (data.avDensities[stri][radi] == 0) {
         return;  // do not draw empty paths
       }
-      var pathData = buildPathData_singlePath(stri, radi, radar.location);
+      var pathData = buildPathData_singlePath(data, stri, radi, radar.location);
       pathData = pathData.map(function (d) {
         return [d[0], d[1] + oy, d[2], d[3]];
       });
       var lineData = timamp.buildOutline(pathData, radiusFactor);
-      drawPath_variableThickness(pathsGroup.append("g"),
+      drawPath_variableThickness(pathsG.append("g"),
         pathData, lineData, stri, radiusFactor);
     });
   }
 }
 
-function buildPathData_singlePath(stri, radi, anchorLoc) {
+function buildPathData_singlePath(data, stri, radi, anchorLoc) {
   var pathData = [];
-  var segi, segn = caseStudy.data.intervalCount;
+  var segi, segn = data.segmentCount;
   var loc, dlon, dlat, pp, angl, dist, dens;
-  var tf1 = caseStudy.data.interval * 0.06;  // 0.06 = 60 sec. * 0.001 km/m
-  var half = Math.floor(caseStudy.data.intervalCount / 2);
+  var tf1 = data.caseStudy.segmentSize * 0.06;  // 0.06 = 60 sec. * 0.001 km/m
+  var half = Math.floor(data.segmentCount / 2);
 
   // tail half:
   loc = anchorLoc;
   pp = projection(loc);
   for (segi = half - 1; segi >= 0; segi--) {
-    dlon = caseStudy.data.uSpeeds[segi][stri][radi] * tf1;
-    dlat = caseStudy.data.vSpeeds[segi][stri][radi] * tf1;
+    dlon = data.uSpeeds[segi][stri][radi] * tf1;
+    dlat = data.vSpeeds[segi][stri][radi] * tf1;
     angl = Math.atan2(-dlon, -dlat);
     dist = util.vectorLength(dlon, dlat);
     loc = util.geo.destinationRad(loc, angl, dist);
-    dens = caseStudy.data.densities[segi][stri][radi];
+    dens = data.densities[segi][stri][radi];
     pp = projection(loc);
     pp.push(dens, angl + Math.PI);
     pathData.unshift(pp);
@@ -606,9 +618,9 @@ function buildPathData_singlePath(stri, radi, anchorLoc) {
   pp = projection(loc);
   for (segi = half; segi < segn; segi++) {
     pp = projection(loc);
-    dens = caseStudy.data.densities[segi][stri][radi];
-    dlon = caseStudy.data.uSpeeds[segi][stri][radi] * tf1;
-    dlat = caseStudy.data.vSpeeds[segi][stri][radi] * tf1;
+    dens = data.densities[segi][stri][radi];
+    dlon = data.uSpeeds[segi][stri][radi] * tf1;
+    dlat = data.vSpeeds[segi][stri][radi] * tf1;
     angl = Math.atan2(dlon, dlat);
     pp.push(dens, angl);
     pathData.push(pp);
@@ -628,16 +640,16 @@ var lineFn = d3.svg.line()
   .y(function (d) { return d[1]; })
   .interpolate("cardinal-closed");
 
-function drawPath_fixedThickness(pathGr, pathData, stri) {
+function drawPath_fixedThickness(data, pathG, pathData, stri) {
   var lcolor = caseStudy.altHexColors[stri];
-  var segi, segn = caseStudy.data.intervalCount;
+  var segi, segn = data.segmentCount;
   for (segi = 0; segi < segn; segi++) {
     var node1 = pathData[segi];
     var node2 = pathData[segi + 1];
     var dens = (node1[2] + node2[2]) / 2;
     var lwidth = util.mapRange(dens, 0, 100, 0, 10);
     //console.log(node1, node2, dens, lwidth, lcolor);
-    pathGr.append("line")
+    pathG.append("line")
       .attr("x1", node1[0]).attr("y1", node1[1])
       .attr("x2", node2[0]).attr("y2", node2[1])
       .attr("style", "stroke:" + lcolor
@@ -681,15 +693,15 @@ function drawPath_variableThickness(flowG, pathData, lineData, stri, radiusFacto
 
 /**
  * Draws the color legend in a horizontal layout.
- * @param legendGroup
+ * @param legendG
  */
-function drawColorLegend_hor(legendGroup) {
+function drawColorLegend_hor(caseStudy, focus, legendG) {
   var legendH = 12;
   var legendL = 25;
   //var tx0 = legendL;
   //var td = 6;
   var ty = mapH - 20 - legendH - 8;
-  var markerGr = legendGroup.append("g");
+  var markerGr = legendG.append("g");
   markerGr.append("text")
     .classed("legend-label", true)
     .attr("x", legendL)
@@ -710,19 +722,19 @@ function drawColorLegend_hor(legendGroup) {
     .text("4 km");
 
   var lineH = 7;
-  legendGroup.append("line")
+  legendG.append("line")
     .classed("scale-legend-line", true)
     .attr("x1", legendL)
     .attr("y1", mapH - 20 - legendH - lineH)
     .attr("x2", legendL)
     .attr("y2", mapH - 20);
-  legendGroup.append("line")
+  legendG.append("line")
     .classed("scale-legend-line", true)
     .attr("x1", legendL + legendW / 2)
     .attr("y1", mapH - 20 - legendH - lineH)
     .attr("x2", legendL + legendW / 2)
     .attr("y2", mapH - 20);
-  legendGroup.append("line")
+  legendG.append("line")
     .classed("scale-legend-line", true)
     .attr("x1", legendL + legendW)
     .attr("y1", mapH - 20 - legendH - lineH)
@@ -731,10 +743,10 @@ function drawColorLegend_hor(legendGroup) {
 
   var tx = legendL;
   ty = mapH - 20 - legendH;
-  var alti, altn = caseStudy.strataCount;
+  var alti, altn = focus.strataCount;
   var dx = legendW / altn;
   for (alti = 0; alti < altn; alti++) {
-    legendGroup.append("rect")
+    legendG.append("rect")
       .attr("x", tx)
       .attr("y", ty)
       .attr("width", Math.ceil(dx))
@@ -746,20 +758,20 @@ function drawColorLegend_hor(legendGroup) {
 
 /**
  * Draws the color legend in a vertical layout.
- * @param legendGroup
+ * @param legendG
  */
-function drawColorLegend(legendGroup) {
+function drawColorLegend(caseStudy, focus, legendG) {
   var margin = 20;
   var legendW = 12;
   var legendH = 100;
   var legendT = margin;
 
   var ty = legendT;
-  var alti, altn = caseStudy.strataCount;
+  var alti, altn = focus.strataCount;
   var dy = legendH / altn;
   var hue, hex;
   for (alti = altn - 1; alti >= 0; alti--) {
-    legendGroup.append("rect")
+    legendG.append("rect")
       .attr("x", margin)
       .attr("y", ty)
       .attr("width", legendW)
@@ -769,37 +781,37 @@ function drawColorLegend(legendGroup) {
   }
 
   var lineW = 7;
-  legendGroup.append("line")
+  legendG.append("line")
     .classed("scale-legend-line", true)
     .attr("x1", margin)
     .attr("y1", legendT)
     .attr("x2", margin + legendW + lineW)
     .attr("y2", legendT);
-  legendGroup.append("line")
+  legendG.append("line")
     .classed("scale-legend-line", true)
     .attr("x1", margin + legendW)
     .attr("y1", legendT + legendH / 2)
     .attr("x2", margin + legendW + lineW)
     .attr("y2", legendT + legendH / 2);
-  legendGroup.append("line")
+  legendG.append("line")
     .classed("scale-legend-line", true)
     .attr("x1", margin)
     .attr("y1", legendT + legendH)
     .attr("x2", 84)
     .attr("y2", legendT + legendH);
 
-  legendGroup.append("text")
+  legendG.append("text")
     .classed("legend-label", true)
     .attr("x", margin + legendW + lineW + 4)
     .attr("y", legendT + 4)
     .text("4000 m");
-  legendGroup.append("text")
+  legendG.append("text")
     .classed("legend-label", true)
     .attr("x", margin + legendW + lineW + 4)
     .attr("y", legendT + legendH / 2 + 4)
     .text("2000 m");
 
-  legendGroup.append("text")
+  legendG.append("text")
     .classed("legend-label", true)
     .attr("x", margin + legendW + lineW + 2)
     .attr("y", legendT + legendH - 4)
@@ -808,10 +820,10 @@ function drawColorLegend(legendGroup) {
 
 /**
  * Draws the scale legend.
- * @param legendGroup
+ * @param legendG
  * @param markers
  */
-function drawScaleLegend(legendGroup, markers) {
+function drawScaleLegend(caseStudy, legendG, markers) {
   var totalKm = markers[2];
   var radar = caseStudy.radars[0];
   var destProj = projection(util.geo.destination(radar.location, 90, totalKm));
@@ -822,7 +834,7 @@ function drawScaleLegend(legendGroup, markers) {
   var lineH = 7;
   var ty = mapH - 20 - lineH - 4;
 
-  var markerGr = legendGroup.append("g");
+  var markerGr = legendG.append("g");
   markerGr.append("text")
     .classed("legend-label", true)
     .attr("x", legendL)
@@ -842,25 +854,25 @@ function drawScaleLegend(legendGroup, markers) {
     .attr("text-anchor", "middle")
     .text(markers[2] + " km");
 
-  legendGroup.append("line")
+  legendG.append("line")
     .classed("scale-legend-line", true)
     .attr("x1", legendL)
     .attr("y1", mapH - 20)
     .attr("x2", legendR)
     .attr("y2", mapH - 20);
-  legendGroup.append("line")
+  legendG.append("line")
     .classed("scale-legend-line", true)
     .attr("x1", legendL)
     .attr("y1", mapH - 20 - lineH)
     .attr("x2", legendL)
     .attr("y2", mapH - 20);
-  legendGroup.append("line")
+  legendG.append("line")
     .classed("scale-legend-line", true)
     .attr("x1", (legendL + legendR) / 2)
     .attr("y1", mapH - 20 - lineH)
     .attr("x2", (legendL + legendR) / 2)
     .attr("y2", mapH - 20);
-  legendGroup.append("line")
+  legendG.append("line")
     .classed("scale-legend-line", true)
     .attr("x1", legendR)
     .attr("y1", mapH - 20 - lineH)
@@ -868,7 +880,7 @@ function drawScaleLegend(legendGroup, markers) {
     .attr("y2", mapH - 20);
 }
 
-function writeMetaData(clipG) {
+function writeMetaData(caseStudy, focus, clipG) {
   if (!writeMetaDataInViz) return;
 
   var mdG = clipG.append("g").attr("id", "meta-data");
@@ -876,7 +888,7 @@ function writeMetaData(clipG) {
   var lh = 12;
   var ly = mapH - 7 - 3 * lh;
   var formatString = "MMM D, YYYY - H[h]";
-  var tillMoment = moment(caseStudy.focusMoment).add(caseStudy.focusLength, "hours");
+  var tillMoment = moment(focus.from).add(caseStudy.focusLength, "hours");
 
   mdG.append("text")
     .classed("legend-label", true)
@@ -887,7 +899,7 @@ function writeMetaData(clipG) {
     .classed("legend-label", true)
     .attr("x", margin + 35)
     .attr("y", ly)
-    .text(caseStudy.focusMoment.format(formatString));
+    .text(focus.from.format(formatString));
 
   ly += lh;
   mdG.append("text")
@@ -906,6 +918,6 @@ function writeMetaData(clipG) {
     .classed("legend-label", true)
     .attr("x", margin)
     .attr("y", ly)
-    .text("Migrants per line: " + caseStudy.migrantsPerPath);
+    .text("Migrants per line: " + focus.migrantsPerPath);
 }
 

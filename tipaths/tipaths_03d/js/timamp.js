@@ -14,6 +14,120 @@ var timamp = (function () {
   var pdi_location = 4;
 
   /**
+   * The timamp data structure is constructed such that it efficiently facilitates
+   * the interpolation operations needed when constructing the paths in the timamp
+   * visualization.
+   *
+   * Terminology:
+   * - segment : The data is temporally segmented in segments of e.g. 20 minutes.
+   * - focus : A temporal section of the data currently shown in the visualisation.
+   * - strata : An altitude range.
+   *
+   * This data structure should always be complete, meaning that for each segment in the
+   * focus window, for each strata and for each radar, there should be a value, even
+   * if the original data does not fully cover the given focus window.
+   *
+   * TODO: reconsider the missing data situation
+   *
+   * The data object has the following form:
+   * {
+     *   caseStudy: {enram.caseStudy},  // the caseStudy
+     *   focus: {enram.focus},    // specifies the focus start and duration
+     *   segmentCount: {number},  // the number of segments in the focus
+     *   densities: {Array},      // matrix with dimensions: [segment, strata, radar]
+     *   uSpeeds: {Array},        // matrix with dimensions: [segment, strata, radar]
+     *   vSpeeds: {Array},        // matrix with dimensions: [segment, strata, radar]
+     *   speeds: {Array},         // matrix with dimensions: [segment, strata, radar]
+     *   avDensities: {Array},    // matrix with dimensions: [strata, radar]
+     * }
+   *
+   * @param caseStudy  {enram.caseStudy object}
+   * @param focus      {enram.focus object}
+   * @returns the data structure
+   */
+  timamp.dataObject = function (caseStudy, focus) {
+    var dataObject = {
+      caseStudy: caseStudy,
+      focus: focus,
+      segmentCount: focus.segmentCount(caseStudy),
+      densities: [],
+      uSpeeds: [],
+      vSpeeds: [],
+      speeds: [],
+      avDensities: []
+    };
+
+    /**
+     * Initializes the data structure to be filled with actual data.
+     *
+     * @return the data object
+     */
+    dataObject.initStructure = function () {
+      var segn = this.segmentCount;
+      var strn = caseStudy.strataCount;
+      var radn = caseStudy.radarCount;
+      for (var segi = 0; segi < segn; segi++) {
+        var densities = [];
+        var uSpeeds = [];
+        var vSpeeds = [];
+        var speeds = [];
+        for (var stri = 0; stri < strn; stri++) {
+          densities.push(utils.zeroArray(radn));
+          uSpeeds.push(utils.zeroArray(radn));
+          vSpeeds.push(utils.zeroArray(radn));
+          speeds.push(utils.zeroArray(radn));
+        }
+        this.densities.push(densities);
+        this.uSpeeds.push(uSpeeds);
+        this.vSpeeds.push(vSpeeds);
+        this.speeds.push(speeds);
+      }
+
+      for (stri = 0; stri < strn; stri++) {
+        this.avDensities.push(utils.zeroArray(radn));
+      }
+
+      return this;
+    };
+
+    // empty partial data structure to use in dataObject.addMissingSegments:
+    var missingSegmentData = [];
+    var strn = caseStudy.strataCount;
+    var radn = caseStudy.radarCount;
+    for (var stri = 0; stri < strn; stri++) {
+      missingSegmentData.push(utils.zeroArray(radn));
+    }
+
+    /**
+     * Prepends data entries to replace missing data for a given amount of segments.
+     * @param amount The number of segments for which to add data entries.
+     */
+    dataObject.prependMissingSegments = function (amount) {
+      for (var i = 0; i < amount; i++) {
+        this.densities.unshift(missingSegmentData);
+        this.uSpeeds.unshift(missingSegmentData);
+        this.vSpeeds.unshift(missingSegmentData);
+        this.speeds.unshift(missingSegmentData);
+      }
+    };
+
+    /**
+     * Appends data entries to replace missing data for a given amount of segments.
+     * @param amount The number of segments for which to add data entries.
+     */
+    dataObject.appendMissingSegments = function (amount) {
+      for (var i = 0; i < amount; i++) {
+        this.densities.push(missingSegmentData);
+        this.uSpeeds.push(missingSegmentData);
+        this.vSpeeds.push(missingSegmentData);
+        this.speeds.push(missingSegmentData);
+      }
+    };
+
+    return dataObject;
+  };
+
+  /**
    * The resulting path is obtained through numerical integration from the anchor point, half
    * backwards, half forwards. The integration is implemented using the 2-stage Runge–Kutta
    * algorithm, also known as the Heun method, as represented in the following scheme:
@@ -31,26 +145,26 @@ var timamp = (function () {
    *
    * Reference: Darmofal_96a (in README.md)
    *
-   * Builds pathData.
-   * @param caseStudy
+   * TODO: filter data points with speed = 0
+   *
+   * @param data {timamp.dataObject}
    * @param stri strata index
    * @param anchorLoc anchor location
    */
-  timamp.buildPathData = function (caseStudy, stri, anchorLoc) {
-
+  timamp.buildPathData = function (data, stri, anchorLoc) {
     var pathData = [];
-    var data = caseStudy.data;
-    var rlons = caseStudy.radLons;
-    var rlats = caseStudy.radLats;
-    var segn = Math.min(data.intervalCount, data.densities.length);
+    var rlons = data.caseStudy.radLons;
+    var rlats = data.caseStudy.radLats;
+    var segn = Math.min(data.segmentCount, data.densities.length);
     var idw = util.idw;
+    //console.log("rlons:", rlons, "rlats:", rlats, "segn:", segn);
 
     // This value is multiplied with uSpeed/vSpeed values, expressed in m/s, in order
     // to obtain the distance traveled during the segment interval, expressed in km.
-    // Note: caseStudy.data.interval = the duration of a segment in minutes (e.g. 20 min).
-    var tf1 = caseStudy.data.interval * 60 / 1000;
+    // Note: data.caseStudy.segmentSize = the duration of a segment in minutes (e.g. 20 min).
+    var tf1 = data.caseStudy.segmentSize * 60 / 1000;
 
-    var half = Math.floor(data.intervalCount / 2);
+    var half = Math.floor(data.segmentCount / 2);
     var segi, loc, d_u, d_v, dat, ang, dis, den;
 
     /**
@@ -135,6 +249,10 @@ var timamp = (function () {
     dat.push(den, ang, loc, d_u, d_v, dis, "anchor");
     pathData.push(dat);
 
+    //console.log("loc:", loc, "d_u:", d_u, "d_v:", d_v);
+    //console.log("den:", den, "ang:", ang, "dis:", dis, "dat:", dat);
+    //console.log("1:", pathData);
+
     // tail half, backwards from middle to first segment
     for (segi = half; segi > 0; segi--) {
       dat = stepBackward(loc, segi, stri);
@@ -142,9 +260,11 @@ var timamp = (function () {
       loc = dat[pdi_location];
     }
 
+    //console.log("2:", pathData);
+
     // front half, forwards from middle to last segment:
     loc = anchorLoc;
-    for (segi = half; segi < segn - 0; segi++) {
+    for (segi = half; segi < segn; segi++) {
       try {
         dat = stepForward(loc, segi, stri);
       } catch (error) {
@@ -155,6 +275,8 @@ var timamp = (function () {
       pathData.push(dat);
       loc = dat[pdi_location];
     }
+
+    //console.log(pathData);
 
     // trim - remove data points with zero speed from the beginning and the end of the data:
     while (pathData.length > 0 && pathData[0][pdi_angle] == 0) {

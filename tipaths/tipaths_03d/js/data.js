@@ -5,63 +5,6 @@
 "use strict";
 
 // -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-
-/**
- * Initializes and returns an empty data object.
- * This data object contains the following properties:
- * - focusMoment: The start time of the series of windows as a moment object
- * - interval: The duration of a window in minutes.
- * - intervalCount: The number of interval
- * - densities: Empty data matrix with dimensions: [segments, strata, radars].
- * - uSpeeds: Empty data matrix with dimensions: [segments, strata, radars].
- * - vSpeeds: Empty data matrix with dimensions: [segments, strata, radars].
- * - speeds: Empty data matrix with dimensions: [segments, strata, radars].
- * - avDensities: Empty data matrix with dimensions: [strata, radars].
- */
-function initDataObject(caseStudy, basic) {
-  var data = {
-    focusMoment: moment.utc(caseStudy.focusMoment),
-    interval : caseStudy.segmentInterval,  // the duration of one segment in minutes:
-    intervalCount: caseStudy.focusLength * 60 / caseStudy.segmentInterval,
-    densities: [],
-    uSpeeds: [],
-    vSpeeds: [],
-    speeds: [],
-    avDensities: []
-  };
-
-  if (basic) { return data; }
-
-  // Prepare the data structure which is constructed such that it efficiently facilitates
-  // the interpolation operations needed when constructing the paths.
-
-  // add one in the following to allow for the 2-stage Runge–Kutta interpolation:
-  var segn = data.intervalCount + 1;
-  var strn = caseStudy.strataCount;
-  var radn = caseStudy.radarCount;
-  for (var segi = 0; segi < segn; segi++) {
-    var densities = [];
-    var uSpeeds = [];
-    var vSpeeds = [];
-    var speeds = [];
-    for (var stri = 0; stri < strn; stri++) {
-      densities.push(util.zeroArray(radn));
-      uSpeeds.push(util.zeroArray(radn));
-      vSpeeds.push(util.zeroArray(radn));
-      speeds.push(util.zeroArray(radn));
-    }
-    data.densities.push(densities);
-    data.uSpeeds.push(uSpeeds);
-    data.vSpeeds.push(vSpeeds);
-    data.speeds.push(speeds);
-  }
-
-  return data;
-}
-
-// -----------------------------------------------------------------------------
 // Database-based DataService
 // -----------------------------------------------------------------------------
 
@@ -113,8 +56,6 @@ function DBDataServiceInitializer(caseStudy) {
     });
   };
 
-  // -----------------------------------------------------------------------------
-
   /**
    * Loads data for a range of altitudes, over a series of windows, for each
    * radar-window-altitude combination averaging the bird_density, the u_speed and
@@ -123,17 +64,16 @@ function DBDataServiceInitializer(caseStudy) {
    *
    * @param {function(Object)} handler   The handler function.
    */
-  dataService.loadData = function (handler) {
-    var data = initDataObject(caseStudy);
-    console.log("Loading from " + data.focusMoment + " for " + data.intervalCount +
-      " windows of " + data.interval + " minutes each.");
-    var tillMoment = moment.utc(data.focusMoment);
-    tillMoment.add(data.interval * data.intervalCount, 'minutes');
+  dataService.loadFocusData = function (focus, handler) {
+    var data = timamp.dataObject(caseStudy, focus);
+
+    console.log("Loading from " + focus.from + " for " + data.segmentCount +
+      " windows of " + data.caseStudy.segmentSize + " minutes each.");
     var sql = this.formatTemplate(this._queryTemplate,
       {
-        from: data.focusMoment.toISOString(),
-        till: tillMoment.toISOString(),
-        interval: data.interval * 60,  // interval as seconds,
+        from: focus.from.toISOString(),
+        till: focus.till.toISOString(),
+        interval: data.caseStudy.segmentSize * 60,  // interval as seconds,
         strataSize: caseStudy.maxAltitude / 1000 / caseStudy.strataCount, // in km
         minAlt: caseStudy.minAltitude / 1000,
         maxAlt: caseStudy.maxAltitude / 1000
@@ -143,12 +83,12 @@ function DBDataServiceInitializer(caseStudy) {
 
     d3.json(caseStudy.queryBaseUrl + sql, function (error, json) {
       if (error) {
-        throw new Error("Error in dataService.cartoDB.loadData. "
+        throw new Error("Error in dataService.loadFocusData. "
           + JSON.parse(error.responseText).error.join("; "));
       }
       else {
         //console.log(JSON.stringify(json));
-        dataService._processData(json, data, caseStudy);
+        dataService._processData(json, data);
         handler(data);
       }
     });
@@ -164,12 +104,13 @@ function DBDataServiceInitializer(caseStudy) {
    * @param {Object} data      The data object in which to organise the data.
    * @param {Object} caseStudy The case study meta-data.
    */
-  dataService._processData = function (json, data, caseStudy) {
+  dataService._processData = function (json, data) {
     //console.log(JSON.stringify(json));
+    var caseStudy = data.caseStudy;
     var rown = json.total_rows;
     var strn = caseStudy.strataCount;
     var radn = caseStudy.radarCount;
-    var segn = data.intervalCount;
+    var segn = data.segmentCount;
     var rowi, row, stri, radi, dsum, avds;
 
     // Add the data in the data structure:

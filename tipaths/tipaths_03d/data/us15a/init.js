@@ -34,10 +34,10 @@ function dataServiceInitializer(caseStudy) {
    * - avDensities: data matrix with dimensions: [strata, radars].
    */
   dataService.checkData = function (data) {
-    var startTime = caseStudy.minMoment.valueOf();
-    var endTime = caseStudy.maxMoment.valueOf();
+    var startTime = caseStudy.dataFrom.valueOf();
+    var endTime = caseStudy.dataTill.valueOf();
     var dt = endTime - startTime;
-    var itervalSec = caseStudy.segmentInterval * 60 * 1000;
+    var itervalSec = caseStudy.segmentSize * 60 * 1000;
     var segn = Math.floor(dt / itervalSec);
     var strn = Math.max.apply(null, caseStudy.strataCounts);
     var radn = caseStudy.radarCount;
@@ -88,16 +88,17 @@ function dataServiceInitializer(caseStudy) {
     }
   };
 
-  dataService.loadData = function (handler) {
-    //console.log(">> dataService.loadData()");
-    var data = initDataObject(caseStudy, true);
-    var startTime = caseStudy.minMoment.valueOf();
-    var dt = data.focusMoment.valueOf() - startTime;
-    var intervalSec = caseStudy.segmentInterval * 60 * 1000;
+  dataService.loadFocusData = function (focus, handler) {
+    //console.log(">> dataService.loadFocusData()");
+    var data = timamp.dataObject(caseStudy, focus);
+
+    var startTime = caseStudy.dataFrom.valueOf();
+    var dt = focus.from.valueOf() - startTime;
+    var intervalSec = caseStudy.segmentSize * 60 * 1000;
     var iFrom = Math.floor(dt / intervalSec);
     // add one in the following to allow for the 2-stage Runge–Kutta interpolation
-    var iTill = iFrom + data.intervalCount + 1;
-    //console.log(firstIntervalIdx, caseStudy.minMoment.toDate(), data.focusMoment.toDate());
+    var iTill = iFrom + data.segmentCount + 1;
+    //console.log(firstIntervalIdx, caseStudy.dataFrom.toDate(), focus.from.toDate());
 
     data.densities = this.data.densities.slice(iFrom, iTill);
     data.uSpeeds = this.data.uSpeeds.slice(iFrom, iTill);
@@ -106,9 +107,9 @@ function dataServiceInitializer(caseStudy) {
     data.avDensities = this.data.avDensities;
 
     // Make sure that the data structure is complete:
-    if (data.densities.length < data.intervalCount + 1) {
+    if (data.densities.length < data.segmentCount + 1) {
       //console.log(data.densities.length);
-      var segn = data.intervalCount + 1;
+      var segn = data.segmentCount + 1;
       var strn = caseStudy.strataCount;
       var radn = caseStudy.radarCount;
       for (var segi = data.densities.length; segi < segn; segi++) {
