@@ -12,6 +12,7 @@ var timamp = (function () {
   var pdi_density = 2;
   var pdi_angle = 3;
   var pdi_location = 4;
+  var pdi_distance = 5;
 
   /**
    * The timamp data structure is constructed such that it efficiently facilitates
@@ -26,8 +27,6 @@ var timamp = (function () {
    * This data structure should always be complete, meaning that for each segment in the
    * focus window, for each strata and for each radar, there should be a value, even
    * if the original data does not fully cover the given focus window.
-   *
-   * TODO: reconsider the missing data situation
    *
    * The data object has the following form:
    * {
@@ -59,12 +58,11 @@ var timamp = (function () {
 
     /**
      * Initializes the data structure to be filled with actual data.
-     *
      * @return the data object
      */
     dataObject.initStructure = function () {
       var segn = this.segmentCount;
-      var strn = caseStudy.strataCount;
+      var strn = focus.strataCount;
       var radn = caseStudy.radarCount;
       for (var segi = 0; segi < segn; segi++) {
         var densities = [];
@@ -93,7 +91,7 @@ var timamp = (function () {
     // empty partial data structure to use in dataObject.addMissingSegments:
     var missingSegmentData = [];
     for (var stri = 0; stri < focus.strataCount; stri++) {
-      missingSegmentData.push(util.zeroArray(caseStudy.radarCount));
+      missingSegmentData.push(utils.zeroArray(caseStudy.radarCount));
     }
 
     /**
@@ -143,8 +141,6 @@ var timamp = (function () {
    *
    * Reference: Darmofal_96a (in README.md)
    *
-   * TODO: filter data points with speed = 0
-   *
    * @param data {timamp.dataObject}
    * @param stri strata index
    * @param anchorLoc anchor location
@@ -153,17 +149,12 @@ var timamp = (function () {
     var pathData = [];
     var rlons = data.caseStudy.radLons;
     var rlats = data.caseStudy.radLats;
-    var segn = Math.min(data.segmentCount, data.densities.length);
-    var idw = util.idw;
-    //console.log("rlons:", rlons, "rlats:", rlats, "segn:", segn);
+    var idw = utils.idw;
 
     // This value is multiplied with uSpeed/vSpeed values, expressed in m/s, in order
     // to obtain the distance traveled during the segment interval, expressed in km.
     // Note: data.caseStudy.segmentSize = the duration of a segment in minutes (e.g. 20 min).
     var tf1 = data.caseStudy.segmentSize * 60 / 1000;
-
-    var half = Math.floor(data.segmentCount / 2);
-    var segi, loc, d_u, d_v, dat, ang, dis, den;
 
     /**
      * @param p_0 source position (in lat/lon)
@@ -173,19 +164,19 @@ var timamp = (function () {
     function stepBackward(p_0, t_i, s_i) {
       var a_u = -idw(p_0[0], p_0[1], data.uSpeeds[t_i][s_i], rlons, rlats, 2) * tf1;
       var a_v = -idw(p_0[0], p_0[1], data.vSpeeds[t_i][s_i], rlons, rlats, 2) * tf1;
-      var a_d = util.vectorLength(a_u, a_v);  // distance a
+      var a_d = utils.vectorLength(a_u, a_v);  // distance a
       var a_a = Math.atan2(a_u, a_v);         // angle a
-      var a_l = util.geo.destinationRad(p_0, a_a, a_d);  // location p_0 + a
+      var a_l = utils.geo.destinationRad(p_0, a_a, a_d);  // location p_0 + a
       var b_u = -idw(a_l[0], a_l[1], data.uSpeeds[t_i - 1][s_i], rlons, rlats, 2) * tf1;
       var b_v = -idw(a_l[0], a_l[1], data.vSpeeds[t_i - 1][s_i], rlons, rlats, 2) * tf1;
-      var f_u = (a_u + b_u) / 2;              // final u
-      var f_v = (a_v + b_v) / 2;              // final v
-      var f_d = util.vectorLength(f_u, f_v);  // final distance
+      var f_u = (a_u + b_u) / 2;              // final u_distance
+      var f_v = (a_v + b_v) / 2;              // final v_distance
+      var f_d = utils.vectorLength(f_u, f_v);  // final distance
       var f_a = Math.atan2(f_u, f_v);         // final angle
-      var f_l = util.geo.destinationRad(p_0, f_a, f_d);  // final position p_0 + 1/2(a + b)
+      var f_l = utils.geo.destinationRad(p_0, f_a, f_d);  // final position p_0 + 1/2(a + b)
       var den = idw(f_l[0], f_l[1], data.densities[t_i - 1][s_i], rlons, rlats, 2);
       var dat = projection(f_l);  // projection of the location in pixel-space
-      dat.push(den, f_a + Math.PI, f_l, -f_u, -f_v, f_d, t_i - 1);
+      dat.push(den, f_a + Math.PI, f_l, f_d, -f_u, -f_v, t_i - 1);
       return dat;
     }
 
@@ -193,9 +184,9 @@ var timamp = (function () {
       var a_u, a_v, a_d, a_a, a_l, f_u, f_v, f_d, f_a, f_l, den, dat;
       a_u = idw(p_0[0], p_0[1], data.uSpeeds[t_i][s_i], rlons, rlats, 2) * tf1;
       a_v = idw(p_0[0], p_0[1], data.vSpeeds[t_i][s_i], rlons, rlats, 2) * tf1;
-      a_d = util.vectorLength(a_u, a_v);  // distance a
+      a_d = utils.vectorLength(a_u, a_v);  // distance a
       a_a = Math.atan2(a_u, a_v);         // angle a
-      a_l = util.geo.destinationRad(p_0, a_a, a_d);  // location p_0 + a
+      a_l = utils.geo.destinationRad(p_0, a_a, a_d);  // location p_0 + a
       if (t_i + 1 >= data.densities.length) {
         f_u = a_u;
         f_v = a_v;
@@ -217,17 +208,25 @@ var timamp = (function () {
           console.error("- data.uSpeeds[t_i + 1]:", data.uSpeeds[t_i + 1]);
           throw error;
         }
-        f_u = (a_u + b_u) / 2;              // final u
-        f_v = (a_v + b_v) / 2;              // final v
-        f_d = util.vectorLength(f_u, f_v);  // final distance
+        f_u = (a_u + b_u) / 2;              // final u_distance
+        f_v = (a_v + b_v) / 2;              // final v_distance
+        f_d = utils.vectorLength(f_u, f_v);  // final distance
         f_a = Math.atan2(f_u, f_v);         // final angle
-        f_l = util.geo.destinationRad(p_0, f_a, f_d);  // final position p_0 + 1/2(a + b)
+        f_l = utils.geo.destinationRad(p_0, f_a, f_d);  // final position p_0 + 1/2(a + b)
         den = idw(f_l[0], f_l[1], data.densities[t_i + 1][s_i], rlons, rlats, 2);
       }
       dat = projection(f_l);  // projection of the location in pixel-space
-      dat.push(den, f_a, f_l, f_u, f_v, f_d, t_i + 1);
+      dat.push(den, f_a, f_l, f_d, f_u, f_v, t_i + 1);
       return dat;
     }
+
+    // filter out
+
+    var segn = Math.min(data.segmentCount, data.densities.length);
+    var half = Math.floor(data.segmentCount / 2);
+    var loc, d_u, d_v, dat, ang, dis, den;
+    //console.log("rlons:", rlons, "rlats:", rlats, "segn:", segn);
+
 
     // middle point on anchor position:
     loc = anchorLoc;       // the current location, initially the location of the path's anchor
@@ -244,7 +243,7 @@ var timamp = (function () {
     d_v = idw(loc[0], loc[1], data.vSpeeds[half][stri], rlons, rlats, 2) * tf1;  // interpolated v-speed
     den = idw(loc[0], loc[1], data.densities[half][stri], rlons, rlats, 2);      // interpolated density
     ang = Math.atan2(d_u, d_v);         // angle
-    dis = util.vectorLength(d_u, d_v);  // distance
+    dis = utils.vectorLength(d_u, d_v);  // distance
     dat.push(den, ang, loc, d_u, d_v, dis, "anchor");
     pathData.push(dat);
 
@@ -279,16 +278,21 @@ var timamp = (function () {
       loc = dat[pdi_location];
     }
 
-    // trim - remove data points with zero speed from the beginning and the end of the data:
-    while (pathData.length > 0 && pathData[0][pdi_angle] == 0) {
-      pathData.shift();
-    }
-    while (pathData.length > 0 && pathData[pathData.length - 1][pdi_angle] == 0) {
-      pathData.pop();
+    // remove all data points with speed = 0:
+    var len = pathData.length;
+    var i = 0;
+    while (i < len) {
+      if (pathData[i][pdi_distance] == 0) {
+        pathData.splice(i, 1);
+        len--;
+      }
+      else {
+        i++;
+      }
     }
 
     // minimize angle delta between subsequent angles:
-    util.minimizeAngleDelta(pathData.length,
+    utils.minimizeAngleDelta(pathData.length,
       function (idx) { return pathData[idx][pdi_angle]; },
       function (idx, val) { pathData[idx][pdi_angle] = val; }
     );
@@ -324,10 +328,8 @@ var timamp = (function () {
 
   /**
    * Generates the outline of a path whose variable width reflects the dynamic densities.
-   *
    * @param pathData
    * @param radiusFactor
-   *
    * @returns {Array} [[<x>, <y>], ...]
    */
   timamp.buildOutline = function (pathData, radiusFactor) {
@@ -370,7 +372,6 @@ var timamp = (function () {
 
     return lineData;
   };
-
 
   return timamp;
 

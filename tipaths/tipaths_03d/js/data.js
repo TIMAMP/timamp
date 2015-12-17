@@ -10,7 +10,6 @@
 
 function DBDataService() {
   var dataService = {};
-  var queryTemplateUrl = caseStudy.urlBase + "template.sql";
 
   /**
    * Initializes the dataService.
@@ -18,6 +17,7 @@ function DBDataService() {
    * @param handler {function}
    */
   dataService.initialize = function(caseStudy, handler) {
+    var queryTemplateUrl = caseStudy.urlBase + "template.sql";
     dataService.loadQueryTemplate(queryTemplateUrl, handler);
   };
 
@@ -70,16 +70,16 @@ function DBDataService() {
    * @param handler   {function(dataObject)} called when the data is loaded
    */
   dataService.loadFocusData = function (caseStudy, focus, handler) {
-    var data = timamp.dataObject(caseStudy, focus);
+    var data = timamp.dataObject(caseStudy, focus).initStructure();
 
     console.log("Loading from " + focus.from + " for " + data.segmentCount +
-      " windows of " + data.caseStudy.segmentSize + " minutes each.");
+      " segments of " + data.caseStudy.segmentSize + " minutes each.");
     var sql = this.formatTemplate(this._queryTemplate,
       {
         from: focus.from.toISOString(),
         till: focus.till.toISOString(),
-        interval: data.caseStudy.segmentSize * 60,  // interval as seconds,
-        strataSize: caseStudy.maxAltitude / 1000 / caseStudy.strataCount, // in km
+        interval: caseStudy.segmentSize * 60,  // segment size in seconds,
+        strataSize: caseStudy.maxAltitude / 1000 / focus.strataCount, // in km
         minAlt: caseStudy.minAltitude / 1000,
         maxAlt: caseStudy.maxAltitude / 1000
       }
@@ -105,16 +105,14 @@ function DBDataService() {
    * which the data is stored in the third dimension of the teh densities,
    * uSpeeds, vSpeeds and speeds matrices in the data object.
    *
-   * @param {Object} json      The JSON-object with the loaded data.
-   * @param {Object} data      The data object in which to organise the data.
-   * @param {Object} caseStudy The case study meta-data.
+   * @param json {jsonObject} The JSON-object with the loaded data.
+   * @param data {dataObject} The data object in which to organise the data.
    */
   dataService._processData = function (json, data) {
     //console.log(JSON.stringify(json));
-    var caseStudy = data.caseStudy;
     var rown = json.total_rows;
-    var strn = caseStudy.strataCount;
-    var radn = caseStudy.radarCount;
+    var strn = data.focus.strataCount;
+    var radn = data.caseStudy.radarCount;
     var segn = data.segmentCount;
     var rowi, row, stri, radi, dsum, avds;
 
@@ -123,15 +121,25 @@ function DBDataService() {
       row = json.rows[rowi];
       var segi = row.interval_idx;
       stri = row.altitude_idx;
-      radi = caseStudy.radarIndices[row.radar_id];
-      data.densities[segi][stri][radi] = row.avg_bird_density;
-      data.uSpeeds[segi][stri][radi] = row.avg_u_speed;
-      data.vSpeeds[segi][stri][radi] = row.avg_v_speed;
-      data.speeds[segi][stri][radi] = row.avg_speed;
+      radi = data.caseStudy.radarIndices[row.radar_id];
+      try {
+        data.densities[segi][stri][radi] = row.avg_bird_density;
+        data.uSpeeds[segi][stri][radi] = row.avg_u_speed;
+        data.vSpeeds[segi][stri][radi] = row.avg_v_speed;
+        data.speeds[segi][stri][radi] = row.avg_speed;
+      }
+      catch (error) {
+        console.log("rowi:", rowi, ", segi:", segi, ", stri:", stri, ", radi:", radi);
+        console.log("data.densities[segi]:", data.densities[segi]);
+        console.log("data.densities[segi][stri]:", data.densities[segi][stri]);
+        console.log("data.densities[segi][stri][radi]:", data.densities[segi][stri][radi]);
+        throw error;
+      }
     }
 
     // The strata height in km:
-    var strataHeight = caseStudy.maxAltitude / caseStudy.strataCount / 1000;
+    var strataHeight = (data.caseStudy.maxAltitude - data.caseStudy.minAltitude)
+      / data.focus.strataCount / 1000;
 
     // Calculate average densities per radar-altitude combination during the
     // complete window, integrated over the strata height. These numbers thus
@@ -146,7 +154,7 @@ function DBDataService() {
         }
         avds[radi] = dsum / segn * strataHeight;
       }
-      data.avDensities.push(avds);
+      data.avDensities[stri] = avds;
     }
   };
 

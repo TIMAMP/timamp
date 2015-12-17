@@ -5,7 +5,7 @@
   "defaultFocusFrom": { "year": 2010, "month": 8, "date": 11, "hour": 0, "minute": 0 },
   "altitudes": 40,
   "minAltitude": 200,
-  "maxAltitude": 4000,
+  "maxAltitude": 3000,
   "strataCounts": [1, 2],
   "migrantsPerPath": 100000,
   "strataCount": 2,

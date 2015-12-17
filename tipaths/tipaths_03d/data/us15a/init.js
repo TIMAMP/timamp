@@ -153,6 +153,9 @@ var us15a = function () {
       data.vSpeeds = sourceData.vSpeeds.slice(iFrom, iTill);
       data.speeds = sourceData.speeds.slice(iFrom, iTill);
 
+      // The strata height in km:
+      var strataHeight = caseStudy.maxAltitude / focus.strataCount / 1000;
+
       // Calculate average densities per radar-altitude combination, integrated
       // over the strata height. These numbers thus represent the number of birds
       // per square km in a given strata. The average density is calculated over
@@ -161,7 +164,7 @@ var us15a = function () {
       var strn = focus.strataCount;
       var radn = caseStudy.radarCount;
       var segn = data.densities.length;
-      var strataHeight = 1.4; // TODO: calculate this dynamically
+      var stri, radi, segi;
       for (stri = 0; stri < strn; stri++) {
         var avds = [];
         for (radi = 0; radi < radn; radi++) {
@@ -175,12 +178,12 @@ var us15a = function () {
             }
           }
           if (cnt == 0) {
-            avds[radi] = 0;
+            avds.push(0);
           } else {
             if (sum == 0) {
               console.error("avDensity is zero for stri " + stri + " and radi " + radi);
             }
-            avds[radi] = sum / cnt * strataHeight;
+            avds.push(sum / cnt * strataHeight);
           }
         }
         data.avDensities.push(avds);

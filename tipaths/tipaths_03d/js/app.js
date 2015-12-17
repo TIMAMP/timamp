@@ -266,7 +266,7 @@ function initDone() {
 
   // configure the duration input widget:
   d3.select("#input-length")
-    .property('value', caseStudy.focusLength)
+    .property('value', focus.duration)
     .on('change', durationUpdateHandler);
 
   // configure the strata-count input widget:
@@ -274,8 +274,8 @@ function initDone() {
     .selectAll('option')
     .data(caseStudy.strataCounts)
     .enter().append("option")
-    .property('value', util.id)
-    .text(util.id);
+    .property('value', utils.id)
+    .text(utils.id);
   d3.select("#input-strata")
     .property('value', focus.strataCount)
     .on('change', strataCountUpdateHandler);
@@ -346,13 +346,13 @@ function updateColors(caseStudy, focus) {
   if (altn == 1) {
     hue = (altiHueMin + altiHueMax) / 2;
     caseStudy.hues.push(hue);
-    caseStudy.altHexColors.push(util.hsvToHex(hue, altiSaturation, altiBrightness));
+    caseStudy.altHexColors.push(utils.hsvToHex(hue, altiSaturation, altiBrightness));
   }
   else {
     for (var alti = 0; alti < altn; alti++) {
-      hue = util.mapRange(alti, 0, altn - 1, altiHueMin, altiHueMax);
+      hue = utils.mapRange(alti, 0, altn - 1, altiHueMin, altiHueMax);
       caseStudy.hues.push(hue);
-      caseStudy.altHexColors.push(util.hsvToHex(hue, altiSaturation, altiBrightness));
+      caseStudy.altHexColors.push(utils.hsvToHex(hue, altiSaturation, altiBrightness));
     }
   }
 }
@@ -397,6 +397,7 @@ function updateVisualisation(caseStudy, focus, dataDirty, mapDirty) {
     // A clone of the focus is passed to the loader. This focus will be set
     // as focus property on the resulting data object.
     caseStudy.loadFocusData(focus.clone(), function (data) {
+      //console.log(data);
       currentData = data;
       drawPaths(data, pathsG);
     });
@@ -442,16 +443,16 @@ function updateMapData() {
 function initAnchors() {
   var locTopLeft = projection.invert([0, 0]);  // the location at the top-left corner
   var locBotRight = projection.invert([mapW, mapH]);  // the loc. at the bottom-right
-  var rra = util.geo.distAngle(radarAnchorRadius);  // radar radius as angle
-  var dlon = util.geo.destination(caseStudy.mapCenter, 90, caseStudy.anchorInterval)[0]
+  var rra = utils.geo.distAngle(radarAnchorRadius);  // radar radius as angle
+  var dlon = utils.geo.destination(caseStudy.mapCenter, 90, caseStudy.anchorInterval)[0]
     - caseStudy.mapCenter[0];  // longitude delta
-  var dlat = util.geo.destination(caseStudy.mapCenter, 0, caseStudy.anchorInterval)[1]
+  var dlat = utils.geo.destination(caseStudy.mapCenter, 0, caseStudy.anchorInterval)[1]
     - caseStudy.mapCenter[1];  // latitude delta
   anchorLocations = [];
   for (var lon = locTopLeft[0]; lon < locBotRight[0]; lon += dlon) {
     for (var lat = locTopLeft[1]; lat > locBotRight[1]; lat -= dlat) {
       caseStudy.radars.forEach(function (radar) {
-        if (util.degrees(d3.geo.distance(radar.location, [lon, lat])) <= rra) {
+        if (utils.degrees(d3.geo.distance(radar.location, [lon, lat])) <= rra) {
           anchorLocations.push([lon, lat]);
         }
       });
@@ -487,7 +488,7 @@ function drawMap(mapG) {
     .attr("d", projectionPath);
 
   // draw radars:
-  var rra = util.geo.distAngle(radarAnchorRadius); // radar radius as angle:
+  var rra = utils.geo.distAngle(radarAnchorRadius); // radar radius as angle:
   var radarG = mapG.append("g").attr("id", "radars");
   if (showRadarLabels) {
     var radarLabelsG = mapG.append("g").attr("id", "radar-labels");
@@ -516,8 +517,8 @@ function drawMap(mapG) {
     // Draw series points around radar at the marker radius:
     //var n = 36;
     //for (var i = 0; i < n; i++) {
-    //  var bearing = util.mapRange(i, 0, n, 0, 360);
-    //  var dest = util.geo.destination(radar.location, bearing, radarAnchorRadius);
+    //  var bearing = utils.mapRange(i, 0, n, 0, 360);
+    //  var dest = utils.geo.destination(radar.location, bearing, radarAnchorRadius);
     //  radarG.append("path")
     //    .datum(d3.geo.circle().origin(dest).angle(.01))
     //    .attr("d", projectionPath)
@@ -539,13 +540,13 @@ function drawPaths(data, pathsG) {
 }
 
 // Debug
-var debugAnchorId = 540;
-function anchorId(anchorLoc) {
-  return anchorLocations.indexOf(anchorLoc);
-}
-function isDebug(anchorLoc) {
-  return anchorLoc == anchorLocations[debugAnchorId];
-}
+//var debugAnchorId = 540;
+//function anchorId(anchorLoc) {
+//  return anchorLocations.indexOf(anchorLoc);
+//}
+//function isDebug(anchorLoc) {
+//  return anchorLoc == anchorLocations[debugAnchorId];
+//}
 
 /**
  * @param data {timamp.dataObject}
@@ -556,7 +557,7 @@ function drawPaths_multiPath(data, pathsG) {
   Math.seedrandom('ENRAM');
   var rlons = data.caseStudy.radLons;
   var rlats = data.caseStudy.radLats;
-  var idw = util.idw;
+  var idw = utils.idw;
   var strn = data.focus.strataCount;
   var radiusFactor = 0.05;
   var probf = anchorArea / data.focus.migrantsPerPath;
@@ -583,7 +584,7 @@ function drawPaths_multiPath(data, pathsG) {
       // Only continue for a subset of anchor locations, selected by a probability based
       // on the average density:
       if (Math.random() < density * probf) {
-        console.log("- active anchorId(anchorLoc): " + anchorId(anchorLoc));
+        //console.log("- active anchorId(anchorLoc): " + anchorId(anchorLoc));
 
         var pathData = timamp.buildPathData(data, stri, anchorLoc);
         if (pathData.length == 0) {
@@ -596,10 +597,10 @@ function drawPaths_multiPath(data, pathsG) {
         drawPath_variableThickness(flowG, pathData, lineData, stri, radiusFactor);
 
         // DEBUG:
-        if (isDebug(anchorLoc)) {
-          console.log(pathData);
-          flowG.select("path").style("fill", "#f00");
-        }
+        //if (isDebug(anchorLoc)) {
+        //  console.log(pathData);
+        //  flowG.select("path").style("fill", "#f00");
+        //}
       }
     });
   }
@@ -611,7 +612,7 @@ function drawPaths_singlePath(data, pathsG) {
   var radiusFactor = 0.05;
   for (var stri = 0; stri < strn; stri++) {
     data.caseStudy.radars.forEach(function (radar, radi) {
-      var oy = util.mapRange(stri, 0, strn - 1, tdy / 2, -tdy / 2);
+      var oy = utils.mapRange(stri, 0, strn - 1, tdy / 2, -tdy / 2);
       // draw anchor marks:
       pathsG.append('circle')
         .attr('cx', radar.projection[0])
@@ -646,8 +647,8 @@ function buildPathData_singlePath(data, stri, radi, anchorLoc) {
     dlon = data.uSpeeds[segi][stri][radi] * tf1;
     dlat = data.vSpeeds[segi][stri][radi] * tf1;
     angl = Math.atan2(-dlon, -dlat);
-    dist = util.vectorLength(dlon, dlat);
-    loc = util.geo.destinationRad(loc, angl, dist);
+    dist = utils.vectorLength(dlon, dlat);
+    loc = utils.geo.destinationRad(loc, angl, dist);
     dens = data.densities[segi][stri][radi];
     pp = projection(loc);
     pp.push(dens, angl + Math.PI);
@@ -665,8 +666,8 @@ function buildPathData_singlePath(data, stri, radi, anchorLoc) {
     angl = Math.atan2(dlon, dlat);
     pp.push(dens, angl);
     pathData.push(pp);
-    dist = util.vectorLength(dlon, dlat);
-    loc = util.geo.destinationRad(loc, angl, dist);
+    dist = utils.vectorLength(dlon, dlat);
+    loc = utils.geo.destinationRad(loc, angl, dist);
   }
 
   pp = projection(loc);
@@ -688,7 +689,7 @@ function drawPath_fixedThickness(data, pathG, pathData, stri) {
     var node1 = pathData[segi];
     var node2 = pathData[segi + 1];
     var dens = (node1[2] + node2[2]) / 2;
-    var lwidth = util.mapRange(dens, 0, 100, 0, 10);
+    var lwidth = utils.mapRange(dens, 0, 100, 0, 10);
     //console.log(node1, node2, dens, lwidth, lcolor);
     pathG.append("line")
       .attr("x1", node1[0]).attr("y1", node1[1])
@@ -722,8 +723,8 @@ function drawPath_variableThickness(flowG, pathData, lineData, stri, radiusFacto
     opacity = .5;
   }
   else {
-    radius = Math.max(1.5, pathData[segn][2] * radiusFactor + .5);
-    opacity = .5;
+    radius = utils.constrain(pathData[segn][2] * radiusFactor + .5, 1.5, 3);
+    opacity = 1;
   }
   flowG.append('circle')
     .attr('cx', pathData[segn][0])
@@ -871,7 +872,7 @@ function drawColorLegend(caseStudy, focus, legendG) {
 function drawScaleLegend(caseStudy, legendG, markers) {
   var totalKm = markers[2];
   var radar = caseStudy.radars[0];
-  var destProj = projection(util.geo.destination(radar.location, 90, totalKm));
+  var destProj = projection(utils.geo.destination(radar.location, 90, totalKm));
   var legendW = destProj[0] - projection(radar.location)[0];
   var marginR = 45;
   var legendL = mapW - marginR - legendW;
@@ -938,7 +939,7 @@ function writeMetaData(caseStudy, focus, clipG) {
   var lh = 12;
   var ly = mapH - 7 - 3 * lh;
   var formatString = "H[h], MMM D, YYYY";
-  var tillMoment = moment(focus.from).add(caseStudy.focusLength, "hours");
+  var tillMoment = moment(focus.from).add(focus.duration, "hours");
 
   mdG.append("text")
     .classed("legend-label", true)

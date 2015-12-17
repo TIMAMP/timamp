@@ -1,25 +1,25 @@
 
-var util = (function () {
+var utils = (function () {
 
   "use strict";
 
-  var util = {};
+  var utils = {};
 
   /**
    * Identity function, simply returns the first argument.
    * @param {*} d
    * @returns {*}
    */
-  util.id = function (d) { return d; }
+  utils.id = function (d) { return d; }
 
   // #############################################################################
   // Geometric functions
   // -----------------------------------------------------------------------------
 
-  util.geo = {};
+  utils.geo = {};
 
   /** @const */
-  util.geo._GEO_DIST_FACTOR = 360 / (6371 * 2 * Math.PI);
+  utils.geo._GEO_DIST_FACTOR = 360 / (6371 * 2 * Math.PI);
 
   /**
    * Returns the angle (in degrees) corresponding with the given displacement in km.
@@ -30,8 +30,8 @@ var util = (function () {
    * @param {Number} dist The distance in km.
    * @returns {number}
    */
-  util.geo.distAngle = function (dist) {
-    return dist * util.geo._GEO_DIST_FACTOR;
+  utils.geo.distAngle = function (dist) {
+    return dist * utils.geo._GEO_DIST_FACTOR;
   };
 
   /**
@@ -42,18 +42,18 @@ var util = (function () {
    * @param  {number}        distance in km
    * @return {Array<number>} a [lon, lat] coordinate in degrees
    */
-  util.geo.destination = function (start, bearing, distance) {
+  utils.geo.destination = function (start, bearing, distance) {
     var dR = distance / 6371;  // angular distance = distance / earth’s radius
-    var lat1 = util.radians(start[1]);
-    var lon1 = util.radians(start[0]);
-    bearing = util.radians(bearing);
+    var lat1 = utils.radians(start[1]);
+    var lon1 = utils.radians(start[0]);
+    bearing = utils.radians(bearing);
     var lat2 = Math.asin(Math.sin(lat1) * Math.cos(dR) +
       Math.cos(lat1) * Math.sin(dR) * Math.cos(bearing));
     var lon2 = lon1 + Math.atan2(Math.sin(bearing) * Math.sin(dR) * Math.cos(lat1),
         Math.cos(dR) - Math.sin(lat1) * Math.sin(lat2));
     lon2 = (lon2 + 3 * Math.PI) % (2 * Math.PI) - Math.PI; // normalise to -180..+180°
     //console.log(start, [Math.degrees(lon2), Math.degrees(lat2)]);
-    return [util.degrees(lon2), util.degrees(lat2)];
+    return [utils.degrees(lon2), utils.degrees(lat2)];
   };
 
   /**
@@ -64,32 +64,32 @@ var util = (function () {
    * @param  {number}        distance in km
    * @return {Array<number>} a [lon, lat] coordinate in degrees
    */
-  util.geo.destinationRad = function (start, bearing, distance) {
+  utils.geo.destinationRad = function (start, bearing, distance) {
     var dR = distance / 6371;  // angular distance = distance / earth’s radius
-    var lat1 = util.radians(start[1]);
-    var lon1 = util.radians(start[0]);
+    var lat1 = utils.radians(start[1]);
+    var lon1 = utils.radians(start[0]);
     var lat2 = Math.asin(Math.sin(lat1) * Math.cos(dR) +
       Math.cos(lat1) * Math.sin(dR) * Math.cos(bearing));
     var lon2 = lon1 + Math.atan2(Math.sin(bearing) * Math.sin(dR) * Math.cos(lat1),
         Math.cos(dR) - Math.sin(lat1) * Math.sin(lat2));
     lon2 = (lon2 + 3 * Math.PI) % (2 * Math.PI) - Math.PI; // normalise to -180..+180°
     //console.log(start, [Math.degrees(lon2), Math.degrees(lat2)]);
-    return [util.degrees(lon2), util.degrees(lat2)];
+    return [utils.degrees(lon2), utils.degrees(lat2)];
   };
 
   // #############################################################################
   // Interpolation
   // -----------------------------------------------------------------------------
 
-  util.idw = function (x, y, tValues, xValues, yValues, power) {
+  utils.idw = function (x, y, tValues, xValues, yValues, power) {
     if (tValues === undefined || tValues === null) {
-      throw new Error("tValues is undefined in util.idw()");
+      throw new Error("tValues is undefined in utils.idw()");
     }
     if (xValues === undefined || xValues === null) {
-      throw new Error("xValues is undefined in util.idw()");
+      throw new Error("xValues is undefined in utils.idw()");
     }
     if (yValues === undefined || yValues === null) {
-      throw new Error("yValues is undefined in util.idw()");
+      throw new Error("yValues is undefined in utils.idw()");
     }
     if (tValues.length != xValues.length) {
       throw "tValues.length != xValues.length";
@@ -126,7 +126,7 @@ var util = (function () {
    * @returns {Object}        An object with r, g and b properties in the range
    *                          [0, 255].
    */
-  util.hsvToRgb = function (h, s, v) {
+  utils.hsvToRgb = function (h, s, v) {
     var r, g, b, i, f, p, q, t;
     if (h && s === undefined && v === undefined) {
       s = h.s, v = h.v, h = h.h;
@@ -164,7 +164,7 @@ var util = (function () {
    * @returns {Array}         An object with h, a and v properties in the range
    *                          [0, 1].
    */
-  util.rgbToHsv = function (r, g, b) {
+  utils.rgbToHsv = function (r, g, b) {
     var min, max, h, s, v, d;
     if (r && g === undefined && b === undefined) {
       g = r.g, b = r.b, r = r.r;
@@ -196,7 +196,7 @@ var util = (function () {
    * @param   {Number}        b The blue color value in the range [0, 255].
    * @returns {String}        The hex represenation of the rgb value.
    */
-  util.rgbToHex = function (r, g, b) {
+  utils.rgbToHex = function (r, g, b) {
     if (r && g === undefined && b === undefined) {
       g = r.g, b = r.b, r = r.r;
     }
@@ -209,12 +209,12 @@ var util = (function () {
     return "#" + r + g + b;
   };
 
-  util.hsvToHex = function (h, s, v) {
-    return util.rgbToHex(util.hsvToRgb(h, s, v));
+  utils.hsvToHex = function (h, s, v) {
+    return utils.rgbToHex(utils.hsvToRgb(h, s, v));
   };
 
-  util.hsvaToRgba = function (h, s, v, a) {
-    var rgb = util.hsvToRgb(h, s, v);
+  utils.hsvaToRgba = function (h, s, v, a) {
+    var rgb = utils.hsvToRgb(h, s, v);
     return "rgba(" + rgb.r + ", " + rgb.g + ", " + rgb.b + ", " + a + ")";
   };
 
@@ -228,7 +228,7 @@ var util = (function () {
    * @param   {*}                undefAv The return value when the array is empty.
    * @returns {Number|undefined} The average or undefined if the array is empty.
    */
-  util.average = function (ary, undefAv) {
+  utils.average = function (ary, undefAv) {
     if (arguments.length === 1) { undefAv = 0; }
     if (ary === undefined) { return undefAv; }
     var len = ary.length;
@@ -248,7 +248,7 @@ var util = (function () {
    * @returns {Object|undefined} An object with angle and speed properties or
    *                             undefined if the given arrays are empty.
    */
-  util.averageDisplacement = function (angles, speeds, undefAv) {
+  utils.averageDisplacement = function (angles, speeds, undefAv) {
     if (angles === undefined || speeds === undefined) { return undefAv; }
     var len = angles.length;
     if (len === 0) { return undefAv; }
@@ -269,14 +269,14 @@ var util = (function () {
   // Math utilities
   // -----------------------------------------------------------------------------
 
-  util.TWO_PI = Math.PI * 2;
+  utils.TWO_PI = Math.PI * 2;
 
   /**
    * Returns the given angle in degrees expressed as radians.
    * @param   {Number} degrees The given angle in degrees.
    * @returns {Number} The given angle in radians.
    */
-  util.radians = function (degrees) {
+  utils.radians = function (degrees) {
     return degrees * Math.PI / 180;
   };
 
@@ -285,23 +285,23 @@ var util = (function () {
    * @param angle
    * @returns the normalized angle, i.e. 0 <= angle < Pi * 2
    */
-  util.normRadians = function (angle) {
+  utils.normRadians = function (angle) {
     while (angle < 0) {
-      angle += util.TWO_PI;
+      angle += utils.TWO_PI;
     }
-    while (angle >= util.TWO_PI) {
-      angle -= util.TWO_PI;
+    while (angle >= utils.TWO_PI) {
+      angle -= utils.TWO_PI;
     }
     return angle;
   };
 
-  util.minimizeAngleDelta = function (count, getter, setter) {
+  utils.minimizeAngleDelta = function (count, getter, setter) {
     if (count == 0) { return; }
     var ac = getter(0);
     for (var i = 1; i < count; i++) {
       var ai = getter(i);
-      while (ai > ac + Math.PI) { ai -= util.TWO_PI; }
-      while (ai < ac - Math.PI) { ai += util.TWO_PI; }
+      while (ai > ac + Math.PI) { ai -= utils.TWO_PI; }
+      while (ai < ac - Math.PI) { ai += utils.TWO_PI; }
       setter(i, ai);
       ac = ai;
     }
@@ -312,7 +312,7 @@ var util = (function () {
    * @param   {Number} radians The given angle in radians.
    * @returns {Number} The given angle in degrees.
    */
-  util.degrees = function (radians) {
+  utils.degrees = function (radians) {
     return radians / Math.PI * 180;
   };
 
@@ -325,7 +325,7 @@ var util = (function () {
    * @param   {Number} high2 The second bound of the target range.
    * @returns {Number} The mapped value.
    */
-  util.mapRange = function (value, low1, high1, low2, high2) {
+  utils.mapRange = function (value, low1, high1, low2, high2) {
     return low2 + (high2 - low2) * (value - low1) / (high1 - low1);
   };
 
@@ -336,7 +336,7 @@ var util = (function () {
    * @param   {Number} max The maximum value of the range.
    * @returns {Number} The constrained value.
    */
-  util.constrain = function (v, min, max) {
+  utils.constrain = function (v, min, max) {
     if (v < min) return min;
     else if (v > max) return max;
     else return v;
@@ -348,7 +348,7 @@ var util = (function () {
    * @param   {Number} dy [[Description]]
    * @returns {Number} [[Description]]
    */
-  util.vectorLength = function (dx, dy) {
+  utils.vectorLength = function (dx, dy) {
     return Math.sqrt(dx * dx + dy * dy);
   };
 
@@ -360,7 +360,7 @@ var util = (function () {
    * Return the size of one em in pixels.
    * @returns {Number} The size of one em in pixels.
    */
-  util.emSize = function () {
+  utils.emSize = function () {
     return parseFloat($("body").css("font-size"));
   };
 
@@ -369,7 +369,7 @@ var util = (function () {
    * @param   {Number}   length The number of zeros to
    * @returns {[[Type]]} [[Description]]
    */
-  util.zeroArray = function (length) {
+  utils.zeroArray = function (length) {
     var result = [];
     for (var i = 0; i < length; i++) {
       result.push(0);
@@ -379,7 +379,7 @@ var util = (function () {
 
   // -----------------------------------------------------------------------------
 
-  util.debug = function (name, value) {
+  utils.debug = function (name, value) {
     //$("#debug").append("<p>" + name + ": " + value + "</p>");
     if (name && value === undefined) {
       console.log(name);
@@ -393,11 +393,11 @@ var util = (function () {
 
   /** Polyfill String.trim for old browsers
    *  (q.v. blog.stevenlevithan.com/archives/faster-trim-javascript) */
-  //if (String.prototype.trim === undefined) {
-  //  String.prototype.trim = function() {
-  //    return String(this).replace(/^\s\s*/, '').replace(/\s\s*$/, '');
-  //  };
-  //}
+  if (String.prototype.trim === undefined) {
+    String.prototype.trim = function() {
+      return String(this).replace(/^\s\s*/, '').replace(/\s\s*$/, '');
+    };
+  }
 
   // -----------------------------------------------------------------------------
 
@@ -409,18 +409,15 @@ var util = (function () {
    * Usage: "{0} is dead, but {1} is alive! {0} {2}".format("ASP", "ASP.NET")
    * >> ASP is dead, but ASP.NET is alive! ASP {2}
    */
-  //if (!String.prototype.format) {
-  //  String.prototype.format = function() {
-  //    var args = arguments;
-  //    return this.replace(/{(\d+)}/g, function(match, number) {
-  //      return typeof args[number] != 'undefined'
-  //        ? args[number]
-  //        : match
-  //        ;
-  //    });
-  //  };
-  //}
+  if (!String.prototype.format) {
+    String.prototype.format = function() {
+      var args = arguments;
+      return this.replace(/{(\d+)}/g, function(match, number) {
+        return typeof args[number] != 'undefined' ? args[number] : match;
+      });
+    };
+  }
 
-  return util;
+  return utils;
 
 })();

@@ -10,13 +10,13 @@
      *   segmentCount: {number} The number of segments in the source data
      * }
  *
- * @param id  {String}
- * @param dataService  {object}
+ * @param basePath {String}
+ * @param dataService {object}
  * @returns The caseStudy object.
  */
-enram.caseStudy = function (id, dataService) {
+enram.caseStudy = function (basePath, dataService) {
   var caseStudy = {
-    id: id,
+    basePath: basePath,
     dataService: dataService,
     isCaseStudy: true
   };
@@ -33,48 +33,43 @@ enram.caseStudy = function (id, dataService) {
 
   /**
    * Load case study data from properly formatted json file.
-   * @param {Object}           caseStudy  An object that represents the case study.
-   * @param {function(Object)} handler    This handler is called with the caseStudy
-   *                                      as this.
+   * @param handler {function(Object)} Called when loading is complete.
    */
   caseStudy.loadMetaData = function (handler) {
     //console.log(this);
-    caseStudy.urlBase = "data/" + this.id + "/";
+    caseStudy.urlBase = "data/" + this.basePath + "/";
     d3.json(caseStudy.urlBase + "metadata.json", function (error, json) {
-      //console.log(caseStudy);
       if (error) {
-        console.error(error);
-        //throw new Error("Error in dataService.loadCaseStudy. "
-        //    + JSON.parse(error.responseText).error.join("; "));
+        throw new Error("Error in caseStudy.loadMetaData: " + error);
+            //+ JSON.parse(error.responseText).error.join("; "));
       }
-      else {
-        for (var attr in json) {
-          if (json.hasOwnProperty(attr)) caseStudy[attr] = json[attr];
-        }
-        caseStudy.dataFrom = moment.utc(caseStudy.dataFrom);
-        caseStudy.dataTill = moment.utc(caseStudy.dataTill);
-        caseStudy.defaultFocusFrom = moment.utc(caseStudy.defaultFocusFrom);
 
-        // Create mapping from radar ids to indices:
-        caseStudy.radarIndices = {};
-        caseStudy.radLons = [];
-        caseStudy.radLats = [];
-        caseStudy.radars.forEach(function (radar, i) {
-          radar.location = [radar.longitude, radar.latitude];
-          caseStudy.radarIndices[radar.id] = i;
-          caseStudy.radLons.push(radar.longitude);
-          caseStudy.radLats.push(radar.latitude);
-        });
-
-        caseStudy.selectedRadar = caseStudy.radars[0];
-        caseStudy.radarCount = caseStudy.radars.length;
-
-        caseStudy.topoJsonUrl = caseStudy.urlBase + "topo.json";
-
-        //console.log(caseStudy.topoJsonUrl);
-        console.log("Loaded case study", caseStudy.label);
-        handler.call(caseStudy);
+      for (var attr in json) {
+        if (json.hasOwnProperty(attr)) caseStudy[attr] = json[attr];
       }
+      caseStudy.dataFrom = moment.utc(caseStudy.dataFrom);
+      caseStudy.dataTill = moment.utc(caseStudy.dataTill);
+      caseStudy.defaultFocusFrom = moment.utc(caseStudy.defaultFocusFrom);
+
+      // Create mapping from radar ids to indices:
+      caseStudy.radarIndices = {};
+      caseStudy.radLons = [];
+      caseStudy.radLats = [];
+      caseStudy.radars.forEach(function (radar, i) {
+        radar.location = [radar.longitude, radar.latitude];
+        caseStudy.radarIndices[radar.id] = i;
+        caseStudy.radLons.push(radar.longitude);
+        caseStudy.radLats.push(radar.latitude);
+      });
+
+      caseStudy.selectedRadar = caseStudy.radars[0];
+      caseStudy.radarCount = caseStudy.radars.length;
+
+      caseStudy.topoJsonUrl = caseStudy.urlBase + "topo.json";
+      //console.log(caseStudy.topoJsonUrl);
+
+      console.info("Loaded case study", caseStudy.label);
+      handler.call(caseStudy);
     });
   };
 
@@ -96,7 +91,7 @@ enram.caseStudy = function (id, dataService) {
   };
 
   caseStudy.getProjection = function (caseStudy, mapWidth, mapHeight) {
-    console.error("There is no implementation for getProjection in case study '" + id + "'.");
+    console.error("There is no implementation for getProjection in case study '" + basePath + "'.");
   };
 
   return caseStudy;
