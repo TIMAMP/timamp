@@ -8,16 +8,17 @@
 // Database-based DataService
 // -----------------------------------------------------------------------------
 
-function DBDataServiceInitializer(caseStudy) {
-
+function DBDataService() {
+  var dataService = {};
   var queryTemplateUrl = caseStudy.urlBase + "template.sql";
 
-  var dataService = {};
-
-  dataService.initialize = function(handler) {
-    dataService.loadQueryTemplate(queryTemplateUrl, function () {
-      handler();
-    });
+  /**
+   * Initializes the dataService.
+   * @param caseStudy {enram.caseStudy}
+   * @param handler {function}
+   */
+  dataService.initialize = function(caseStudy, handler) {
+    dataService.loadQueryTemplate(queryTemplateUrl, handler);
   };
 
   dataService.loadQueryTemplate = function (url, handler) {
@@ -57,14 +58,18 @@ function DBDataServiceInitializer(caseStudy) {
   };
 
   /**
-   * Loads data for a range of altitudes, over a series of windows, for each
+   * Loads the data for the given focus.
+   *
+   * <p>Loads data for a range of altitudes, over a series of windows, for each
    * radar-window-altitude combination averaging the bird_density, the u_speed and
    * the v_speed. When the data is loaded, the handler function is called with
-   * a JSON-object holding the data as sole argument.
+   * a JSON-object holding the data as sole argument.</p>
    *
-   * @param {function(Object)} handler   The handler function.
+   * @param caseStudy {enram.caseStudy}
+   * @param focus     {enram.focus}
+   * @param handler   {function(dataObject)} called when the data is loaded
    */
-  dataService.loadFocusData = function (focus, handler) {
+  dataService.loadFocusData = function (caseStudy, focus, handler) {
     var data = timamp.dataObject(caseStudy, focus);
 
     console.log("Loading from " + focus.from + " for " + data.segmentCount +

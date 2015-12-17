@@ -3,23 +3,31 @@
  */
 
 /**
+ * caseStudy form:
+ * {
+     *   <see properties in README.md>
+     *   defaultFocusFrom: {moment}
+     *   segmentCount: {number} The number of segments in the source data
+     * }
  *
- * @param id
- * @param dataServiceFn A function that initialises and returns the data service object.
- *                      This function should take the caseStudy object as sole argument.
- *                      The returned data service object should have a initialize
- *                      method that takes a handler which is called when the
- *                      initialisation is complete.
- * @returns The case study object.
+ * @param id  {String}
+ * @param dataService  {object}
+ * @returns The caseStudy object.
  */
-function initCaseStudy(id, dataServiceInitializer) {
+enram.caseStudy = function (id, dataService) {
+  var caseStudy = {
+    id: id,
+    dataService: dataService,
+    isCaseStudy: true
+  };
 
-  var caseStudy = { id: id };
-
-  caseStudy.initialize = function (handler) {
+  /**
+   * Asynchronously loads the case study metadata and other necessary data.
+   * @param handler
+   */
+  caseStudy.load = function (handler) {
     this.loadMetaData(function () {
-      this.dataService = dataServiceInitializer(caseStudy);
-      this.dataService.initialize(handler);
+      this.dataService.initialize(caseStudy, handler);
     });
   };
 
@@ -71,22 +79,20 @@ function initCaseStudy(id, dataServiceInitializer) {
   };
 
   /**
-   * This method should be implemented in concrete case studies. It should
-   * further initialize the bare dataService object, accessible through
-   * this.dataService.
-   *
-   * @param handler
+   * Loads the data for the given focus.
+   * @param focus    {enram.focus}
+   * @param handler  {function(dataObject)}  called when the data is loaded
    */
-  caseStudy.initDataService = function (dataService, handler) {
-    handler();
-  };
-
   caseStudy.loadFocusData = function (focus, handler) {
     //console.log(">> caseStudy.loadFocusData()");
-    this.dataService.loadFocusData(focus, function (data) {
-      caseStudy.data = data;
-      handler(data);
-    });
+    this.dataService.loadFocusData(this, focus, handler);
+  };
+
+  /**
+   * @return the segment duration in milliseconds
+   */
+  caseStudy.segmentMillis = function () {
+    return this.segmentSize * 60 * 1000;
   };
 
   caseStudy.getProjection = function (caseStudy, mapWidth, mapHeight) {
@@ -94,4 +100,5 @@ function initCaseStudy(id, dataServiceInitializer) {
   };
 
   return caseStudy;
-}
+
+};

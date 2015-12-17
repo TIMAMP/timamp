@@ -82,6 +82,15 @@ var util = (function () {
   // -----------------------------------------------------------------------------
 
   util.idw = function (x, y, tValues, xValues, yValues, power) {
+    if (tValues === undefined || tValues === null) {
+      throw new Error("tValues is undefined in util.idw()");
+    }
+    if (xValues === undefined || xValues === null) {
+      throw new Error("xValues is undefined in util.idw()");
+    }
+    if (yValues === undefined || yValues === null) {
+      throw new Error("yValues is undefined in util.idw()");
+    }
     if (tValues.length != xValues.length) {
       throw "tValues.length != xValues.length";
     }

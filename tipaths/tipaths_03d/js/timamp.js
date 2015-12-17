@@ -41,8 +41,8 @@ var timamp = (function () {
      *   avDensities: {Array},    // matrix with dimensions: [strata, radar]
      * }
    *
-   * @param caseStudy  {enram.caseStudy object}
-   * @param focus      {enram.focus object}
+   * @param caseStudy  {enram.caseStudy}
+   * @param focus      {enram.focus}
    * @returns the data structure
    */
   timamp.dataObject = function (caseStudy, focus) {
@@ -92,10 +92,8 @@ var timamp = (function () {
 
     // empty partial data structure to use in dataObject.addMissingSegments:
     var missingSegmentData = [];
-    var strn = caseStudy.strataCount;
-    var radn = caseStudy.radarCount;
-    for (var stri = 0; stri < strn; stri++) {
-      missingSegmentData.push(utils.zeroArray(radn));
+    for (var stri = 0; stri < focus.strataCount; stri++) {
+      missingSegmentData.push(util.zeroArray(caseStudy.radarCount));
     }
 
     /**
@@ -210,7 +208,8 @@ var timamp = (function () {
         try {
           var b_u = idw(a_l[0], a_l[1], data.uSpeeds[t_i + 1][s_i], rlons, rlats, 2) * tf1;
           var b_v = idw(a_l[0], a_l[1], data.vSpeeds[t_i + 1][s_i], rlons, rlats, 2) * tf1;
-        } catch (error) {
+        }
+        catch (error) {
           console.error("- a_l:", a_l);
           console.error("- t_i:", t_i);
           console.error("- s_i:", s_i);
@@ -255,28 +254,30 @@ var timamp = (function () {
 
     // tail half, backwards from middle to first segment
     for (segi = half; segi > 0; segi--) {
-      dat = stepBackward(loc, segi, stri);
+      try {
+        dat = stepBackward(loc, segi, stri);
+      }
+      catch (error) {
+        console.error("- segi: " + segi + ", segn: " + segn + ", stri: " + stri);
+        throw error;
+      }
       pathData.unshift(dat);
       loc = dat[pdi_location];
     }
-
-    //console.log("2:", pathData);
 
     // front half, forwards from middle to last segment:
     loc = anchorLoc;
     for (segi = half; segi < segn; segi++) {
       try {
         dat = stepForward(loc, segi, stri);
-      } catch (error) {
-        console.error("- segn: " + segn);
-        console.error("- segn: " + segn);
+      }
+      catch (error) {
+        console.error("- segi: " + segi + ", segn: " + segn + ", stri: " + stri);
         throw error;
       }
       pathData.push(dat);
       loc = dat[pdi_location];
     }
-
-    //console.log(pathData);
 
     // trim - remove data points with zero speed from the beginning and the end of the data:
     while (pathData.length > 0 && pathData[0][pdi_angle] == 0) {

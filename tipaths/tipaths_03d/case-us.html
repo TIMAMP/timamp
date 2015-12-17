@@ -49,7 +49,10 @@
       <div class="row collapse">
         <div class="small-4 medium-12 columns">
           <strong>Date:</strong><br class="show-for-small-only">
-          <input id="input-day" type="number" class="inline" step="1"> apr.
+          <input id="input-day" type="number" class="inline"
+                 min="-1" max="32" step="1">
+          <span id="focus-month"></span>,
+          <span id="focus-year"></span>.
         </div>
         <div class="small-4 medium-12 columns">
           <strong>Time:</strong><br class="show-for-small-only">
@@ -70,8 +73,6 @@
           <select id="input-migrants-per-path" class="inline"></select>
         </div>
       </div>
-
-      <!--<button id="button_redraw" type="button">redraw</button>-->
     </form>
 
     <p class="description">

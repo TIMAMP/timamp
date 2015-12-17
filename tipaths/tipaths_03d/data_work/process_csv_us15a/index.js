@@ -217,17 +217,17 @@ function start() {
       // Calculate average densities per radar-altitude combination, integrated
       // over the strata height. These numbers thus represent the number of birds
       // per square km in a given strata.
-      for (stri = 0; stri < strn; stri++) {
-        var avds = [];
-        for (radi = 0; radi < radn; radi++) {
-          var dsum = 0;
-          for (segi = 0; segi < segn; segi++) {
-            dsum += data.densities[segi][stri][radi];
-          }
-          avds[radi] = dsum / segn * strataHeight;
-        }
-        data.avDensities.push(avds);
-      }
+      //for (stri = 0; stri < strn; stri++) {
+      //  var avds = [];
+      //  for (radi = 0; radi < radn; radi++) {
+      //    var dsum = 0;
+      //    for (segi = 0; segi < segn; segi++) {
+      //      dsum += data.densities[segi][stri][radi];
+      //    }
+      //    avds[radi] = dsum / segn * strataHeight;
+      //  }
+      //  data.avDensities.push(avds);
+      //}
 
       // write the raw data in a json format:
       console.log("# Writing " + raw_data_path);

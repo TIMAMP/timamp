@@ -108,8 +108,8 @@ var showRadarLabels = true;
 
 /**
  * Start the app. Call this function from a script element at the end of the html-doc.
- * @param {string} _caseStudy The initial case study object as initialized in the
- * init.js files for each case study.
+ * @param _caseStudy {string} The initial case study object as initialized in the
+ *                            init.js files for each case study.
  */
 function startApp(_caseStudy) {
   // assert that SVG is supported by the browser:
@@ -123,7 +123,7 @@ function startApp(_caseStudy) {
   d3.select("#radar-anchor-radius").text(radarAnchorRadius);
 
   // load the case study data:
-  caseStudy.initialize(function () {
+  caseStudy.load(function () {
     //console.log(caseStudy);
 
     focus = enram.focus(
@@ -132,6 +132,7 @@ function startApp(_caseStudy) {
       caseStudy.defaultStrataCount,
       caseStudy.defaultMigrantsPerPath
     );
+    focus.constrain(caseStudy);
 
     d3.select("#path-bird-count").text(numeral(focus.migrantsPerPath).format('0,0'));
 
@@ -175,75 +176,100 @@ function startApp(_caseStudy) {
   });
 }
 
+/**
+ * This function assumes that seconds and milliseconds are zero.
+ * @param from {moment}
+ * @param focus {enram.focus}
+ * @param caseStudy {enram.caseStudy}
+ * @returns {moment}
+ */
+function constrainFrom(from, focus, caseStudy) {
+  if (from.isBefore(caseStudy.dataFrom)) {
+    from.date(caseStudy.dataFrom.date());
+    from.hour(caseStudy.dataFrom.hour());
+    from.minute(caseStudy.dataFrom.minute());
+    return from;
+  }
+  var till = moment(from).add(focus.duration, 'hours');
+  if (!till.isBefore(caseStudy.dataTill)) {
+    from.date(caseStudy.dataTill.date());
+    from.hour(caseStudy.dataTill.hour() - focus.duration);
+    from.minute(caseStudy.dataTill.minute());
+  }
+  return from;
+}
+
 function initDone() {
-  caseStudy.focusLength = defaultFocusDuration;
 
-  var dataFromDay = caseStudy.dataFrom.date();
-  var dataTillDay = caseStudy.dataTill.date();
+  function dateUpdateHandler() {
+    var inputDay = d3.select("#input-day");
+    var inputHour = d3.select("#input-hour");
 
+    // derive and constrain new focus from moment:
+    var newFocusFrom = moment(focus.from);
+    newFocusFrom.date(parseInt(inputDay.property('value')));
+    newFocusFrom.hour(parseInt(inputHour.property('value')));
+    constrainFrom(newFocusFrom, focus, caseStudy);
+
+    // update the input widget to the constrained values:
+    inputDay.property('value', newFocusFrom.date());
+    inputHour.property('value', newFocusFrom.hour());
+    d3.select("#focus-month").text(focus.from.format("MMM"));
+    d3.select("#focus-year").text(focus.from.format("YYYY"));
+
+    // update focus and view if focus has changed:
+    if (!newFocusFrom.isSame(focus.from)) {
+      focus.setFrom(newFocusFrom);
+      updateVisualisation(caseStudy, focus, true, false);
+    }
+  }
+
+  function durationUpdateHandler() {
+    var inputDuration = d3.select("#input-length");
+    var newDuration = parseInt(inputDuration.property('value'));
+    if (newDuration != focus.duration) {
+      focus.setDuration(newDuration);
+      updateVisualisation(caseStudy, focus, true, false);
+    }
+  }
+
+  function strataCountUpdateHandler() {
+    var newStrataCount = d3.select("#input-strata").property('value');
+    if (newStrataCount != focus.strataCount) {
+      //console.log("input-strata changed:", newStrataCount);
+      setStrataCount(newStrataCount);
+      updateColors(caseStudy, focus);
+      updateVisualisation(caseStudy, focus, true, true);
+    }
+  }
+
+  function migrantsPerPathUpdateHandler() {
+    var newMPP = d3.select(this).property('value');
+    if (newMPP != focus.migrantsPerPath) {
+      //console.log("input-migrants-per-path changed:", newMPP);
+      setMigrantsPerPath(newMPP);
+      updateVisualisation(caseStudy, focus, false, false);
+    }
+  }
+
+  // configure the date input widgets:
   d3.select("#input-day")
     .property('value', focus.from.date())
-    .attr('min', caseStudy.dataFrom.date())
-    .attr('max', caseStudy.dataTill.date())
-    .on('change', function () {
-      //console.log("change", d3.select(this).property('value'));
-      var date = parseInt(d3.select(this).property('value'));
-      focus.from.date(date);
-      updateVisualisation(caseStudy, focus, true, false);
-    });
-
+    //.attr('min', caseStudy.dataFrom.date())
+    //.attr('max', moment(caseStudy.dataTill).subtract(1, 'minute').date())
+    .on('change', dateUpdateHandler);
+  d3.select("#focus-month").text(focus.from.format("MMM"));
+  d3.select("#focus-year").text(focus.from.format("YYYY"));
   d3.select("#input-hour")
     .property('value', focus.from.hour())
-    .on('change', function () {
-      var inputDay = d3.select("#input-day");
-      var day = parseInt(inputDay.property('value'));
-      var inputHour = d3.select("#input-hour");
-      var hour = parseInt(inputHour.property('value'));
-      if (hour >= 24) {
-        if (day >= dataTillDay) {
-          day = dataTillDay;
-          hour = 23;
-        }
-        else {
-          day++;
-          hour = 0;
-        }
-      }
-      else if (hour < 0) {
-        if (day <= dataFromDay) {
-          day = dataFromDay;
-          hour = 0;
-        }
-        else {
-          day--;
-          hour = 23;
-        }
-      }
+    .on('change', dateUpdateHandler);
 
-      inputDay.property('value', day);
-      inputHour.property('value', hour);
-
-      var focusDirty = false;
-      if (focus.from.date() != day) {
-        focus.from.date(day);
-        focusDirty = true;
-      }
-      if (focus.from.hour() != hour) {
-        focus.from.hour(hour);
-        focusDirty = true;
-      }
-      if (focusDirty) updateVisualisation(caseStudy, focus, true, false);
-    });
-
-  // input-length:
+  // configure the duration input widget:
   d3.select("#input-length")
     .property('value', caseStudy.focusLength)
-    .on('change', function () {
-      caseStudy.focusLength = parseInt(d3.select("#input-length").property('value'));
-      updateVisualisation(caseStudy, focus, true, false);
-    });
+    .on('change', durationUpdateHandler);
 
-  // input-strata:
+  // configure the strata-count input widget:
   d3.select("#input-strata")
     .selectAll('option')
     .data(caseStudy.strataCounts)
@@ -252,15 +278,9 @@ function initDone() {
     .text(util.id);
   d3.select("#input-strata")
     .property('value', focus.strataCount)
-    .on('change', function () {
-      //console.log("input-strata changed:", d3.select(this).property('value'));
-      setStrataCount(d3.select(this).property('value'));
-      //updateAnchors();
-      updateColors(caseStudy, focus);
-      updateVisualisation(caseStudy, focus, true, true);
-    });
+    .on('change', strataCountUpdateHandler);
 
-  // input-migrants-per-path:
+  // configure the migrants-per-path input widget:
   d3.select("#input-migrants-per-path")
     .selectAll('option')
     .data(migrantsPerPathOptions)
@@ -270,11 +290,7 @@ function initDone() {
     .text(function (d) { return d.text; });
   d3.select("#input-migrants-per-path")
     .property('value', focus.migrantsPerPath)
-    .on('change', function () {
-      //console.log("input-migrants-per-path changed:", d3.select(this).property('value'));
-      setMigrantsPerPath(d3.select(this).property('value'));
-      updateVisualisation(caseStudy, focus, false, false);
-    });
+    .on('change', migrantsPerPathUpdateHandler);
 
   // set resize handler that updates the visualisation:
   d3.select(window)
@@ -287,31 +303,31 @@ function initDone() {
   // First update the map data and add the svg element to avoid miscalculation
   // of the actual size of the svg content (on Chrome).
   updateMapData();
-  svg = d3.select("#map-container").append("svg")
-    .style("width", mapW)
-    .style("height", mapH);
 
   // Now update the map for real:
   updateVisualisation(caseStudy, focus, true, true);
 }
 
 /**
- * Use this function to update the strataCount value in the case study.
- * @param {number} newCount
+ * Use this function to update the strataCount value.
+ * @param {number} strataCount
  */
-function setStrataCount(newCount) {
+function setStrataCount(strataCount) {
   // Assert that the strata count is a whole divisor of the number
   // of altitudes in the data.
-  if (caseStudy.altitudes % newCount != 0) {
-    console.error("The given strata count (" + newCount
+  if (caseStudy.altitudes % strataCount != 0) {
+    console.error("The given strata count (" + strataCount
       + ") should be a whole divisor of the number of altitudes in the data ("
       + caseStudy.altitudes + ").");
     return;
   }
-
-  focus.strataCount = newCount;
+  focus.strataCount = strataCount;
 }
 
+/**
+ * Use this function to update the migrants-per-path value.
+ * @param {number} migrantsPerPath
+ */
 function setMigrantsPerPath(migrantsPerPath) {
   focus.migrantsPerPath = migrantsPerPath;
   d3.select("#path-bird-count").text(numeral(migrantsPerPath).format('0,0'));
@@ -319,6 +335,8 @@ function setMigrantsPerPath(migrantsPerPath) {
 
 /**
  * Prepare the hues for the altitude strata.
+ * @param caseStudy {enram.caseStudy}
+ * @param focus {enram.focus}
  */
 function updateColors(caseStudy, focus) {
   caseStudy.hues = [];
@@ -339,6 +357,12 @@ function updateColors(caseStudy, focus) {
   }
 }
 
+/**
+ * @param caseStudy {enram.caseStudy}
+ * @param focus {enram.focus}
+ * @param dataDirty {boolean}
+ * @param mapDirty {boolean}
+ */
 function updateVisualisation(caseStudy, focus, dataDirty, mapDirty) {
   if (mapDirty) updateMapData();
 
@@ -360,16 +384,15 @@ function updateVisualisation(caseStudy, focus, dataDirty, mapDirty) {
 
   var clipG = svg.append("g");
   clipG.attr("style", "clip-path: url(#clipRect);");
-
-  if (arty) clipG.attr("style", "background: #fff;");
-
-  if (!arty) {
-    var mapG = clipG.append("g").attr("id", "map");
+  if (arty) {
+    clipG.attr("style", "background: #fff;");
   }
+  else {
+    var mapG = clipG.append("g").attr("id", "map");
+    drawMap(mapG);
+  }
+
   var pathsG = clipG.append("g").attr("id", "paths");
-
-  drawMap(mapG);
-
   if (dataDirty) {
     // A clone of the focus is passed to the loader. This focus will be set
     // as focus property on the resulting data object.
@@ -379,6 +402,7 @@ function updateVisualisation(caseStudy, focus, dataDirty, mapDirty) {
     });
   }
   else {
+    currentData.focus = focus;
     drawPaths(currentData, pathsG);
   }
 
@@ -435,23 +459,21 @@ function initAnchors() {
   }
 }
 
-function drawMap(mapGroup) {
-  mapGroup.append("rect")
+function drawMap(mapG) {
+  mapG.append("rect")
     .attr("id", "background")
     .attr("x", 0)
     .attr("y", 0)
     .attr("width", mapW)
     .attr("height", mapH);
-
-  mapGroup.append("path")
+  mapG.append("path")
     .attr("id", "land")
     .datum(topojson.feature(
       caseStudy.topoJson,
       caseStudy.topoJson.objects.countries
     ))
     .attr("d", projectionPath);
-
-  mapGroup.append("path")
+  mapG.append("path")
     .attr("id", "country-boundary")
     .datum(topojson.mesh(
       caseStudy.topoJson,
@@ -459,17 +481,16 @@ function drawMap(mapGroup) {
       function(a, b) { return a !== b; }
     ))
     .attr("d", projectionPath);
-
-  mapGroup.append("path")
+  mapG.append("path")
     .attr("id", "graticule")
     .datum(d3.geo.graticule().step([1, 1]))
     .attr("d", projectionPath);
 
   // draw radars:
   var rra = util.geo.distAngle(radarAnchorRadius); // radar radius as angle:
-  var radarG = mapGroup.append("g").attr("id", "radars");
+  var radarG = mapG.append("g").attr("id", "radars");
   if (showRadarLabels) {
-    var radarLabelsG = mapGroup.append("g").attr("id", "radar-labels");
+    var radarLabelsG = mapG.append("g").attr("id", "radar-labels");
   }
   caseStudy.radars.forEach(function (radar) {
     radarG.append("path")
@@ -479,7 +500,7 @@ function drawMap(mapGroup) {
 
     if (showRadarLabels) {
       var rp = projection(radar.location);
-      radarLabelsG.append('svg:circle')
+      radarLabelsG.append('circle')
         .attr('cx', rp[0])
         .attr('cy', rp[1])
         .attr('r', 1.5)
@@ -497,7 +518,7 @@ function drawMap(mapGroup) {
     //for (var i = 0; i < n; i++) {
     //  var bearing = util.mapRange(i, 0, n, 0, 360);
     //  var dest = util.geo.destination(radar.location, bearing, radarAnchorRadius);
-    //  radarGroup.append("path")
+    //  radarG.append("path")
     //    .datum(d3.geo.circle().origin(dest).angle(.01))
     //    .attr("d", projectionPath)
     //    .classed("highlight3", true);
@@ -517,7 +538,21 @@ function drawPaths(data, pathsG) {
   }
 }
 
+// Debug
+var debugAnchorId = 540;
+function anchorId(anchorLoc) {
+  return anchorLocations.indexOf(anchorLoc);
+}
+function isDebug(anchorLoc) {
+  return anchorLoc == anchorLocations[debugAnchorId];
+}
+
+/**
+ * @param data {timamp.dataObject}
+ * @param pathsG {svg.g}
+ */
 function drawPaths_multiPath(data, pathsG) {
+  //console.log(">> app.drawPaths_multiPath");
   Math.seedrandom('ENRAM');
   var rlons = data.caseStudy.radLons;
   var rlats = data.caseStudy.radLats;
@@ -528,41 +563,47 @@ function drawPaths_multiPath(data, pathsG) {
   for (var stri = 0; stri < strn; stri++) {
     try {
       var densities = data.avDensities[stri]; // birds/km2 in the strata
-    } catch (error) {
+    }
+    catch (error) {
       console.error("- stri: " + stri);
       console.error("- strn: " + strn);
       console.error("- data.avDensities: " + data.avDensities);
       throw (error);
     }
+
     anchorLocations.forEach(function (anchorLoc) {
       try {
         var density = idw(anchorLoc[0], anchorLoc[1], densities, rlons, rlats, 2);
-      } catch (error) {
+      }
+      catch (error) {
         console.error("- anchorLoc: " + anchorLoc);
         throw (error);
       }
+
+      // Only continue for a subset of anchor locations, selected by a probability based
+      // on the average density:
       if (Math.random() < density * probf) {
+        console.log("- active anchorId(anchorLoc): " + anchorId(anchorLoc));
+
         var pathData = timamp.buildPathData(data, stri, anchorLoc);
         if (pathData.length == 0) {
           //console.log("got empty pathData");
           return;
         }
+
         var lineData = timamp.buildOutline(pathData, radiusFactor);
         var flowG = pathsG.append("g").classed("flow-line", true);
         drawPath_variableThickness(flowG, pathData, lineData, stri, radiusFactor);
 
         // DEBUG:
-        //console.log(anchorLocations.indexOf(anchorLoc));
-        //if (anchorLoc == anchorLocations[DEBUG_ANCHOR_IDX]) {
-        //  //anchorLoc.debug = true;
-        //  flowG.select("path").style("fill", "#f00");
-        //}
+        if (isDebug(anchorLoc)) {
+          console.log(pathData);
+          flowG.select("path").style("fill", "#f00");
+        }
       }
     });
   }
 }
-
-//var DEBUG_ANCHOR_IDX = 324;
 
 function drawPaths_singlePath(data, pathsG) {
   var strn = data.focus.strataCount;
@@ -572,7 +613,7 @@ function drawPaths_singlePath(data, pathsG) {
     data.caseStudy.radars.forEach(function (radar, radi) {
       var oy = util.mapRange(stri, 0, strn - 1, tdy / 2, -tdy / 2);
       // draw anchor marks:
-      pathsG.append('svg:circle')
+      pathsG.append('circle')
         .attr('cx', radar.projection[0])
         .attr('cy', radar.projection[1] + oy)
         .attr('r', 1)
@@ -684,7 +725,7 @@ function drawPath_variableThickness(flowG, pathData, lineData, stri, radiusFacto
     radius = Math.max(1.5, pathData[segn][2] * radiusFactor + .5);
     opacity = .5;
   }
-  flowG.append('svg:circle')
+  flowG.append('circle')
     .attr('cx', pathData[segn][0])
     .attr('cy', pathData[segn][1])
     .attr('r', radius)
@@ -693,6 +734,8 @@ function drawPath_variableThickness(flowG, pathData, lineData, stri, radiusFacto
 
 /**
  * Draws the color legend in a horizontal layout.
+ * @param caseStudy {enram.caseStudy}
+ * @param focus {enram.focus}
  * @param legendG
  */
 function drawColorLegend_hor(caseStudy, focus, legendG) {
@@ -758,6 +801,8 @@ function drawColorLegend_hor(caseStudy, focus, legendG) {
 
 /**
  * Draws the color legend in a vertical layout.
+ * @param caseStudy {enram.caseStudy}
+ * @param focus {enram.focus}
  * @param legendG
  */
 function drawColorLegend(caseStudy, focus, legendG) {
@@ -769,7 +814,6 @@ function drawColorLegend(caseStudy, focus, legendG) {
   var ty = legendT;
   var alti, altn = focus.strataCount;
   var dy = legendH / altn;
-  var hue, hex;
   for (alti = altn - 1; alti >= 0; alti--) {
     legendG.append("rect")
       .attr("x", margin)
@@ -820,6 +864,7 @@ function drawColorLegend(caseStudy, focus, legendG) {
 
 /**
  * Draws the scale legend.
+ * @param caseStudy {enram.caseStudy}
  * @param legendG
  * @param markers
  */
@@ -880,6 +925,11 @@ function drawScaleLegend(caseStudy, legendG, markers) {
     .attr("y2", mapH - 20);
 }
 
+/**
+ * @param caseStudy {enram.caseStudy}
+ * @param focus {enram.focus}
+ * @param clipG
+ */
 function writeMetaData(caseStudy, focus, clipG) {
   if (!writeMetaDataInViz) return;
 
@@ -887,7 +937,7 @@ function writeMetaData(caseStudy, focus, clipG) {
   var margin = 18;
   var lh = 12;
   var ly = mapH - 7 - 3 * lh;
-  var formatString = "MMM D, YYYY - H[h]";
+  var formatString = "H[h], MMM D, YYYY";
   var tillMoment = moment(focus.from).add(caseStudy.focusLength, "hours");
 
   mdG.append("text")
