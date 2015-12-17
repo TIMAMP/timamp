@@ -1,0 +1,39 @@
+{
+  "name": "enram-analytics",
+  "version": "1.0.0",
+  "homepage": "http://www.addith.be/",
+  "license": "CC-BY-NC-SA-4.0",
+  "private": true,
+  "scripts": {
+    "start": "gulp"
+  },
+  "devDependencies": {
+    "front-router": "^1.0.0",
+    "gulp": "^3.9.0",
+    "gulp-autoprefixer": "^2.3.1",
+    "gulp-concat": "^2.6.0",
+    "gulp-if": "^1.2.5",
+    "gulp-load-plugins": "1.0.0-rc.1",
+    "gulp-ng-html2js": "^0.2.0",
+    "gulp-sass": "^2.0.3",
+    "gulp-sourcemaps": "^1.5.2",
+    "gulp-uglify": "^1.2.0",
+    "gulp-webserver": "^0.9.1",
+    "rimraf": "^2.4.1",
+    "run-sequence": "^1.1.1",
+    "yargs": "^3.15.0"
+  },
+  "dependencies": {
+    "angular": "^1.4.7",
+    "angular-animate": "^1.4.7",
+    "angular-ui-bootstrap": "^0.14.3",
+    "angular-ui-router": "^0.2.15",
+    "bootstrap": "^3.3.5",
+    "d3": "^3.5.6",
+    "fastclick": "^1.0.6",
+    "html5shiv": "^3.7.3",
+    "husl": "^6.0.1",
+    "moment": "^2.10.6",
+    "respond.js": "^1.4.2"
+  }
+}
