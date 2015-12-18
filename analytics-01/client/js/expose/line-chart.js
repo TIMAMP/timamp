@@ -115,6 +115,7 @@
       }
 
       if (spec.xAxis.labels != undefined) {
+        console.log(spec.xAxis.labels);
         labelsG = axisG
           .append("g")
           .attr("class", "axis-labels");
@@ -123,7 +124,7 @@
             var label = labelsG
               .append("text")
               .attr("x", xMap(lvp.value))
-              .attr("y", spec.chartHeight + 3)
+              .attr("y", spec.chartHeight + 2)
               .text(lvp.label);
             if (lvp.value == spec.xAxis.range.min) {
               label.classed("axis-label-min", true);

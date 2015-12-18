@@ -83,7 +83,7 @@
       var padRight = 25;
       var padTop = 25;
       var padBottom = 50;
-      var chartGap = 10; // the (vertical) gap between graphs in pixels
+      var chartGap = 13; // the (vertical) gap between graphs in pixels
       var chartPadTop = 20;
       var subChartGap = 5; // the (vertical) gap between graphs in pixels
 
@@ -117,7 +117,7 @@
       var radi, radar, i;
 
       // X-axis spec:
-      var xGLValue = focus.start;
+      var xGLValue = focus.from;
       var xGLValues = [xGLValue];
       var xLabels = [];
       for (i = 0; i < focus.duration; i++) {

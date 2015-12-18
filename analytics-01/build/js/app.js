@@ -1175,7 +1175,7 @@
       var padRight = 25;
       var padTop = 25;
       var padBottom = 50;
-      var chartGap = 10; // the (vertical) gap between graphs in pixels
+      var chartGap = 13; // the (vertical) gap between graphs in pixels
       var chartPadTop = 20;
       var subChartGap = 5; // the (vertical) gap between graphs in pixels
 
@@ -1209,7 +1209,7 @@
       var radi, radar, i;
 
       // X-axis spec:
-      var xGLValue = focus.start;
+      var xGLValue = focus.from;
       var xGLValues = [xGLValue];
       var xLabels = [];
       for (i = 0; i < focus.duration; i++) {
@@ -1579,6 +1579,7 @@
       }
 
       if (spec.xAxis.labels != undefined) {
+        console.log(spec.xAxis.labels);
         labelsG = axisG
           .append("g")
           .attr("class", "axis-labels");
@@ -1587,7 +1588,7 @@
             var label = labelsG
               .append("text")
               .attr("x", xMap(lvp.value))
-              .attr("y", spec.chartHeight + 3)
+              .attr("y", spec.chartHeight + 2)
               .text(lvp.label);
             if (lvp.value == spec.xAxis.range.min) {
               label.classed("axis-label-min", true);
@@ -1707,6 +1708,32 @@
 
     return lineChart;
   }
+})();
+
+/**
+ * Created by wouter on 22/09/2015.
+ */
+(function() {
+  'use strict';
+
+  angular.module('enram')
+    .factory('eu15a', ['enram', 'settings', eu15aFactory]);
+
+  function eu15aFactory(enram, settings) {
+    // case study constructor:
+
+    var caseStudy = enram.caseStudy("eu15a", DBDataServiceInitializer);
+
+    caseStudy.getProjection = function (caseStudy, mapWidth, mapHeight) {
+      return d3.geo.mercator()
+        .scale(caseStudy.mapScaleFactor * mapWidth)
+        .translate([mapWidth / 2, mapHeight / 2])
+        .center(caseStudy.mapCenter);
+    };
+
+    return caseStudy;
+  }
+
 })();
 
 /**
@@ -2022,32 +2049,6 @@
     };
 
     return dataService;
-  }
-
-})();
-
-/**
- * Created by wouter on 22/09/2015.
- */
-(function() {
-  'use strict';
-
-  angular.module('enram')
-    .factory('eu15a', ['enram', 'settings', eu15aFactory]);
-
-  function eu15aFactory(enram, settings) {
-    // case study constructor:
-
-    var caseStudy = enram.caseStudy("eu15a", DBDataServiceInitializer);
-
-    caseStudy.getProjection = function (caseStudy, mapWidth, mapHeight) {
-      return d3.geo.mercator()
-        .scale(caseStudy.mapScaleFactor * mapWidth)
-        .translate([mapWidth / 2, mapHeight / 2])
-        .center(caseStudy.mapCenter);
-    };
-
-    return caseStudy;
   }
 
 })();
