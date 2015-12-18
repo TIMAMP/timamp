@@ -15,24 +15,27 @@ The run this application, run:
 node index.js
 ```
 
-## Data
+# Data
 
 - For scans in which we have identified rain, we have set the ___velocity___ to 0 so that no lines/particles are created there. This is a temporary fix until the viz setups can directly handle weather.
 
 
-#### Query template
+### Query template
 
 The query is a variation of the query proposed [here](https://github.com/enram/case-study/tree/master/data/bird-migration-altitude-profiles#aggregation).
 This variation aggregate altitudes depending on the template parameter ___strataSize___.
 
 The resulting records also contain the values:
+TODO
 
+### Strata (Altitude Bands)
 
-#### Strata (Altitude Bands)
-1. 0.2 - 1.6 km
-2. 1.6 - 3.0 km
+| id in source csv | range | index in data.json |
+|:----------------:|-------|:--------------------:|
+| 1 | 0.2 - 1.6 km | 0 |
+| 2 | 1.6 - 3.0 km | 1 |
 
-#### vertical_integrated_density
+### vertical_integrated_density
 
 The following SQL was used to generate the data.
 
@@ -49,13 +52,13 @@ GROUP BY
 ```
 The `vertical_integrated_density` is thus the number of birds per km^2 per strata, obtained by multiplying the height of each strata with the `bird_density`, which is the number of birds per km^3. Both strata have a height of 1.4 km, thus the average density is multiplied by 1.4 (7/5 or 14/10).
 
-## Node dependencies
+# Node dependencies
 
-#### [node-csv](https://github.com/wdavidw/node-csv)
+### [node-csv](https://github.com/wdavidw/node-csv)
 
 Used to read the records from the csv file.
 
-#### [jsonfile](https://www.npmjs.com/package/jsonfile)
+### [jsonfile](https://www.npmjs.com/package/jsonfile)
 
 Used to write records as json.
 
