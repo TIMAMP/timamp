@@ -1,0 +1,159 @@
+.nav, .pagination, .carousel, .panel-title a {
+  cursor: pointer; }
+
+* {
+  padding: 0;
+  margin: 0;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-tap-highlight-color: transparent;
+  /* For some Androids */
+  -webkit-touch-callout: none;
+  -webkit-font-smoothing: antialiased; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  margin: 0;
+  padding: 0; }
+
+body,
+input,
+textarea,
+select,
+button {
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 400;
+  font-size: 14px; }
+
+.ng-cloak {
+  opacity: 0; }
+
+.navbar-brand {
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 600;
+  font-size: 20px;
+  padding-left: 24px; }
+
+.navbar-nav {
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 600;
+  font-size: 14px; }
+
+.navbar-inverse .navbar-brand,
+.navbar-inverse .navbar-nav > li > a {
+  color: #d6dfd6; }
+
+.collapsible-nav {
+  height: 0px;
+  overflow: hidden; }
+
+.expose-body {
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  min-width: 100%;
+  width: 100%;
+  min-height: 100%;
+  height: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 50px 0 0 0;
+  color: #d6dfd6;
+  background-color: #e2e9e6; }
+  .expose-body .expose-content {
+    min-width: 100%;
+    width: 100%;
+    min-height: 100%;
+    height: 100%;
+    overflow: hidden; }
+
+.white-dashed-line {
+  stroke: #fff;
+  stroke-dasharray: 5px; }
+
+#charts {
+  background-color: #FF5555; }
+
+.charts-title {
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  fill: #000;
+  text-anchor: middle;
+  shape-rendering: crispEdges; }
+
+.chart-title {
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 600;
+  font-size: 11px;
+  fill: #000;
+  text-anchor: left;
+  dominant-baseline: hanging;
+  shape-rendering: crispEdges; }
+
+.chart-bg {
+  fill: #FFF;
+  stroke: #AAA;
+  stroke-width: 1px;
+  shape-rendering: crispEdges; }
+
+.chart-axis .grid-lines {
+  stroke: #DDD;
+  stroke-width: 1;
+  shape-rendering: crispEdges; }
+
+.chart-axis .axis-labels {
+  fill: #333;
+  stroke: none;
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 600;
+  font-size: 10px;
+  shape-rendering: crispEdges; }
+
+.x-axis .axis-labels {
+  text-anchor: middle;
+  dominant-baseline: hanging; }
+
+.x-axis .axis-labels .axis-label-min {
+  text-anchor: start; }
+
+.x-axis .axis-labels .axis-label-max {
+  text-anchor: end; }
+
+.y-axis .axis-labels {
+  text-anchor: end;
+  dominant-baseline: central; }
+
+.y-axis .axis-labels .axis-label-min {
+  dominant-baseline: use-script; }
+
+.y-axis .axis-labels .axis-label-max {
+  dominant-baseline: hanging; }
+
+.plot-lines {
+  stroke: #ED1C24;
+  fill: none;
+  stroke-width: 1;
+  stroke-opacity: .5; }
+
+.plot-points {
+  fill: #ED1C24;
+  stroke: none; }
+
+.legend-label {
+  fill: #333;
+  stroke: none;
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 600;
+  font-size: 11px;
+  dominant-baseline: central;
+  shape-rendering: crispEdges; }
+
+.chart-combo-title {
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 600;
+  font-size: 13px; }
+
+/*# sourceMappingURL=app.css.map */
