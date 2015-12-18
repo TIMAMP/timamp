@@ -142,6 +142,7 @@
         $scope.model.caseStudy = caseStudy;
 
         // update the day options:
+        $scope.model.dayOptions = [];
         var mom = moment(caseStudy.dataFrom).hours(0).minutes(0);
         while (mom.isBefore(caseStudy.dataTill)) {
           $scope.model.dayOptions.push({
@@ -153,6 +154,7 @@
         $scope.model.dayOption = $scope.model.dayOptions[3];
 
         // Update the radio options:
+        $scope.model.radarOptions = [];
         var radarCnt = caseStudy.radars.length;
         var radarOption;
         caseStudy.radars.forEach(function (radar, i) {

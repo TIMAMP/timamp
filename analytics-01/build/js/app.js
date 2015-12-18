@@ -766,6 +766,7 @@
         $scope.model.caseStudy = caseStudy;
 
         // update the day options:
+        $scope.model.dayOptions = [];
         var mom = moment(caseStudy.dataFrom).hours(0).minutes(0);
         while (mom.isBefore(caseStudy.dataTill)) {
           $scope.model.dayOptions.push({
@@ -777,6 +778,7 @@
         $scope.model.dayOption = $scope.model.dayOptions[3];
 
         // Update the radio options:
+        $scope.model.radarOptions = [];
         var radarCnt = caseStudy.radars.length;
         var radarOption;
         caseStudy.radars.forEach(function (radar, i) {
@@ -1714,32 +1716,6 @@
   'use strict';
 
   angular.module('enram')
-    .factory('eu15a', ['enram', 'settings', eu15aFactory]);
-
-  function eu15aFactory(enram, settings) {
-    // case study constructor:
-
-    var caseStudy = enram.caseStudy("eu15a", DBDataServiceInitializer);
-
-    caseStudy.getProjection = function (caseStudy, mapWidth, mapHeight) {
-      return d3.geo.mercator()
-        .scale(caseStudy.mapScaleFactor * mapWidth)
-        .translate([mapWidth / 2, mapHeight / 2])
-        .center(caseStudy.mapCenter);
-    };
-
-    return caseStudy;
-  }
-
-})();
-
-/**
- * Created by wouter on 22/09/2015.
- */
-(function() {
-  'use strict';
-
-  angular.module('enram')
     .factory('us15a.raw', ['enram', us15a]);
 
   /**
@@ -2046,6 +2022,32 @@
     };
 
     return dataService;
+  }
+
+})();
+
+/**
+ * Created by wouter on 22/09/2015.
+ */
+(function() {
+  'use strict';
+
+  angular.module('enram')
+    .factory('eu15a', ['enram', 'settings', eu15aFactory]);
+
+  function eu15aFactory(enram, settings) {
+    // case study constructor:
+
+    var caseStudy = enram.caseStudy("eu15a", DBDataServiceInitializer);
+
+    caseStudy.getProjection = function (caseStudy, mapWidth, mapHeight) {
+      return d3.geo.mercator()
+        .scale(caseStudy.mapScaleFactor * mapWidth)
+        .translate([mapWidth / 2, mapHeight / 2])
+        .center(caseStudy.mapCenter);
+    };
+
+    return caseStudy;
   }
 
 })();
