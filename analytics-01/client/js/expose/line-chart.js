@@ -115,7 +115,6 @@
       }
 
       if (spec.xAxis.labels != undefined) {
-        console.log(spec.xAxis.labels);
         labelsG = axisG
           .append("g")
           .attr("class", "axis-labels");

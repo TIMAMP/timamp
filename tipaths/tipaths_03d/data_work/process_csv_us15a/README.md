@@ -7,9 +7,9 @@
 
 # Introduction
 
-This project hosts a NodeJS application that generates the `data.json` file loaded by the `us15a` case study in the TIMAMP app. The source data is loaded from `data.csv` and the needed metadata is loaded from `metadata.json`. 
+This project hosts a NodeJS application that generates the `data.json` file loaded by the `us15a` case study in the TIMAMP app, i.e. `tipaths_03d`. The source data is loaded from `data.csv` and the required metadata is loaded from `metadata.json`. 
 
-The run this application, run:
+The run this application, execute:
 
 ```
 node index.js
