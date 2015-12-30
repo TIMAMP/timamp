@@ -1,0 +1,29 @@
+{
+  "name": "tipaths_03d",
+  "version": "0.0.2",
+  "homepage": "http://timamp.github.io/",
+  "description": "Time Integrated Multi-Altitude Migration Paths",
+  "keywords": [
+    "visualisation"
+  ],
+  "contributors": [
+    "Wouter Van den Broeck <wouter@addith.be> (http://addith.be)",
+    "Jan Klaas Van Den Meersche",
+    "Kyle Horton",
+    "Sérgio Branco"
+  ],
+  "license": "CC-BY-NC-SA-4.0",
+  "private": true,
+  "devDependencies": {
+  },
+  "dependencies": {
+    "d3": "^3.5.6",
+    "fastclick": "^1.0.6",
+    "jquery": "^2.1.4",
+    "modernizr": "^3.2.0",
+    "moment": "^2.10.6",
+    "numeral": "^1.5.3",
+    "seedrandom": "^2.4.2",
+    "topojson": "^1.6.19"
+  }
+}

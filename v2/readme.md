@@ -53,9 +53,9 @@ object with the following properties:
 
 # 3rd-Party libraries
 
-Most 3rd-party client libraries are managed through Bower, except for the Foundation library, which is a custom build. See below for more details.
+Most 3rd-party client libraries are managed through NPM, except for the Foundation library, which is a custom build. See below for more details.
 
-## Bower components
+## NPM components
 
 * __modernizr__
 * __fastclick__
