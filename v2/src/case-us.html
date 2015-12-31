@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Time Integrated Multi-Altitude Migration Flows</title>
+
+  <link rel="stylesheet" type="text/css" href="assets/css/vendor.css" />
+  <link rel="stylesheet" type="text/css" href="assets/css/app.css">
+
+  <script src="assets/js/vendor.js"></script>
+  <script src="assets/js/app.js"></script>
+</head>
+
+<body>
+
+<div class="row">
+  <div class="small-12 show-for-small-only small-title">
+    <h1>Time Integrated Multi-Altitude Migration Flows</h1>
+  </div>
+</div>
+
+<div class="row">
+  <div class="small-12 medium-8 large-9 columns">
+    <div id="map-container"></div>
+  </div>
+  <div class="small-12 medium-4 large-3 columns">
+    <div class="show-for-medium-up">
+      <h1>Time Integrated<br>Multi-Altitude<br>Migration Flows</h1>
+    </div>
+
+    <form>
+      <div class="row collapse">
+        <div class="small-4 medium-12 columns">
+          <strong>Date:</strong><br class="show-for-small-only">
+          <input id="input-day" type="number" class="inline"
+                 min="-1" max="32" step="1">
+          <span id="focus-month"></span>,
+          <span id="focus-year"></span>.
+        </div>
+        <div class="small-4 medium-12 columns">
+          <strong>Time:</strong><br class="show-for-small-only">
+          <input id="input-hour" type="number" class="inline"
+                 min="-1" max="24" step="1"> h.
+        </div>
+        <div class="small-4 medium-12 columns">
+          <strong>Window:</strong><br class="show-for-small-only">
+          <input id="input-length" type="number" class="inline"
+                 min="1" max="12" step="1"> h.
+        </div>
+        <div class="small-4 medium-12 columns">
+          <strong>Strata:</strong><br class="show-for-small-only">
+          <select id="input-strata" class="inline"></select>
+        </div>
+        <div class="small-8 medium-12 columns">
+          <strong>Migrants/Path:</strong><br class="show-for-small-only">
+          <select id="input-migrants-per-path" class="inline"></select>
+        </div>
+      </div>
+    </form>
+
+    <p class="description">
+      This visualization provide a holistic picture of the spatial and temporal
+      variation in migration activity during an observation window of one to eight hours.
+      Each pathline represents the expected travel path of an imaginary swarm
+      of average migrants during the selected observation window.
+      Each pathline corresponds to approx. <span id="path-bird-count"></span> migrants.
+      The amount of pathline and their distribution corresponds with the observed
+      densities during the observation window.
+      Paths are anchored within a radius of <span id="radar-anchor-radius"></span> km
+      around the radars.
+      Their length corresponds to the distance covered by the migrants during
+      the selected time window while the varying thickness reflects changes in
+      migrant density during the observation window.
+    </p>
+
+  </div>
+</div>
+
+<div class="row">
+  <div class="small-12 medium-8 large-9 columns footer">
+    <p>
+      <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons Licence" class="CC-BY-NC-SA" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a>
+      <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title">Time Integrated Multi-Altitude Migration Patterns</span>
+      by <a xmlns:cc="http://creativecommons.org/ns#" href="http://timamp.github.io/" property="cc:attributionName" rel="cc:attributionURL">Wouter Van den Broeck, Jan Klaas Van Den Meersche, Kyle Horton and S&eacute;rgio Branco</a>
+      is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a> – Data served by <a href="http://cartodb.com">CartoDB</a>.</p>
+  </div>
+  <div class="small-12 medium-4 large-3 columns show-for-medium-up"></div>
+</div>
+
+<script>
+  $(document).foundation();
+  $(document).ready(function () { startApp(us15a); });
+</script>
+
+</body>
+</html>

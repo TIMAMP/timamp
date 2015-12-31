@@ -1,4 +1,96 @@
-# About this visualisationFlow visualization techniques are commonly used to visualize vector fields in various domains of science and engineering. Using these techniques to visualize the migration data entails the interpretation of this data in terms of a sparsely sampled vector field. Each sample is a point-vector pair with the point being the location of the radar and the vector being the migrant velocity (the u and v components). Given these sparse samples, the complete vector field can be reconstructed by means of interpolation. The migrant density data can similarly be interpreted as a sparse scattered scalar field on the basis of which a complete scalar field can be reconstructed using interpolation. Both the velocity vector field and the density scalar field are time dependent.
+<h1>TIMAMP v2</h1>
+
+[toc]
+
+# Introduction
+
+This project offers a web-based data visualization of bird migration data. See below more details about the visualization.
+
+# Development Notes
+
+## Prerequisites
+
+To edit this project, you will need the following software:
+
+- [Node.js][1] – Use the [installer](https://nodejs.org/en/download/) for your OS.
+- [Gulp][4] – This depedency is required in the `./package.json` and thus installed by _npm_, but It is probably best to install it globally by running the following command: `npm install -g gulp`. Depending on how Node is configured on your machine, you may need to run `sudo npm install -g gulp` instead, if you get an error with the first command.
+
+## Building the app
+
+The source code (HTML, JS, CSS, ...) is maintained in the `./src/` directory.
+The build website consists of html files in the project's root directory and js/css and other assets in the `./assets' directory.
+The website is published as GitHub ghpages.
+
+To build the project, run:
+
+```bash
+npm start
+```
+
+This will:
+
+- concatenate and minify the client js-files in `./assets/js/app.js`;
+- concatenate and minify the vendor css-files in `./assets/css/vendor.css`;
+- concatenate and minify the vendor js-files in `./assets/js/vendor.js`;
+- copy all asset files to `./assets/...`;
+- open the (built) app in a browser; and
+- start a file-change watcher that recompiles the build and reloads the browser when source files are modified.
+
+## Dependencies
+
+Npm is used for managing 3rd-party dependencies. The npm configuration is specified in the file `./package.json` while the packages are located in the directory `./node_modules/`. The file `./npm-debug.log` contains npm related debug/log messages.
+
+### Development dependencies
+
+The development setup depends on the following libraries and tools:
+
+- [Gulp][4] – Build tool
+
+And a number of Gulp extensions:
+
+- gulp-autoprefixer
+- gulp-concat
+- gulp-if
+- gulp-load-plugins
+- gulp-ng-html2js
+- gulp-sass
+- gulp-sourcemaps
+- gulp-uglify
+- gulp-webserver
+- rimraf – Deleting folders.
+- run-sequence
+- yargs
+
+### Client dependencies
+
+This project depends on the following framework libraries:
+
+- Foundation – See below for more details.
+- [D3][7] – A JavaScript library for manipulating documents based on data.
+- jquery – This is (only) needed for Foundation.
+- [Moment](http://momentjs.com/) – Parse, validate, manipulate, and display dates in JavaScript.
+- [Numeral.js](http://numeraljs.com/) – A javascript library for formatting and manipulating numbers.
+- [Seedrandom.js](https://github.com/davidbau/seedrandom) – Seeded random number generator for JavaScript.
+- [TopoJSON](https://github.com/mbostock/topojson/wiki) – D3 plugin for drawing topography from topojson data.
+
+This project additionally depends on the following problem solvers:
+
+- [FastClick](https://github.com/ftlabs/fastclick) – Eliminates the 300ms delay between a physical tap and the firing of a click event on mobile browsers, thus making the application feel less laggy and more responsive while avoiding any interference with your current logic.
+
+
+
+### Foundation
+
+This app uses Foundation for its responsiveness.
+This Foundation is a custom build of v5.5.2 that includes:
+
+* grid
+* visibility
+
+The js and css files are maintained in the ./vendor directory.
+
+
+## About this visualisationFlow visualization techniques are commonly used to visualize vector fields in various domains of science and engineering. Using these techniques to visualize the migration data entails the interpretation of this data in terms of a sparsely sampled vector field. Each sample is a point-vector pair with the point being the location of the radar and the vector being the migrant velocity (the u and v components). Given these sparse samples, the complete vector field can be reconstructed by means of interpolation. The migrant density data can similarly be interpreted as a sparse scattered scalar field on the basis of which a complete scalar field can be reconstructed using interpolation. Both the velocity vector field and the density scalar field are time dependent.
 This visualization uses a local flow visualization technique based on particle tracing (Weiskopf and Erlebacher, 2005). It shows a number of pathlines, which trace particles through the dynamic vector field, keeping integration time in sync with vector field time. This allows changes in both the spatial and temporal dimensions to be shown in a single static visualization.
 The resulting static visualization is meant to provide a holistic picture of the spatial and temporal variation in migration activity during a period of one to eight hours. To this end it shows a number of pathlines on a geographic map. Each pathline represents the expected travel path of an imaginary swarm of average migrants during the selected time period. This visualization does thus not show the travel paths of actual migrants but rather describes average migration patterns based on the data detailed in the previous sections.
 The user can interactively select the starting date/time and the duration (in hours) of the visualized time period. The user can also select the number of strata the full altitude range (0–4000 m) is divided into. For each strata a separate set of pathlines is drawn with a different color, using the aggregated migrant density and velocity data within that strata. This enables the user to get a picture of the variation of the migration patterns at different altitudes. The color-strata correspondence can be found in the color legend.
@@ -51,29 +143,13 @@ object with the following properties:
     * __max__ - the maximum of the altitude range
     * __idx__ - the index
 
-# 3rd-Party libraries
-
-Most 3rd-party client libraries are managed through NPM, except for the Foundation library, which is a custom build. See below for more details.
-
-## NPM components
-
-* __modernizr__
-* __fastclick__
-* __moment__ - better date/time handling
-* __d3__ - visualization
-* __topojson__ - d3 plugin for drawing topography from topojson data
-* __jquery__ - actually only needed for Foundation
-
-## Foundation
-
-This app uses Foundation for its responsiveness.
-This Foundation is a custom build of v5.5.2 that includes:
-
-* grid
-* visibility
-
-The js and css files are maintained in the ./vendor directory.
 
 # References
 
 - __[Darmofal_96a]__ – _An Analysis of 3D Particle Path Integration Algorithms._ D. L. Darmofal. Journal of Computanional Physics 123, 182–195 (1996).
+
+[1]: http://nodejs.org
+[4]: http://gulpjs.com
+[5]: http://sass-lang.com
+[6]: http://foundation.zurb.com/apps/
+[7]: http://d3js.org
