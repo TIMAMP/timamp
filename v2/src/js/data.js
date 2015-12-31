@@ -140,7 +140,7 @@ function JsonDataService() {
     }
 
     if (checkData) {
-      this._checkData(data, focus.strataCount(caseStudy));
+      this._checkData(data);
     }
 
     handler(data);
@@ -153,10 +153,10 @@ function JsonDataService() {
    * - speeds: data matrix with dimensions: [segments, strata, radars].
    * - avDensities: data matrix with dimensions: [strata, radars].
    */
-  dataService._checkData = function (data, strataCount) {
+  dataService._checkData = function (data) {
     var segn = data.segmentCount + 1; // add one to allow two-phase integration
-    var strn = strataCount;
-    var radn = caseStudy.radarCount;
+    var strn = data.strataCount;
+    var radn = data.caseStudy.radarCount;
     var segi, stri;
 
     if (data.densities.length != segn) {

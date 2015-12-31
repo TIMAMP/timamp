@@ -236,8 +236,6 @@ var timamp = (function () {
       return dat;
     }
 
-    // filter out
-
     var segn = Math.min(data.segmentCount, data.densities.length);
     var half = Math.floor(data.segmentCount / 2);
     var loc, d_u, d_v, dat, ang, dis, den;

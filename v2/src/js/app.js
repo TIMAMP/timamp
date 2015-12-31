@@ -100,9 +100,7 @@ var showRadarLabels = true;
 /** @type {Object} */ var svg;
 /** @type {Object} */ var projection;
 /** @type {Object} */ var projectionPath;
-/** @type {Object} */ var caseStudy;  // TODO: move to startApp
-/** @type {Object} */ var focus;  // TODO: move to startApp
-/** @type {Object} */ var currentData;  // TODO: move to startApp
+/** @type {Object} */ var currentData;
 
 // -----------------------------------------------------------------------------
 
@@ -111,14 +109,12 @@ var showRadarLabels = true;
  * @param _caseStudy {string} The initial case study object as initialized in the
  *                            init.js files for each case study.
  */
-function startApp(_caseStudy) {
+function startApp(caseStudy) {
   // assert that SVG is supported by the browser:
   if (!document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#Image", "1.1")) {
     alert('SVG is not supported in your browser. Please use a recent browser.');
     return;
   }
-
-  caseStudy = _caseStudy;
 
   d3.select("#radar-anchor-radius").text(radarAnchorRadius);
 
@@ -303,7 +299,7 @@ function initDone(caseStudy) {
 
   // First update the map data and add the svg element to avoid miscalculation
   // of the actual size of the svg content (on Chrome).
-  updateMapData();
+  updateMapData(caseStudy);
 
   // Now update the map for real:
   updateVisualisation(caseStudy, focus, true, true);
@@ -357,7 +353,7 @@ function updateColors(caseStudy, focus) {
  * @param mapDirty {boolean}
  */
 function updateVisualisation(caseStudy, focus, dataDirty, mapDirty) {
-  if (mapDirty) updateMapData();
+  if (mapDirty) updateMapData(caseStudy);
 
   // create/replace svg object:
   if (svg) { svg.remove(); }
@@ -382,7 +378,7 @@ function updateVisualisation(caseStudy, focus, dataDirty, mapDirty) {
   }
   else {
     var mapG = clipG.append("g").attr("id", "map");
-    drawMap(mapG);
+    drawMap(mapG, caseStudy);
   }
 
   var pathsG = clipG.append("g").attr("id", "paths");
@@ -412,7 +408,7 @@ function updateVisualisation(caseStudy, focus, dataDirty, mapDirty) {
   }
 }
 
-function updateMapData() {
+function updateMapData(caseStudy) {
   var svgRect = d3.select("#map-container").node().getBoundingClientRect();
   mapW = svgRect.width;
   //console.log("- mapW:", mapW);
@@ -429,11 +425,11 @@ function updateMapData() {
     radar.projection = projection(radar.location);
   });
 
-  initAnchors();
+  initAnchors(caseStudy);
 }
 
 /** Initialize the anchors. */
-function initAnchors() {
+function initAnchors(caseStudy) {
   var locTopLeft = projection.invert([0, 0]);  // the location at the top-left corner
   var locBotRight = projection.invert([mapW, mapH]);  // the loc. at the bottom-right
   var rra = utils.geo.distAngle(radarAnchorRadius);  // radar radius as angle
@@ -453,7 +449,7 @@ function initAnchors() {
   }
 }
 
-function drawMap(mapG) {
+function drawMap(mapG, caseStudy) {
   mapG.append("rect")
     .attr("id", "background")
     .attr("x", 0)
@@ -587,7 +583,8 @@ function drawPaths_multiPath(data, pathsG) {
 
         var lineData = timamp.buildOutline(pathData, radiusFactor);
         var flowG = pathsG.append("g").classed("flow-line", true);
-        drawPath_variableThickness(flowG, pathData, lineData, stri, radiusFactor);
+        var lcolor = data.caseStudy.altHexColors[stri];
+        drawPath_variableThickness(flowG, pathData, lineData, stri, radiusFactor, lcolor);
 
         // DEBUG:
         //if (isDebug(anchorLoc)) {
@@ -620,8 +617,9 @@ function drawPaths_singlePath(data, pathsG) {
         return [d[0], d[1] + oy, d[2], d[3]];
       });
       var lineData = timamp.buildOutline(pathData, radiusFactor);
+      var lcolor = data.caseStudy.altHexColors[stri];
       drawPath_variableThickness(pathsG.append("g"),
-        pathData, lineData, stri, radiusFactor);
+        pathData, lineData, stri, radiusFactor, lcolor);
     });
   }
 }
@@ -694,11 +692,10 @@ function drawPath_fixedThickness(data, pathG, pathData, stri) {
   }
 }
 
-function drawPath_variableThickness(flowG, pathData, lineData, stri, radiusFactor) {
+function drawPath_variableThickness(flowG, pathData, lineData, stri, radiusFactor, lcolor) {
   //console.log(lineData.map(function (d) {
   //  return '[' + d[0] + ', ' + d[1] + ']';
   //}));
-  var lcolor = caseStudy.altHexColors[stri];
   var segn = pathData.length - 1;
   var radius;
 
