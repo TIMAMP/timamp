@@ -42,9 +42,6 @@ function JsonDataService() {
           return;
         }
 
-        if (checkData) {
-          dataService.checkData(json, focus.strataCount(caseStudy));
-        }
         sourceData = json;
         currFocus = focus;
         dataService._loadFocusData_next(caseStudy, focus, handler);
@@ -90,6 +87,7 @@ function JsonDataService() {
       append = iTill - iMax;
       iTill = iMax;
     }
+    //console.log(iFrom, iTill, iMax, prepend, append);
 
     // Use slices of the source data as focus data:
     data.densities = sourceData.densities.slice(iFrom, iTill);
@@ -141,6 +139,10 @@ function JsonDataService() {
         ", data.segmentCount + 1: " + (data.segmentCount + 1) + "]");
     }
 
+    if (checkData) {
+      this._checkData(data, focus.strataCount(caseStudy));
+    }
+
     handler(data);
   };
 
@@ -151,72 +153,75 @@ function JsonDataService() {
    * - speeds: data matrix with dimensions: [segments, strata, radars].
    * - avDensities: data matrix with dimensions: [strata, radars].
    */
-  dataService.checkData = function (data, strataCount) {
-    var startTime = caseStudy.dataFrom.valueOf();
-    var endTime = caseStudy.dataTill.valueOf();
-    var dt = endTime - startTime;
-    var itervalSec = caseStudy.segmentSize * 60 * 1000;
-    var segn = Math.floor(dt / itervalSec);
+  dataService._checkData = function (data, strataCount) {
+    var segn = data.segmentCount + 1; // add one to allow two-phase integration
     var strn = strataCount;
     var radn = caseStudy.radarCount;
     var segi, stri;
 
-    function logData() {
-      console.error("- segn:" + segn);
-      console.error("- data.densities.length:" + data.densities.length);
-      console.error("- data.uSpeeds.length:" + data.densities.length);
-      console.error("- data.vSpeeds.length:" + data.densities.length);
-      console.error("- data.speeds.length:" + data.densities.length);
-    }
-
     if (data.densities.length != segn) {
-      logData();
-      throw ("data.densities.length != segn");
+      throw ("data.densities.length (" + data.densities.length +
+        ") != segn (" + segn + ")");
     }
     if (data.uSpeeds.length != segn) {
-      logData();
-      throw ("data.uSpeeds.length != segn");
+      throw ("data.uSpeeds.length (" + data.uSpeeds.length +
+        ") != segn (" + segn + ")");
     }
     if (data.vSpeeds.length != segn) {
-      logData();
-      throw ("data.vSpeeds.length != segn");
+      throw ("data.vSpeeds.length (" + data.vSpeeds.length +
+        ") != segn (" + segn + ")");
     }
     if (data.speeds.length != segn) {
-      logData();
-      throw ("data.speeds.length != segn");
+      throw ("data.speeds.length (" + data.speeds.length +
+        ") != segn (" + segn + ")");
     }
 
     for (segi = 0; segi < segn; segi++) {
       if (data.densities[segi].length != strn) {
         throw ("data.densities[segi].length (" + data.densities[segi].length +
-        ") != strn (" + strn + ")");
+          ") != strn (" + strn + ")");
       }
       if (data.uSpeeds[segi].length != strn) {
         throw ("data.uSpeeds[segi].length (" + data.uSpeeds[segi].length +
-        ") != strn (" + strn + ")");
+          ") != strn (" + strn + ")");
       }
       if (data.vSpeeds[segi].length != strn) {
         throw ("data.vSpeeds[segi].length (" + data.vSpeeds[segi].length +
-        ") != strn (" + strn + ")");
+          ") != strn (" + strn + ")");
       }
       if (data.speeds[segi].length != strn) {
         throw ("data.speeds[segi].length (" + data.speeds[segi].length +
-        ") != strn (" + strn + ")");
+          ") != strn (" + strn + ")");
       }
 
       for (stri = 0; stri < strn; stri++) {
         if (data.densities[segi][stri].length != radn) {
-          throw ("data.densities[segi][stri].length != radn");
+          throw ("data.densities[segi][stri].length (" +
+            data.densities[segi][stri].length + ") != radn (" + radn + ")");
         }
         if (data.uSpeeds[segi][stri].length != radn) {
-          throw ("data.uSpeeds[segi][stri].length != radn");
+          throw ("data.uSpeeds[segi][stri].length (" +
+            data.uSpeeds[segi][stri].length + ") != radn (" + radn + ")");
         }
         if (data.vSpeeds[segi][stri].length != radn) {
-          throw ("data.vSpeeds[segi][stri].length != radn");
+          throw ("data.vSpeeds[segi][stri].length (" +
+            data.vSpeeds[segi][stri].length + ") != radn (" + radn + ")");
         }
         if (data.speeds[segi][stri].length != radn) {
-          throw ("data.speeds[segi][stri].length != radn");
+          throw ("data.speeds[segi][stri].length (" +
+            data.speeds[segi][stri].length + ") != radn (" + radn + ")");
         }
+      }
+    }
+
+    if (data.avDensities.length != strn) {
+      throw ("data.avDensities.length (" + data.avDensities.length +
+        ") != strn (" + strn + ")");
+    }
+    for (stri = 0; stri < strn; stri++) {
+      if (data.avDensities[stri].length != radn) {
+        throw ("data.avDensities[stri].length (" +
+          data.avDensities[stri].length + ") != radn (" + radn + ")");
       }
     }
   };
