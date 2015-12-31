@@ -64,7 +64,7 @@ var timamp = (function () {
      */
     dataObject.initStructure = function () {
       var segn = this.segmentCount;
-      var strn = focus.strataCount;
+      var strn = this.strataCount;
       var radn = caseStudy.radarCount;
       for (var segi = 0; segi < segn; segi++) {
         var densities = [];
@@ -99,17 +99,17 @@ var timamp = (function () {
       return this.__strataOption[strataIdx][2] / 1000;
     };
 
-    // empty partial data structure to use in dataObject.addMissingSegments:
-    var missingSegmentData = [];
-    for (var stri = 0; stri < focus.strataCount; stri++) {
-      missingSegmentData.push(utils.zeroArray(caseStudy.radarCount));
-    }
-
     /**
      * Prepends data entries to replace missing data for a given amount of segments.
      * @param amount The number of segments for which to add data entries.
      */
     dataObject.prependMissingSegments = function (amount) {
+      // empty partial data structure to use in dataObject.addMissingSegments:
+      var missingSegmentData = [];
+      for (var stri = 0; stri < this.strataCount; stri++) {
+        missingSegmentData.push(utils.zeroArray(caseStudy.radarCount));
+      }
+
       for (var i = 0; i < amount; i++) {
         this.densities.unshift(missingSegmentData);
         this.uSpeeds.unshift(missingSegmentData);
@@ -123,6 +123,12 @@ var timamp = (function () {
      * @param amount The number of segments for which to add data entries.
      */
     dataObject.appendMissingSegments = function (amount) {
+      // empty partial data structure to use in dataObject.addMissingSegments:
+      var missingSegmentData = [];
+      for (var stri = 0; stri < this.strataCount; stri++) {
+        missingSegmentData.push(utils.zeroArray(caseStudy.radarCount));
+      }
+
       for (var i = 0; i < amount; i++) {
         this.densities.push(missingSegmentData);
         this.uSpeeds.push(missingSegmentData);
@@ -213,8 +219,7 @@ var timamp = (function () {
         }
         catch (error) {
           console.error("- a_l:", a_l);
-          console.error("- t_i:", t_i);
-          console.error("- s_i:", s_i);
+          console.error("- t_i:", t_i, "s_i:", s_i);
           console.error("- data.uSpeeds:", data.uSpeeds);
           console.error("- data.uSpeeds[t_i + 1]:", data.uSpeeds[t_i + 1]);
           throw error;
