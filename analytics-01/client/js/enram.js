@@ -95,10 +95,8 @@
        *   called with the caseStudy as argument.
        */
       caseStudy._loadMetaData = function (handler) {
-        //console.log(this);
         caseStudy.urlBase = "data/" + this.basePath + "/";
         d3.json(caseStudy.urlBase + "metadata.json", function (error, json) {
-          //console.log(caseStudy);
           if (error) {
             throw error;
             //throw new Error("Error in caseStudy._loadMetaData. "
