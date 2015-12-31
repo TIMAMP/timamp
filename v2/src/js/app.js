@@ -126,6 +126,7 @@ function startApp(_caseStudy) {
   caseStudy.load(function () {
     //console.log(caseStudy);
 
+    // The initial focus:
     focus = enram.focus(
       caseStudy.defaultFocusFrom,
       defaultFocusDuration,
@@ -941,7 +942,7 @@ function writeMetaData(caseStudy, focus, clipG) {
   var margin = 18;
   var lh = 12;
   var ly = mapH - 7 - 3 * lh;
-  var formatString = "H[h], MMM D, YYYY";
+  var formatString = "HH[h], MMM D, YYYY";
   var tillMoment = moment(focus.from).add(focus.duration, "hours");
 
   mdG.append("text")
