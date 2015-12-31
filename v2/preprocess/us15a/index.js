@@ -8,10 +8,9 @@ var csv = require('csv');
 var jsonfile = require('jsonfile');
 var moment = require('moment');
 
-// cofiguration:
+// configuration:
 var csv_path = "data.csv";
 var metadata_path = "metadata.json";
-//var id = "us15a";
 
 // Raw data indices:
 var ri_radar_id = 0,
@@ -23,35 +22,29 @@ var ri_radar_id = 0,
   ri_vertical_integrated_density = 6,
   ri_speed = 7 /* enriched */;
 
-function loadMetadata(path, handler) {
+function loadMetadata(path) {
   console.log('# Loading metadata from ' + path);
-  fs.readFile(path, 'utf8', function (err, raw) {
-    if (err) {
-      console.error("! Failed to read '" + path + "'. " + err);
-      throw err;
-    }
+  var buffer = fs.readFileSync(path, 'utf8');
+  var metadata = JSON.parse(buffer);
 
-    var metadata = JSON.parse(raw);
+  // segment duration in milliseconds:
+  metadata.intervalMs = metadata.segmentSize * 60 * 1000;
 
-    // segment duration in milliseconds:
-    metadata.intervalMs = metadata.segmentSize * 60 * 1000;
+  metadata.startMoment = moment.utc(metadata.dataFrom);
+  metadata.endMoment = moment.utc(metadata.dataTill);
+  metadata.startTime = metadata.startMoment.valueOf();
+  metadata.endTime = metadata.endMoment.valueOf();
 
-    metadata.startMoment = moment.utc(metadata.dataFrom);
-    metadata.endMoment = moment.utc(metadata.dataTill);
-    metadata.startTime = metadata.startMoment.valueOf();
-    metadata.endTime = metadata.endMoment.valueOf();
+  // the number of segments:
+  metadata.segmentCount = Math.floor((metadata.endTime - metadata.startTime) / metadata.intervalMs);
 
-    // the number of segments:
-    metadata.segmentCount = Math.floor((metadata.endTime - metadata.startTime) / metadata.intervalMs);
-
-    // data structure to map radar ids to the radar index:
-    metadata.radarIndices = {};
-    metadata.radars.forEach(function (radar, i) {
-      metadata.radarIndices[radar.id] = i;
-    });
-
-    handler(metadata);
+  // data structure to map radar ids to the radar index:
+  metadata.radarIndices = {};
+  metadata.radars.forEach(function (radar, i) {
+    metadata.radarIndices[radar.id] = i;
   });
+
+  return metadata;
 }
 
 function loadData(path, metadata, handler) {
@@ -140,8 +133,7 @@ function initData(metadata, strataOption) {
     densities: [],
     uSpeeds: [],
     vSpeeds: [],
-    speeds: [],
-    avDensities: []
+    speeds: []
   };
   for (segi = 0; segi < segn; segi++) {
     var densities = [];
@@ -302,7 +294,7 @@ function processData(records, metadata, strataIdx) {
     //});
   }
   else {
-    console.log("# Complete");
+    console.log("# Preprocessing complete");
   }
 }
 
@@ -322,8 +314,7 @@ function average(ary, undefAv) {
   return r / len;
 }
 
-loadMetadata(metadata_path, function (metadata) {
-  loadData(csv_path, metadata, function (records) {
-    processData(records, metadata, 0);
-  });
+var metadata = loadMetadata(metadata_path);
+loadData(csv_path, metadata, function (records) {
+  processData(records, metadata, 0);
 });

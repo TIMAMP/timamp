@@ -1,7 +1,7 @@
 {
-  "name": "process_csv_us15a",
+  "name": "Preprocess_us15a",
   "version": "1.0.0",
-  "description": "Docker image that runs NodeJS app that processes the csv data file with the us15a case study data.",
+  "description": "NodeJS app that preprocesses the data for the us15a case study.",
   "author": "Wouter Van den Broeck <wouter@addith.be>",
   "main": "index.js",
   "dependencies": {
