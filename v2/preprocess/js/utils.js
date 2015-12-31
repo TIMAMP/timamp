@@ -108,3 +108,76 @@ exports.writeData = function (data, strataIdx, outputPath, handler) {
     handler();
   });
 };
+
+/** Check if the given data is OK:
+ * - densities: data matrix with dimensions: [segments, strata, radars].
+ * - uSpeeds: data matrix with dimensions: [segments, strata, radars].
+ * - vSpeeds: data matrix with dimensions: [segments, strata, radars].
+ * - speeds: data matrix with dimensions: [segments, strata, radars].
+ * - avDensities: data matrix with dimensions: [strata, radars].
+ */
+exports.checkData = function (data, metadata, strataIdx) {
+  var startTime = metadata.startMoment.valueOf();
+  var endTime = metadata.endMoment.valueOf();
+  var dt = endTime - startTime;
+  var itervalSec = metadata.segmentSize * 60 * 1000;
+  var segn = Math.floor(dt / itervalSec);
+  var strn = metadata.strataOptions[strataIdx].length;
+  var radn = metadata.radars.length;
+  var segi, stri;
+
+  if (data.densities.length != segn) {
+    throw ("data.densities.length (" + data.densities.length +
+      ") != segn (" + segn + ")");
+  }
+  if (data.uSpeeds.length != segn) {
+    throw ("data.uSpeeds.length (" + data.uSpeeds.length +
+      ") != segn (" + segn + ")");
+  }
+  if (data.vSpeeds.length != segn) {
+    throw ("data.vSpeeds.length (" + data.vSpeeds.length +
+      ") != segn (" + segn + ")");
+  }
+  if (data.speeds.length != segn) {
+    throw ("data.speeds.length (" + data.speeds.length +
+      ") != segn (" + segn + ")");
+  }
+
+  for (segi = 0; segi < segn; segi++) {
+    if (data.densities[segi].length != strn) {
+      throw ("data.densities[segi].length (" + data.densities[segi].length +
+        ") != strn (" + strn + ")");
+    }
+    if (data.uSpeeds[segi].length != strn) {
+      throw ("data.uSpeeds[segi].length (" + data.uSpeeds[segi].length +
+        ") != strn (" + strn + ")");
+    }
+    if (data.vSpeeds[segi].length != strn) {
+      throw ("data.vSpeeds[segi].length (" + data.vSpeeds[segi].length +
+        ") != strn (" + strn + ")");
+    }
+    if (data.speeds[segi].length != strn) {
+      throw ("data.speeds[segi].length (" + data.speeds[segi].length +
+        ") != strn (" + strn + ")");
+    }
+
+    for (stri = 0; stri < strn; stri++) {
+      if (data.densities[segi][stri].length != radn) {
+        throw ("data.densities[segi][stri].length (" +
+          data.densities[segi][stri].length + ") != radn (" + radn + ")");
+      }
+      if (data.uSpeeds[segi][stri].length != radn) {
+        throw ("data.uSpeeds[segi][stri].length (" +
+          data.uSpeeds[segi][stri].length + ") != radn (" + radn + ")");
+      }
+      if (data.vSpeeds[segi][stri].length != radn) {
+        throw ("data.vSpeeds[segi][stri].length (" +
+          data.vSpeeds[segi][stri].length + ") != radn (" + radn + ")");
+      }
+      if (data.speeds[segi][stri].length != radn) {
+        throw ("data.speeds[segi][stri].length (" +
+          data.speeds[segi][stri].length + ") != radn (" + radn + ")");
+      }
+    }
+  }
+};

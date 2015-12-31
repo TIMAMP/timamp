@@ -132,6 +132,7 @@ function process(records, metadata, strataOption, handler) {
 function processNext(records, metadata, strataIdx) {
   if (strataIdx < metadata.strataOptions.length) {
     process(records, metadata, metadata.strataOptions[strataIdx], function (data) {
+      utils.checkData(data, metadata, strataIdx);
       utils.writeData(data, strataIdx, outputPath, function () {
         processNext(records, metadata, strataIdx + 1);
       });
