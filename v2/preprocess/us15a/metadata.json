@@ -16,12 +16,11 @@
     [[200, 3000]]
   ],
   "defaultStrataOption": 2,
-  "migrantsPerPath": 100000,
+  "defaultMigrantsPerPath": 500000,
   "segmentSize": 20,
   "anchorInterval": 20,
   "mapCenter": [-73.2, 42],
   "mapScaleFactor": 4.25,
-  "colorLegendMarkers": [0.2, 1.6, 3, "km"],
   "scaleLegendMarkers": [0, 100, 200, "km"],
   "radars": [
     {

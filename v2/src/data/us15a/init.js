@@ -9,6 +9,7 @@ var us15a = function () {
     var dataService = {};
     var checkData = true;
     var sourceData = null;
+    var currFocus = null;
 
     /**
      * Initializes the dataService.
@@ -16,92 +17,7 @@ var us15a = function () {
      * @param handler {function}
      */
     dataService.initialize = function(caseStudy, handler) {
-      d3.json(caseStudy.urlBase + "data.json", function (error, json) {
-        //console.log(caseStudy);
-        if (error) {
-          console.error(error);
-          //throw new Error("Error in dataService.loadCaseStudy. "
-          //    + JSON.parse(error.responseText).error.join("; "));
-          return;
-        }
-
-        if (checkData) { dataService.checkData(json); }
-        sourceData = json;
-        handler();
-      });
-    };
-
-    /** Check if the given data is OK:
-     * - densities: data matrix with dimensions: [segments, strata, radars].
-     * - uSpeeds: data matrix with dimensions: [segments, strata, radars].
-     * - vSpeeds: data matrix with dimensions: [segments, strata, radars].
-     * - speeds: data matrix with dimensions: [segments, strata, radars].
-     * - avDensities: data matrix with dimensions: [strata, radars].
-     */
-    dataService.checkData = function (data) {
-      var startTime = caseStudy.dataFrom.valueOf();
-      var endTime = caseStudy.dataTill.valueOf();
-      var dt = endTime - startTime;
-      var itervalSec = caseStudy.segmentSize * 60 * 1000;
-      var segn = Math.floor(dt / itervalSec);
-      var strn = Math.max.apply(null, caseStudy.strataCounts);
-      var radn = caseStudy.radarCount;
-      var segi, stri;
-
-      function logData() {
-        console.error("- segn:" + segn);
-        console.error("- data.densities.length:" + data.densities.length);
-        console.error("- data.uSpeeds.length:" + data.densities.length);
-        console.error("- data.vSpeeds.length:" + data.densities.length);
-        console.error("- data.speeds.length:" + data.densities.length);
-      }
-
-      if (data.densities.length != segn) {
-        logData();
-        throw ("data.densities.length != segn");
-      }
-      if (data.uSpeeds.length != segn) {
-        logData();
-        throw ("data.uSpeeds.length != segn");
-      }
-      if (data.vSpeeds.length != segn) {
-        logData();
-        throw ("data.vSpeeds.length != segn");
-      }
-      if (data.speeds.length != segn) {
-        logData();
-        throw ("data.speeds.length != segn");
-      }
-
-      for (segi = 0; segi < segn; segi++) {
-        if (data.densities[segi].length != strn) {
-          throw ("data.densities[segi].length != strn");
-        }
-        if (data.uSpeeds[segi].length != strn) {
-          throw ("data.uSpeeds[segi].length != strn");
-        }
-        if (data.vSpeeds[segi].length != strn) {
-          throw ("data.vSpeeds[segi].length != strn");
-        }
-        if (data.speeds[segi].length != strn) {
-          throw ("data.speeds[segi].length != strn");
-        }
-
-        for (stri = 0; stri < strn; stri++) {
-          if (data.densities[segi][stri].length != radn) {
-            throw ("data.densities[segi][stri].length != radn");
-          }
-          if (data.uSpeeds[segi][stri].length != radn) {
-            throw ("data.uSpeeds[segi][stri].length != radn");
-          }
-          if (data.vSpeeds[segi][stri].length != radn) {
-            throw ("data.vSpeeds[segi][stri].length != radn");
-          }
-          if (data.speeds[segi][stri].length != radn) {
-            throw ("data.speeds[segi][stri].length != radn");
-          }
-        }
-      }
+      handler();
     };
 
     /**
@@ -112,6 +28,36 @@ var us15a = function () {
      */
     dataService.loadFocusData = function (caseStudy, focus, handler) {
       //console.log(">> dataService.loadFocusData()");
+
+      if (currFocus == focus) {
+        throw "currFocus == focus";
+      }
+
+      if (currFocus == undefined || currFocus.strataOptionIdx != focus.strataOptionIdx) {
+        // update source data:
+        var dataPath = caseStudy.urlBase + "data-" + focus.strataOptionIdx + ".json";
+        d3.json(dataPath, function (error, json) {
+          if (error) {
+            console.error(error);
+            //throw new Error("Error in dataService.loadCaseStudy. "
+            //    + JSON.parse(error.responseText).error.join("; "));
+            return;
+          }
+
+          if (checkData) {
+            dataService.checkData(json, focus.strataCount(caseStudy));
+          }
+          sourceData = json;
+          currFocus = focus;
+          dataService._loadFocusData_next(caseStudy, focus, handler);
+        });
+      }
+      else {
+        this._loadFocusData_next(caseStudy, focus, handler);
+      }
+    };
+
+    dataService._loadFocusData_next = function (caseStudy, focus, handler) {
       var data = timamp.dataObject(caseStudy, focus);
       var dt = focus.from.valueOf() - caseStudy.dataFrom.valueOf();
       var segmentSec = caseStudy.segmentSize * 60 * 1000;
@@ -153,20 +99,18 @@ var us15a = function () {
       data.vSpeeds = sourceData.vSpeeds.slice(iFrom, iTill);
       data.speeds = sourceData.speeds.slice(iFrom, iTill);
 
-      // The strata height in km:
-      var strataHeight = caseStudy.maxAltitude / focus.strataCount / 1000;
-
       // Calculate average densities per radar-altitude combination, integrated
       // over the strata height. These numbers thus represent the number of birds
       // per square km in a given strata. The average density is calculated over
       // the segments for which a (partial) path is shown, i.e. for which speed
       // and density > 0.
-      var strn = focus.strataCount;
+      var strn = data.strataCount;
       var radn = caseStudy.radarCount;
       var segn = data.densities.length;
       var stri, radi, segi;
       for (stri = 0; stri < strn; stri++) {
         var avds = [];
+        var strataSize = data.strataSize(stri);
         for (radi = 0; radi < radn; radi++) {
           var cnt = 0;
           var sum = 0;
@@ -183,7 +127,7 @@ var us15a = function () {
             if (sum == 0) {
               console.error("avDensity is zero for stri " + stri + " and radi " + radi);
             }
-            avds.push(sum / cnt * strataHeight);
+            avds.push(sum / cnt * strataSize);
           }
         }
         data.avDensities.push(avds);
@@ -200,6 +144,83 @@ var us15a = function () {
       }
 
       handler(data);
+    };
+
+    /** Check if the given data is OK:
+     * - densities: data matrix with dimensions: [segments, strata, radars].
+     * - uSpeeds: data matrix with dimensions: [segments, strata, radars].
+     * - vSpeeds: data matrix with dimensions: [segments, strata, radars].
+     * - speeds: data matrix with dimensions: [segments, strata, radars].
+     * - avDensities: data matrix with dimensions: [strata, radars].
+     */
+    dataService.checkData = function (data, strataCount) {
+      var startTime = caseStudy.dataFrom.valueOf();
+      var endTime = caseStudy.dataTill.valueOf();
+      var dt = endTime - startTime;
+      var itervalSec = caseStudy.segmentSize * 60 * 1000;
+      var segn = Math.floor(dt / itervalSec);
+      var strn = strataCount;
+      var radn = caseStudy.radarCount;
+      var segi, stri;
+
+      function logData() {
+        console.error("- segn:" + segn);
+        console.error("- data.densities.length:" + data.densities.length);
+        console.error("- data.uSpeeds.length:" + data.densities.length);
+        console.error("- data.vSpeeds.length:" + data.densities.length);
+        console.error("- data.speeds.length:" + data.densities.length);
+      }
+
+      if (data.densities.length != segn) {
+        logData();
+        throw ("data.densities.length != segn");
+      }
+      if (data.uSpeeds.length != segn) {
+        logData();
+        throw ("data.uSpeeds.length != segn");
+      }
+      if (data.vSpeeds.length != segn) {
+        logData();
+        throw ("data.vSpeeds.length != segn");
+      }
+      if (data.speeds.length != segn) {
+        logData();
+        throw ("data.speeds.length != segn");
+      }
+
+      for (segi = 0; segi < segn; segi++) {
+        if (data.densities[segi].length != strn) {
+          throw ("data.densities[segi].length (" + data.densities[segi].length +
+          ") != strn (" + strn + ")");
+        }
+        if (data.uSpeeds[segi].length != strn) {
+          throw ("data.uSpeeds[segi].length (" + data.uSpeeds[segi].length +
+          ") != strn (" + strn + ")");
+        }
+        if (data.vSpeeds[segi].length != strn) {
+          throw ("data.vSpeeds[segi].length (" + data.vSpeeds[segi].length +
+          ") != strn (" + strn + ")");
+        }
+        if (data.speeds[segi].length != strn) {
+          throw ("data.speeds[segi].length (" + data.speeds[segi].length +
+          ") != strn (" + strn + ")");
+        }
+
+        for (stri = 0; stri < strn; stri++) {
+          if (data.densities[segi][stri].length != radn) {
+            throw ("data.densities[segi][stri].length != radn");
+          }
+          if (data.uSpeeds[segi][stri].length != radn) {
+            throw ("data.uSpeeds[segi][stri].length != radn");
+          }
+          if (data.vSpeeds[segi][stri].length != radn) {
+            throw ("data.vSpeeds[segi][stri].length != radn");
+          }
+          if (data.speeds[segi][stri].length != radn) {
+            throw ("data.speeds[segi][stri].length != radn");
+          }
+        }
+      }
     };
 
     return dataService;

@@ -72,6 +72,7 @@ function DBDataService() {
   dataService.loadFocusData = function (caseStudy, focus, handler) {
     var data = timamp.dataObject(caseStudy, focus).initStructure();
 
+    // TODO: consider strataSize
     console.log("Loading from " + focus.from + " for " + data.segmentCount +
       " segments of " + data.caseStudy.segmentSize + " minutes each.");
     var sql = this.formatTemplate(this._queryTemplate,

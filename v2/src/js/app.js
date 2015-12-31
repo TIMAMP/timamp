@@ -7,9 +7,6 @@
 // -----------------------------------------------------------------------------
 // Configuration settings that do not change:
 
-//
-// TODO: colorLegendMarkers removed from metadata, infer from strataOptions
-
 /**
  * The radius around radars in km in which path anchors are considered.
  * @type {number}
@@ -132,7 +129,7 @@ function startApp(_caseStudy) {
     focus = enram.focus(
       caseStudy.defaultFocusFrom,
       defaultFocusDuration,
-      caseStudy.defaultStrataCount,
+      caseStudy.defaultStrataOption,
       caseStudy.defaultMigrantsPerPath
     );
     focus.constrain(caseStudy);
@@ -167,7 +164,7 @@ function startApp(_caseStudy) {
         return;
       }
       caseStudy.topoJson = json;
-      if (--busy == 0) initDone();
+      if (--busy == 0) initDone(caseStudy);
     });
 
     //updateAnchors();
@@ -175,7 +172,7 @@ function startApp(_caseStudy) {
 
     anchorArea = caseStudy.anchorInterval * caseStudy.anchorInterval;
 
-    if (--busy == 0) initDone();
+    if (--busy == 0) initDone(caseStudy);
   });
 }
 
@@ -202,7 +199,7 @@ function constrainFrom(from, focus, caseStudy) {
   return from;
 }
 
-function initDone() {
+function initDone(caseStudy) {
 
   function dateUpdateHandler() {
     var inputDay = d3.select("#input-day");
@@ -237,10 +234,10 @@ function initDone() {
   }
 
   function strataCountUpdateHandler() {
-    var newStrataCount = d3.select("#input-strata").property('value');
-    if (newStrataCount != focus.strataCount) {
-      //console.log("input-strata changed:", newStrataCount);
-      setStrataCount(newStrataCount);
+    var newStrataOptionIdx = d3.select("#input-strata").property('value');
+    if (newStrataOptionIdx != focus.strataOptionIdx) {
+      //console.log("input-strata changed:", newStrataOptionIdx);
+      setStrataOptionIdx(newStrataOptionIdx);
       updateColors(caseStudy, focus);
       updateVisualisation(caseStudy, focus, true, true);
     }
@@ -275,12 +272,12 @@ function initDone() {
   // configure the strata-count input widget:
   d3.select("#input-strata")
     .selectAll('option')
-    .data(caseStudy.strataCounts)
+    .data(caseStudy.strataOptions)
     .enter().append("option")
-    .property('value', utils.id)
-    .text(utils.id);
+    .property('value', function (strataOption, i) { return i; })
+    .text(function (strataOption) { return strataOption.length; });
   d3.select("#input-strata")
-    .property('value', focus.strataCount)
+    .property('value', caseStudy.defaultStrataOption)
     .on('change', strataCountUpdateHandler);
 
   // configure the migrants-per-path input widget:
@@ -312,19 +309,11 @@ function initDone() {
 }
 
 /**
- * Use this function to update the strataCount value.
- * @param {number} strataCount
+ * Use this function to update the strata-option value.
+ * @param {number} strataOptionIdx
  */
-function setStrataCount(strataCount) {
-  // Assert that the strata count is a whole divisor of the number
-  // of altitudes in the data.
-  if (caseStudy.altitudes % strataCount != 0) {
-    console.error("The given strata count (" + strataCount
-      + ") should be a whole divisor of the number of altitudes in the data ("
-      + caseStudy.altitudes + ").");
-    return;
-  }
-  focus.strataCount = strataCount;
+function setStrataOptionIdx(strataOptionIdx) {
+  focus.strataOptionIdx = strataOptionIdx;
 }
 
 /**
@@ -344,7 +333,7 @@ function setMigrantsPerPath(migrantsPerPath) {
 function updateColors(caseStudy, focus) {
   caseStudy.hues = [];
   caseStudy.altHexColors = [];
-  var altn = focus.strataCount;
+  var altn = focus.strataCount(caseStudy);
   var hue;
   if (altn == 1) {
     hue = (altiHueMin + altiHueMax) / 2;
@@ -561,7 +550,7 @@ function drawPaths_multiPath(data, pathsG) {
   var rlons = data.caseStudy.radLons;
   var rlats = data.caseStudy.radLats;
   var idw = utils.idw;
-  var strn = data.focus.strataCount;
+  var strn = data.strataCount;
   var radiusFactor = 0.05;
   var probf = anchorArea / data.focus.migrantsPerPath;
   for (var stri = 0; stri < strn; stri++) {
@@ -610,7 +599,7 @@ function drawPaths_multiPath(data, pathsG) {
 }
 
 function drawPaths_singlePath(data, pathsG) {
-  var strn = data.focus.strataCount;
+  var strn = data.strataCount;
   var tdy = Math.min(12 * strn, 150);
   var radiusFactor = 0.05;
   for (var stri = 0; stri < strn; stri++) {
@@ -790,7 +779,7 @@ function drawColorLegend_hor(caseStudy, focus, legendG) {
 
   var tx = legendL;
   ty = mapH - 20 - legendH;
-  var alti, altn = focus.strataCount;
+  var alti, altn = focus.strataCount(caseStudy);
   var dx = legendW / altn;
   for (alti = 0; alti < altn; alti++) {
     legendG.append("rect")
@@ -815,8 +804,13 @@ function drawColorLegend(caseStudy, focus, legendG) {
   var legendH = 100;
   var legendT = margin;
 
+  var altitudeRange = focus.altitudeRange(caseStudy);
+  var minHeight = altitudeRange[0] / 1000;
+  var midHeight = (altitudeRange[0] + altitudeRange[1]) / 2000;
+  var maxHeight = altitudeRange[1] / 1000;
+
   var ty = legendT;
-  var alti, altn = focus.strataCount;
+  var alti, altn = focus.strataCount(caseStudy);
   var dy = legendH / altn;
   for (alti = altn - 1; alti >= 0; alti--) {
     legendG.append("rect")
@@ -829,40 +823,46 @@ function drawColorLegend(caseStudy, focus, legendG) {
   }
 
   var lineW = 7;
+  var x2 = margin + legendW + lineW;
   legendG.append("line")
     .classed("scale-legend-line", true)
     .attr("x1", margin)
     .attr("y1", legendT)
-    .attr("x2", margin + legendW + lineW)
+    .attr("x2", x2)
     .attr("y2", legendT);
   legendG.append("line")
     .classed("scale-legend-line", true)
     .attr("x1", margin + legendW)
     .attr("y1", legendT + legendH / 2)
-    .attr("x2", margin + legendW + lineW)
+    .attr("x2", x2)
     .attr("y2", legendT + legendH / 2);
   legendG.append("line")
     .classed("scale-legend-line", true)
     .attr("x1", margin)
     .attr("y1", legendT + legendH)
-    .attr("x2", 84)
+    .attr("x2", x2)
     .attr("y2", legendT + legendH);
 
+  var x2 = margin + legendW + lineW + 4;
   legendG.append("text")
     .classed("legend-label", true)
-    .attr("x", margin + legendW + lineW + 4)
-    .attr("y", legendT + 4)
-    .text("4000 m");
+    .attr("x", x2)
+    .attr("y", legendT + 8)
+    .text(maxHeight + "km");
   legendG.append("text")
     .classed("legend-label", true)
-    .attr("x", margin + legendW + lineW + 4)
+    .attr("x", x2)
     .attr("y", legendT + legendH / 2 + 4)
-    .text("2000 m");
-
+    .text(midHeight + " km");
+  legendG.append("text")
+    .classed("legend-label", true)
+    .attr("x", x2)
+    .attr("y", legendT + legendH)
+    .text(minHeight + " km");
   legendG.append("text")
     .classed("legend-label", true)
     .attr("x", margin + legendW + lineW + 2)
-    .attr("y", legendT + legendH - 4)
+    .attr("y", legendT + legendH + 12)
     .text("altitude");
 }
 

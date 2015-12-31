@@ -48,6 +48,8 @@ var timamp = (function () {
     var dataObject = {
       caseStudy: caseStudy,
       focus: focus,
+      __strataOption: focus.strataOption(caseStudy),
+      strataCount: focus.strataCount(caseStudy),
       segmentCount: focus.segmentCount(caseStudy),
       densities: [],
       uSpeeds: [],
@@ -86,6 +88,15 @@ var timamp = (function () {
       }
 
       return this;
+    };
+
+    /**
+     * Returns the size (height) of the strata with the given index.
+     * @param strataIdx
+     * @returns {number}
+     */
+    dataObject.strataSize = function (strataIdx) {
+      return this.__strataOption[strataIdx][2] / 1000;
     };
 
     // empty partial data structure to use in dataObject.addMissingSegments:

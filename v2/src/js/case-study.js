@@ -66,6 +66,12 @@ enram.caseStudy = function (basePath, dataService) {
       caseStudy.selectedRadar = caseStudy.radars[0];
       caseStudy.radarCount = caseStudy.radars.length;
 
+      caseStudy.strataOptions.forEach(function (strataOption) {
+        strataOption.forEach(function (strata) {
+          strata.push(strata[1] - strata[0]);
+        })
+      });
+
       caseStudy.topoJsonUrl = caseStudy.urlBase + "topo.json";
       //console.log(caseStudy.topoJsonUrl);
 
@@ -83,6 +89,19 @@ enram.caseStudy = function (basePath, dataService) {
     //console.log(">> caseStudy.loadFocusData()");
     this.dataService.loadFocusData(this, focus, handler);
   };
+
+  /**
+   * @return the number of strata for the different strata options.
+   */
+  caseStudy.strataCounts = function () {
+    if (this.__strataCounts == undefined) {
+      this.__strataCounts = this.strataOptions.map(function (strataOption) {
+        return strataOption.length;
+      });
+    }
+    return this.__strataCounts;
+  };
+  caseStudy.__strataCounts = undefined;
 
   /**
    * @return the segment duration in milliseconds
