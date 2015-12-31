@@ -1,0 +1,134 @@
+{
+  "label": "USA north-east",
+  "dataFrom": { "year": 2010, "month": 8, "day": 8, "hour": 22, "minute": 40 },
+  "dataTill": { "year": 2010, "month": 8, "day": 11, "hour": 12, "minute": 0 },
+  "defaultFocusFrom": { "year": 2010, "month": 8, "date": 11, "hour": 0, "minute": 0 },
+  "altitudes": 40,
+  "minAltitude": 200,
+  "maxAltitude": 3000,
+  "strataOptions": [
+    [
+      [200, 400], [400, 600], [600, 800], [800, 1000],
+      [1000, 1200], [1200, 1400], [1400, 1600], [1600, 1800], [1800, 2000],
+      [2000, 2200], [2200, 2400], [2400, 2600], [2600, 2800], [2800, 3000]
+    ],
+    [[200, 600], [600, 1000], [1000, 1400], [1400, 1800], [1800, 2200], [2200, 2600], [2600, 3000]],
+    [[200, 600], [600, 1200], [1200, 1800], [1800, 2400], [2400, 3000]],
+    [[200, 1000], [1000, 2000], [2000, 3000]],
+    [[200, 1600], [1600, 3000]],
+    [[200, 3000]]
+  ],
+  "defaultStrataOption": 2,
+  "defaultMigrantsPerPath": 500000,
+  "segmentSize": 20,
+  "anchorInterval": 20,
+  "mapCenter": [-73.2, 42],
+  "mapScaleFactor": 4.25,
+  "scaleLegendMarkers": [0, 100, 200, "km"],
+  "radars": [
+    {
+      "id": "KBGM",
+      "name": "KBGM",
+      "country": "USA",
+      "type": "weather",
+      "longitude": -75.984722,
+      "latitude": 42.199722
+    },
+    {
+      "id": "KBOX",
+      "name": "KBOX",
+      "country": "USA",
+      "type": "weather",
+      "longitude": -71.136944,
+      "latitude": 41.955833
+    },
+    {
+      "id": "KBUF",
+      "name": "KBUF",
+      "country": "USA",
+      "type": "weather",
+      "longitude": -78.736667,
+      "latitude": 42.948889
+    },
+    {
+      "id": "KCBW",
+      "name": "KCBW",
+      "country": "USA",
+      "type": "weather",
+      "longitude": -67.806667,
+      "latitude": 46.039444
+    },
+    {
+      "id": "KCCX",
+      "name": "KCCX",
+      "country": "USA",
+      "type": "weather",
+      "longitude": -78.003611,
+      "latitude": 40.923056
+    },
+    {
+      "id": "KCXX",
+      "name": "KCXX",
+      "country": "USA",
+      "type": "weather",
+      "longitude": -73.166944,
+      "latitude": 44.511111
+    },
+    {
+      "id": "KDIX",
+      "name": "KDIX",
+      "country": "USA",
+      "type": "weather",
+      "longitude": -74.410833,
+      "latitude": 39.946944
+    },
+    {
+      "id": "KDOX",
+      "name": "KDOX",
+      "country": "USA",
+      "type": "weather",
+      "longitude": -75.440000,
+      "latitude": 38.825556
+    },
+    {
+      "id": "KENX",
+      "name": "KENX",
+      "country": "USA",
+      "type": "weather",
+      "longitude": -74.063889,
+      "latitude": 42.586389
+    },
+    {
+      "id": "KGYX",
+      "name": "KGYX",
+      "country": "USA",
+      "type": "weather",
+      "longitude": -70.256667,
+      "latitude": 43.891389
+    },
+    {
+      "id": "KLWX",
+      "name": "KLWX",
+      "country": "USA",
+      "type": "weather",
+      "longitude": -77.477778,
+      "latitude": 38.975278
+    },
+    {
+      "id": "KOKX",
+      "name": "KOKX",
+      "country": "USA",
+      "type": "weather",
+      "longitude": -72.863889,
+      "latitude": 40.865556
+    },
+    {
+      "id": "KTYX",
+      "name": "KTYX",
+      "country": "USA",
+      "type": "weather",
+      "longitude": -75.675000,
+      "latitude": 43.750833
+    }
+  ]
+}
