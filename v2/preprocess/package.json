@@ -1,0 +1,12 @@
+{
+  "name": "Preprocess",
+  "version": "1.0.0",
+  "description": "NodeJS app that preprocesses the data for the case studies.",
+  "author": "Wouter Van den Broeck <wouter@addith.be>",
+  "dependencies": {
+    "csv": "^0.4.6",
+    "jsonfile": "^2.2.3",
+    "moment": "^2.10.6",
+    "request": "^2.67.0"
+  }
+}
