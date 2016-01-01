@@ -1804,7 +1804,7 @@ function viz_paths_(_config, _utils) {
   var paths = {};
 
   // private properties:
-  var radiusFactor = 0.05;  // Determines the thickness of the paths.
+  var radiusFactor = 0.025;  // Determines the thickness of the paths.
 
   // pathData indices:
   var pdi_x = 0;
