@@ -1,22 +1,24 @@
-/*jshint undef: false, unused: true, laxbreak: true*/
-/*jslint vars: true, plusplus: true*/
-/*global define*/
-
 "use strict";
 
-// -----------------------------------------------------------------------------
-// Json-based DataService
-// -----------------------------------------------------------------------------
+/**
+ * Data-service for models.caseStudy instances that loads data from json-files.
+ *
+ * @param models {object} The models service.
+ */
+function jsonDataService(models) {
 
-function JsonDataService() {
+  // service object:
   var dataService = {};
+
+  // private properties:
   var checkData = true;
   var sourceData = null;
-  var currFocus = null;
+  var currStrataOptionIdx = -1;
 
   /**
    * Initializes the dataService.
-   * @param caseStudy {enram.caseStudy}
+   *
+   * @param caseStudy {object} The models.caseStudy object.
    * @param handler {function}
    */
   dataService.initialize = function(caseStudy, handler) {
@@ -25,25 +27,23 @@ function JsonDataService() {
 
   /**
    * Loads the data for the given focus.
-   * @param caseStudy {enram.caseStudy}
-   * @param focus     {enram.focus}
-   * @param handler   {function(dataObject)} called when the data is loaded
+   *
+   * @param caseStudy {object} The models.caseStudy object.
+   * @param focus {object} The models.focus object.
+   * @param handler {function(object)} Called when the data is loaded, passing the
+   *                data object as argument.
    */
   dataService.loadFocusData = function (caseStudy, focus, handler) {
     //console.log(">> dataService.loadFocusData()");
-    if (currFocus == undefined || currFocus.strataOptionIdx != focus.strataOptionIdx) {
+    if (currStrataOptionIdx == -1 || currStrataOptionIdx != focus.strataOptionIdx) {
       // update source data:
-      var dataPath = caseStudy.urlBase + "data-" + focus.strataOptionIdx + ".json";
+      var dataPath = caseStudy.dataPath + "data-" + focus.strataOptionIdx + ".json";
       d3.json(dataPath, function (error, json) {
         if (error) {
-          console.error(error);
-          //throw new Error("Error in dataService.loadCaseStudy. "
-          //    + JSON.parse(error.responseText).error.join("; "));
-          return;
+          throw new Error("Error in dataService.loadFocusData. " + error);
         }
-
         sourceData = json;
-        currFocus = focus;
+        currStrataOptionIdx = focus.strataOptionIdx;
         dataService._loadFocusData_next(caseStudy, focus, handler);
       });
     }
@@ -52,15 +52,15 @@ function JsonDataService() {
     }
   };
 
+  /* @private */
   dataService._loadFocusData_next = function (caseStudy, focus, handler) {
-    var data = timamp.dataObject(caseStudy, focus);
+    var data = models.dataObject(caseStudy, focus);
     var dt = focus.from.valueOf() - caseStudy.dataFrom.valueOf();
     var segmentSec = caseStudy.segmentSize * 60 * 1000;
     var iFrom = Math.floor(dt / segmentSec);
     // add one in the following to allow for the 2-stage Runge–Kutta interpolation
     var iTill = iFrom + data.segmentCount + 1;
     var iMax = sourceData.densities.length;
-    //console.log(iFrom, caseStudy.dataFrom.toDate(), focus.from.toDate());
 
     // Warn when the focus interval does not intersect the available interval:
     if (iFrom >= iMax) {
@@ -87,7 +87,6 @@ function JsonDataService() {
       append = iTill - iMax;
       iTill = iMax;
     }
-    //console.log(iFrom, iTill, iMax, prepend, append);
 
     // Use slices of the source data as focus data:
     data.densities = sourceData.densities.slice(iFrom, iTill);
@@ -140,20 +139,22 @@ function JsonDataService() {
     }
 
     if (checkData) {
-      this._checkData(data);
+      this.checkData(data);
     }
 
     handler(data);
   };
 
-  /** Check if the given data is OK:
+  /**
+   * @private
+   * Check if the given data is OK:
    * - densities: data matrix with dimensions: [segments, strata, radars].
    * - uSpeeds: data matrix with dimensions: [segments, strata, radars].
    * - vSpeeds: data matrix with dimensions: [segments, strata, radars].
    * - speeds: data matrix with dimensions: [segments, strata, radars].
    * - avDensities: data matrix with dimensions: [strata, radars].
    */
-  dataService._checkData = function (data) {
+  dataService.checkData = function (data) {
     var segn = data.segmentCount + 1; // add one to allow two-phase integration
     var strn = data.strataCount;
     var radn = data.caseStudy.radarCount;
@@ -227,4 +228,4 @@ function JsonDataService() {
   };
 
   return dataService;
-} // end dataService
+}

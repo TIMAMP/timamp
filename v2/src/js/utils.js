@@ -1,5 +1,5 @@
 
-var utils = (function () {
+function utils_() {
 
   "use strict";
 
@@ -81,6 +81,23 @@ var utils = (function () {
   // Interpolation
   // -----------------------------------------------------------------------------
 
+  /**
+   * Interpolates a value in a two-dimensional domain given a set of irregularly-
+   * spaced data points. The value is interpolated by means of inverse distance
+   * weighting (Shepard, 1968)
+   *
+   * - Donald Shepard (1968) A two-dimensional interpolation function for
+   *   irregularly-spaced data. Proceedings of the 1968 23rd ACM national
+   *   conference. ACM.
+   *
+   * @param x {number} The x-coordinate of the point for which to interpolate.
+   * @param y {number} The y-coordinate of the point for which to interpolate.
+   * @param tValues {array} The known values.
+   * @param xValues {array} The x-coordinates for the known values.
+   * @param yValues {array} The y-coordinates for the known values.
+   * @param power {number} The power to use in the weighting.
+   * @returns {number} The interpolated value.
+   */
   utils.idw = function (x, y, tValues, xValues, yValues, power) {
     if (tValues === undefined || tValues === null) {
       throw new Error("tValues is undefined in utils.idw()");
@@ -119,6 +136,7 @@ var utils = (function () {
    * and v properties in the range [0, 1]).
    * Based on http://axonflux.com/handy-rgb-to-hsl-and-rgb-to-hsv-color-model-c.
    * Conversion formula adapted from http://en.wikipedia.org/wiki/HSL_color_space.
+   *
    * @param   {Number|Object} h The hue value in the range [0, 1], or an
    *                            object with three properties {h:h, s:s, v:v}.
    * @param   {Number}        s The saturation in the range [0, 1].
@@ -419,5 +437,4 @@ var utils = (function () {
   }
 
   return utils;
-
-})();
+}

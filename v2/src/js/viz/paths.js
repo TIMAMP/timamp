@@ -1,10 +1,16 @@
-/**
- * Created by wouter on 13/12/2015.
- */
+"use strict";
 
-var timamp = (function () {
+function viz_paths_(_config, _utils) {
 
-  var timamp = {};
+  // dependencies:
+  var config = _config;
+  var utils = _utils;
+
+  // service object:
+  var paths = {};
+
+  // private properties:
+  var radiusFactor = 0.05;  // Determines the thickness of the paths.
 
   // pathData indices:
   var pdi_x = 0;
@@ -15,132 +21,73 @@ var timamp = (function () {
   var pdi_distance = 5;
 
   /**
-   * The timamp data structure is constructed such that it efficiently facilitates
-   * the interpolation operations needed when constructing the paths in the timamp
-   * visualization.
+   * Draw the paths.
    *
-   * Terminology:
-   * - segment : The data is temporally segmented in segments of e.g. 20 minutes.
-   * - focus : A temporal section of the data currently shown in the visualisation.
-   * - strata : An altitude range.
-   *
-   * This data structure should always be complete, meaning that for each segment in the
-   * focus window, for each strata and for each radar, there should be a value, even
-   * if the original data does not fully cover the given focus window.
-   *
-   * The data object has the following form:
-   * {
-     *   caseStudy: {enram.caseStudy},  // the caseStudy
-     *   focus: {enram.focus},    // specifies the focus start and duration
-     *   segmentCount: {number},  // the number of segments in the focus
-     *   densities: {Array},      // matrix with dimensions: [segment, strata, radar]
-     *   uSpeeds: {Array},        // matrix with dimensions: [segment, strata, radar]
-     *   vSpeeds: {Array},        // matrix with dimensions: [segment, strata, radar]
-     *   speeds: {Array},         // matrix with dimensions: [segment, strata, radar]
-     *   avDensities: {Array},    // matrix with dimensions: [strata, radar]
-     * }
-   *
-   * @param caseStudy  {enram.caseStudy}
-   * @param focus      {enram.focus}
-   * @returns the data structure
+   * @param data {object} the models.dataObject
+   * @param anchorLocations {array} the anchor locations
+   * @param projection {function} the d3.geo geographic projection
+   * @param pathsG {object} The svg group element in which to draw the paths.
    */
-  timamp.dataObject = function (caseStudy, focus) {
-    var dataObject = {
-      caseStudy: caseStudy,
-      focus: focus,
-      __strataOption: focus.strataOption(caseStudy),
-      strataCount: focus.strataCount(caseStudy),
-      segmentCount: focus.segmentCount(caseStudy),
-      densities: [],
-      uSpeeds: [],
-      vSpeeds: [],
-      speeds: [],
-      avDensities: []
-    };
+  paths.drawPaths = function (data, anchorLocations, projection, pathsG) {
+    //console.log(">> _paths.drawPaths");
 
-    /**
-     * Initializes the data structure to be filled with actual data.
-     * @return the data object
-     */
-    dataObject.initStructure = function () {
-      var segn = this.segmentCount;
-      var strn = this.strataCount;
-      var radn = caseStudy.radarCount;
-      for (var segi = 0; segi < segn; segi++) {
-        var densities = [];
-        var uSpeeds = [];
-        var vSpeeds = [];
-        var speeds = [];
-        for (var stri = 0; stri < strn; stri++) {
-          densities.push(utils.zeroArray(radn));
-          uSpeeds.push(utils.zeroArray(radn));
-          vSpeeds.push(utils.zeroArray(radn));
-          speeds.push(utils.zeroArray(radn));
+    // set fixed random seed:
+    Math.seedrandom('ENRAM');
+
+    var rlons = data.caseStudy.radLons;
+    var rlats = data.caseStudy.radLats;
+    var idw = utils.idw;
+    var strn = data.strataCount;
+    var probf = data.caseStudy.anchorArea / data.focus.migrantsPerPath;
+    for (var stri = 0; stri < strn; stri++) {
+      try {
+        var densities = data.avDensities[stri]; // birds/km2 in the strata
+      }
+      catch (error) {
+        console.error("- stri: " + stri);
+        console.error("- strn: " + strn);
+        console.error("- data.avDensities: " + data.avDensities);
+        throw (error);
+      }
+
+      var pathColor = config.altHexColors[stri];
+
+      anchorLocations.forEach(function (anchorLoc) {
+        try {
+          var density = idw(anchorLoc[0], anchorLoc[1], densities, rlons, rlats, 2);
         }
-        this.densities.push(densities);
-        this.uSpeeds.push(uSpeeds);
-        this.vSpeeds.push(vSpeeds);
-        this.speeds.push(speeds);
-      }
+        catch (error) {
+          console.error("- anchorLoc: " + anchorLoc);
+          throw (error);
+        }
 
-      for (stri = 0; stri < strn; stri++) {
-        this.avDensities.push(utils.zeroArray(radn));
-      }
+        // Only continue for a subset of anchor locations, selected by a probability based
+        // on the average density:
+        if (Math.random() < density * probf) {
+          //console.log("- active anchorId(anchorLoc): " + anchorId(anchorLoc));
 
-      return this;
-    };
+          var pathData = paths.buildPathData(data, stri, anchorLoc, projection);
+          if (pathData.length == 0) {
+            //console.log("got empty pathData");
+            return;
+          }
 
-    /**
-     * Returns the size (height) of the strata with the given index.
-     * @param strataIdx
-     * @returns {number}
-     */
-    dataObject.strataSize = function (strataIdx) {
-      return this.__strataOption[strataIdx][2] / 1000;
-    };
+          var lineData = paths.buildOutline(pathData);
+          var flowG = pathsG.append("g").classed("flow-line", true);
+          paths.drawPath(flowG, pathData, lineData, pathColor);
 
-    /**
-     * Prepends data entries to replace missing data for a given amount of segments.
-     * @param amount The number of segments for which to add data entries.
-     */
-    dataObject.prependMissingSegments = function (amount) {
-      // empty partial data structure to use in dataObject.addMissingSegments:
-      var missingSegmentData = [];
-      for (var stri = 0; stri < this.strataCount; stri++) {
-        missingSegmentData.push(utils.zeroArray(caseStudy.radarCount));
-      }
-
-      for (var i = 0; i < amount; i++) {
-        this.densities.unshift(missingSegmentData);
-        this.uSpeeds.unshift(missingSegmentData);
-        this.vSpeeds.unshift(missingSegmentData);
-        this.speeds.unshift(missingSegmentData);
-      }
-    };
-
-    /**
-     * Appends data entries to replace missing data for a given amount of segments.
-     * @param amount The number of segments for which to add data entries.
-     */
-    dataObject.appendMissingSegments = function (amount) {
-      // empty partial data structure to use in dataObject.addMissingSegments:
-      var missingSegmentData = [];
-      for (var stri = 0; stri < this.strataCount; stri++) {
-        missingSegmentData.push(utils.zeroArray(caseStudy.radarCount));
-      }
-
-      for (var i = 0; i < amount; i++) {
-        this.densities.push(missingSegmentData);
-        this.uSpeeds.push(missingSegmentData);
-        this.vSpeeds.push(missingSegmentData);
-        this.speeds.push(missingSegmentData);
-      }
-    };
-
-    return dataObject;
+          // DEBUG:
+          //if (isDebug(anchorLoc)) {
+          //  console.log(pathData);
+          //  flowG.select("path").style("fill", "#f00");
+          //}
+        }
+      });
+    }
   };
 
   /**
+   * @private
    * The resulting path is obtained through numerical integration from the anchor point, half
    * backwards, half forwards. The integration is implemented using the 2-stage Runge–Kutta
    * algorithm, also known as the Heun method, as represented in the following scheme:
@@ -158,11 +105,12 @@ var timamp = (function () {
    *
    * Reference: Darmofal_96a (in README.md)
    *
-   * @param data {timamp.dataObject}
-   * @param stri strata index
-   * @param anchorLoc anchor location
+   * @param data {object} the models.dataObject
+   * @param stri {number} strata index
+   * @param anchorLoc {array} Anchor location in the form of a [longitude, latitude] array.
+   * @param projection {function} The d3.geo projection.
    */
-  timamp.buildPathData = function (data, stri, anchorLoc) {
+  paths.buildPathData = function (data, stri, anchorLoc, projection) {
     var pathData = [];
     var rlons = data.caseStudy.radLons;
     var rlats = data.caseStudy.radLats;
@@ -174,9 +122,9 @@ var timamp = (function () {
     var tf1 = data.caseStudy.segmentSize * 60 / 1000;
 
     /**
-     * @param p_0 source position (in lat/lon)
-     * @param t_i source segment index
-     * @param s_i strata index
+     * @param p_0 {array} source position as [longitude, latitude] array
+     * @param t_i {number} source segment index
+     * @param s_i {number} strata index
      */
     function stepBackward(p_0, t_i, s_i) {
       var a_u = -idw(p_0[0], p_0[1], data.uSpeeds[t_i][s_i], rlons, rlats, 2) * tf1;
@@ -188,7 +136,7 @@ var timamp = (function () {
       var b_v = -idw(a_l[0], a_l[1], data.vSpeeds[t_i - 1][s_i], rlons, rlats, 2) * tf1;
       var f_u = (a_u + b_u) / 2;              // final u_distance
       var f_v = (a_v + b_v) / 2;              // final v_distance
-      var f_d = utils.vectorLength(f_u, f_v);  // final distance
+      var f_d = utils.vectorLength(f_u, f_v); // final distance
       var f_a = Math.atan2(f_u, f_v);         // final angle
       var f_l = utils.geo.destinationRad(p_0, f_a, f_d);  // final position p_0 + 1/2(a + b)
       var den = idw(f_l[0], f_l[1], data.densities[t_i - 1][s_i], rlons, rlats, 2);
@@ -197,12 +145,17 @@ var timamp = (function () {
       return dat;
     }
 
+    /**
+     * @param p_0 {array} source position as [longitude, latitude] array
+     * @param t_i {number} source segment index
+     * @param s_i {number} strata index
+     */
     function stepForward(p_0, t_i, s_i) {
       var a_u, a_v, a_d, a_a, a_l, f_u, f_v, f_d, f_a, f_l, den, dat;
       a_u = idw(p_0[0], p_0[1], data.uSpeeds[t_i][s_i], rlons, rlats, 2) * tf1;
       a_v = idw(p_0[0], p_0[1], data.vSpeeds[t_i][s_i], rlons, rlats, 2) * tf1;
       a_d = utils.vectorLength(a_u, a_v);  // distance a
-      a_a = Math.atan2(a_u, a_v);         // angle a
+      a_a = Math.atan2(a_u, a_v);          // angle a
       a_l = utils.geo.destinationRad(p_0, a_a, a_d);  // location p_0 + a
       if (t_i + 1 >= data.densities.length) {
         f_u = a_u;
@@ -226,7 +179,7 @@ var timamp = (function () {
         }
         f_u = (a_u + b_u) / 2;              // final u_distance
         f_v = (a_v + b_v) / 2;              // final v_distance
-        f_d = utils.vectorLength(f_u, f_v);  // final distance
+        f_d = utils.vectorLength(f_u, f_v); // final distance
         f_a = Math.atan2(f_u, f_v);         // final angle
         f_l = utils.geo.destinationRad(p_0, f_a, f_d);  // final position p_0 + 1/2(a + b)
         den = idw(f_l[0], f_l[1], data.densities[t_i + 1][s_i], rlons, rlats, 2);
@@ -238,9 +191,8 @@ var timamp = (function () {
 
     var segn = Math.min(data.segmentCount, data.densities.length);
     var half = Math.floor(data.segmentCount / 2);
-    var loc, d_u, d_v, dat, ang, dis, den;
+    var segi, loc, d_u, d_v, dat, ang, dis, den;
     //console.log("rlons:", rlons, "rlats:", rlats, "segn:", segn);
-
 
     // middle point on anchor position:
     loc = anchorLoc;       // the current location, initially the location of the path's anchor
@@ -312,7 +264,7 @@ var timamp = (function () {
     );
 
     //DEBUG:
-    //if (anchorLoc == anchorLocations[DEBUG_ANCHOR_IDX]) {
+    //if (anchorLoc == app.anchorLocations[DEBUG_ANCHOR_IDX]) {
     //  var densities = [];
     //  var angles = [];
     //  var uSpeeds = [];
@@ -341,12 +293,14 @@ var timamp = (function () {
   };
 
   /**
-   * Generates the outline of a path whose variable width reflects the dynamic densities.
-   * @param pathData
-   * @param radiusFactor
+   * @private
+   * Generates the outline of a path with a variable width that reflects the
+   * density variability.
+   *
+   * @param pathData {array} A data structure as returned by paths.buildPathData.
    * @returns {Array} [[<x>, <y>], ...]
    */
-  timamp.buildOutline = function (pathData, radiusFactor) {
+  paths.buildOutline = function (pathData) {
     var lineData = [];
     if (pathData.length == 0) { return lineData; }
 
@@ -387,6 +341,55 @@ var timamp = (function () {
     return lineData;
   };
 
-  return timamp;
+  /**
+   * @private
+   * Draws a path with variable thickness.
+   *
+   * @param flowG {object} The svg group element in which to draw the path.
+   * @param pathData {array} A data structure as returned by paths.buildPathData.
+   * @param lineData {array} A data structure as returned by paths.buildOutline.
+   * @param pathColor {string} Hex-string that represents a color.
+   */
+  paths.drawPath = function (flowG, pathData, lineData, pathColor) {
+    //console.log(lineData.map(function (d) {
+    //  return '[' + d[0] + ', ' + d[1] + ']';
+    //}));
 
-})();
+    var segn = pathData.length - 1;
+    var radius;
+
+    // draw paths:
+    var opacity = config.arty ? .6 : .7;
+    flowG.append("path")
+      .attr("d", paths._lineFn(lineData))
+      .style({fill: pathColor, "fill-opacity": opacity });
+
+    // draw head dot:
+    if (config.arty) {
+      radius = 0;
+      pathData.forEach(function (d) { radius += d[2]; });
+      radius = Math.max(1, radius / pathData.length);
+      opacity = .5;
+    }
+    else {
+      radius = utils.constrain(pathData[segn][2] * radiusFactor + .5, 1.5, 3);
+      opacity = 1;
+    }
+    flowG.append('circle')
+      .attr('cx', pathData[segn][0])
+      .attr('cy', pathData[segn][1])
+      .attr('r', radius)
+      .attr("style", "fill: " + pathColor + "; fill-opacity: " + opacity + ";");
+  };
+
+  /**
+   * @private
+   * D3 line function used in paths.drawPath.
+   */
+  paths._lineFn = d3.svg.line()
+    .x(function (d) { return d[0]; })
+    .y(function (d) { return d[1]; })
+    .interpolate("cardinal-closed");
+
+  return paths;
+}

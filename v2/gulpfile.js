@@ -34,8 +34,9 @@ var paths = {
   // the client javascript files that should be concatenated in app.js:
   appJS: [
     './src/js/utils.js',
-    './src/js/data.js',
-    './src/js/enram.js',
+    './src/js/models.js',
+    './src/js/gui.js',
+    './src/js/jsonDataService.js',
     './src/js/**/*.js',
     './src/data/**/*.js'
   ],

@@ -3,7 +3,6 @@
   "dataFrom": { "year": 2010, "month": 8, "date": 8, "hour": 22, "minute": 40 },
   "dataTill": { "year": 2010, "month": 8, "date": 12, "hour": 0, "minute": 0 },
   "defaultFocusFrom": { "year": 2010, "month": 8, "date": 11, "hour": 0, "minute": 0 },
-  "altitudes": 40,
   "minAltitude": 200,
   "maxAltitude": 3000,
   "strataOptions": [

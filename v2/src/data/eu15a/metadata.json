@@ -3,7 +3,6 @@
   "dataFrom": { "year": 2013, "month": 3, "day": 5, "hour": 0, "minute": 0 },
   "dataTill": { "year": 2013, "month": 3, "day": 12, "hour": 0, "minute": 0 },
   "defaultFocusFrom": { "year": 2013, "month": 3, "date": 7, "hour": 18, "minute": 0 },
-  "altitudes": 20,
   "minAltitude": 200,
   "maxAltitude": 4000,
   "strataOptions": [
@@ -28,7 +27,6 @@
   "anchorInterval": 10,
   "mapCenter": [4.5, 51.55],
   "mapScaleFactor": 8.5,
-  "queryBaseUrl": "http://lifewatch.cartodb.com/api/v2/sql?q=",
   "scaleLegendMarkers": [0, 50, 100, "km"],
   "radars": [
     {

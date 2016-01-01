@@ -42,7 +42,7 @@
         <div class="small-4 medium-12 columns">
           <strong>Time:</strong><br class="show-for-small-only">
           <input id="input-hour" type="number" class="inline"
-                 min="-1" max="24" step="1"> h.
+                 min="-1" max="24" step="1"> h. GMT
         </div>
         <div class="small-4 medium-12 columns">
           <strong>Window:</strong><br class="show-for-small-only">
@@ -62,17 +62,17 @@
 
     <p class="description">
       This visualization provide a holistic picture of the spatial and temporal
-      variation in migration activity during an observation window of one to eight hours.
+      variation in migration activity during an given period.
       Each pathline represents the expected travel path of an imaginary swarm
-      of average migrants during the selected observation window.
-      Each pathline corresponds to approx. <span id="path-bird-count"></span> migrants.
-      The amount of pathline and their distribution corresponds with the observed
-      densities during the observation window.
-      Paths are anchored within a radius of <span id="radar-anchor-radius"></span> km
+      of average migrants during the selected observation period.
+      Each pathline corresponds to approx. <span id="migrants-per-path"></span> migrants.
+      The amount of pathlines and their distribution corresponds with the observed
+      densities during the observation period.
+      The pathlines are anchored within a radius of <span id="radar-anchor-radius"></span> km
       around the radars.
       Their length corresponds to the distance covered by the migrants during
       the selected time window while the varying thickness reflects changes in
-      migrant density during the observation window.
+      migrant density during the observation period.
     </p>
 
   </div>
@@ -84,7 +84,7 @@
       <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons Licence" class="CC-BY-NC-SA" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a>
       <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title">Time Integrated Multi-Altitude Migration Patterns</span>
       by <a xmlns:cc="http://creativecommons.org/ns#" href="http://timamp.github.io/" property="cc:attributionName" rel="cc:attributionURL">Wouter Van den Broeck, Jan Klaas Van Den Meersche, Kyle Horton and S&eacute;rgio Branco</a>
-      is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a> – Data served by <a href="http://cartodb.com">CartoDB</a>.</p>
+      is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a></p>
   </div>
   <div class="small-12 medium-4 large-3 columns show-for-medium-up"></div>
 </div>

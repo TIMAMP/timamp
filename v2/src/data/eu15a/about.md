@@ -8,5 +8,5 @@ The lowest altitude bin (0-200 m, 0.1 km in dataset) contains influence of groun
 
 - ___Dokter_2011a___ - TODO
 - ___Annoni_2001a___ - A. Annoni, C. Luzet, E. Gubler and J. Ihde. Map Projections for Europe. Institute for Environment and Sustainability, European Communities, 2003. URL: [http://ec.europa.eu/eurostat/documents/4311134/4366152/Map-projections-EUROPE.pdf](http://ec.europa.eu/eurostat/documents/4311134/4366152/Map-projections-EUROPE.pdf)
-- TODO: add reference to paper
+- TODO: add reference to new paper
 
