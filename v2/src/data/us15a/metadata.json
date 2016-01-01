@@ -18,7 +18,7 @@
     [[200, 3000]]
   ],
   "defaultStrataOption": 2,
-  "defaultMigrantsPerPath": 500000,
+  "defaultMigrantsPerPath": 250000,
   "segmentSize": 20,
   "anchorInterval": 20,
   "mapCenter": [-73.2, 42],
