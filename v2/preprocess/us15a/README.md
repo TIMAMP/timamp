@@ -9,10 +9,10 @@
 
 This project provides a NodeJS application that generates the `data.json` file loaded by the `us15a` case study in the TIMAMP v2 app. The source data is loaded from `data.csv` and the needed metadata is loaded from `metadata.json`. 
 
-The run this application, run:
+The run this application, run (from the `preprocess` directory):
 
 ```
-node index.js
+node process_us15a.js
 ```
 
 # Data
